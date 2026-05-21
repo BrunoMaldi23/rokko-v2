@@ -27,6 +27,36 @@ export default function Header() {
           </div>
         </Link>
 
+        <nav className="hidden items-center gap-7 md:flex">
+          <Link
+            href="/"
+            className="text-sm font-bold text-slate-600 transition hover:text-cyan-700"
+          >
+            Inicio
+          </Link>
+
+          <Link
+            href="/quienes-somos"
+            className="text-sm font-bold text-slate-600 transition hover:text-cyan-700"
+          >
+            Quiénes somos
+          </Link>
+
+          <Link
+            href="/servicios"
+            className="text-sm font-bold text-slate-600 transition hover:text-cyan-700"
+          >
+            Servicios
+          </Link>
+
+          <Link
+            href="/medidas-cuidados"
+            className="text-sm font-bold text-slate-600 transition hover:text-cyan-700"
+          >
+            Medidas y cuidados
+          </Link>
+        </nav>
+
         <Link
           href="/admin"
           className="rounded-full border border-cyan-500 bg-white px-5 py-2 text-sm font-bold text-cyan-700 shadow-sm transition hover:bg-cyan-50 hover:shadow-md"

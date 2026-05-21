@@ -1,10 +1,20 @@
 "use client";
 
+import { useState } from "react";
+import AdminTabs, { AdminTab } from "./AdminTabs";
+import AdminOverview from "./AdminOverview";
+import AdminProducts from "./AdminProducts";
+import AdminCommercial from "./AdminCommercial";
+import AdminQuotes from "./AdminQuotes";
+import AdminBranding from "./AdminBranding";
+
 type Props = {
   onLogout: () => void;
 };
 
 export default function AdminDashboard({ onLogout }: Props) {
+  const [activeTab, setActiveTab] = useState<AdminTab>("resumen");
+
   return (
     <section className="mx-auto max-w-7xl px-6 py-10">
       <div className="mb-10 flex flex-wrap items-start justify-between gap-4">
@@ -18,8 +28,8 @@ export default function AdminDashboard({ onLogout }: Props) {
           </h1>
 
           <p className="mt-3 max-w-2xl text-slate-500">
-            Administra productos, precios, descuentos, disponibilidad y
-            cotizaciones.
+            Administra productos, precios, descuentos, disponibilidad,
+            cotizaciones y branding.
           </p>
         </div>
 
@@ -31,25 +41,13 @@ export default function AdminDashboard({ onLogout }: Props) {
         </button>
       </div>
 
-      <div className="grid gap-5 md:grid-cols-3">
-        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <p className="text-sm font-bold text-slate-500">Productos</p>
-          <h2 className="mt-3 text-4xl font-black text-slate-950">5</h2>
-          <p className="mt-2 text-sm text-slate-500">Poleras cargadas</p>
-        </div>
+      <AdminTabs activeTab={activeTab} onChange={setActiveTab} />
 
-        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <p className="text-sm font-bold text-slate-500">Cotizaciones</p>
-          <h2 className="mt-3 text-4xl font-black text-slate-950">0</h2>
-          <p className="mt-2 text-sm text-slate-500">Historial pendiente</p>
-        </div>
-
-        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <p className="text-sm font-bold text-slate-500">Descuento global</p>
-          <h2 className="mt-3 text-4xl font-black text-cyan-700">0%</h2>
-          <p className="mt-2 text-sm text-slate-500">Configuración manual</p>
-        </div>
-      </div>
+      {activeTab === "resumen" && <AdminOverview />}
+      {activeTab === "productos" && <AdminProducts />}
+      {activeTab === "comercial" && <AdminCommercial />}
+      {activeTab === "cotizaciones" && <AdminQuotes />}
+      {activeTab === "branding" && <AdminBranding />}
     </section>
   );
 }
