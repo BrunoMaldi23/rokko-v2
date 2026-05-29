@@ -296,9 +296,15 @@ export default function QuoteBuilder({ initialProducts }: Props) {
         body: JSON.stringify({
           folio: result.folio,
           client_empresa: clientData.empresa,
+          client_rut: clientData.rut,
+          client_contacto: clientData.contacto,
           client_correo: clientData.correo,
+          client_telefono: clientData.telefono,
+          client_observaciones: clientData.observaciones,
           items: cart.map(({ id: _cartId, ...rest }) => rest),
           total,
+          brand,
+          commercial,
         }),
       });
 
@@ -1177,9 +1183,15 @@ export default function QuoteBuilder({ initialProducts }: Props) {
                       body: JSON.stringify({
                         folio: submittedFolio,
                         client_empresa: clientData.empresa,
+                        client_rut: clientData.rut,
+                        client_contacto: clientData.contacto,
                         client_correo: clientData.correo,
+                        client_telefono: clientData.telefono,
+                        client_observaciones: clientData.observaciones,
                         items: cart.map(({ id: _cartId, ...rest }) => rest),
                         total,
+                        brand,
+                        commercial,
                       }),
                     })
                       .then((r) => setEmailStatus(r.ok ? "sent" : "error"))
