@@ -3,17 +3,16 @@ import Link from "next/link";
 
 export default function Header() {
   return (
-    <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/85 backdrop-blur-xl">
+    <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/80 backdrop-blur-xl">
       <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6">
-        <Link href="/" className="flex items-center gap-5">
-          <div className="rounded-2xl bg-slate-950 px-4 py-2 shadow-sm">
+        <Link href="/" className="flex items-center gap-5 transition active:scale-95">
+          <div className="rounded-2xl bg-slate-950 px-4 py-2 shadow-sm transition hover:shadow-md">
             <Image
               src="/rokko.png"
               alt="ROKKO"
               width={160}
               height={50}
               priority
-              className="h-auto w-[160px]"
             />
           </div>
 
@@ -27,42 +26,35 @@ export default function Header() {
           </div>
         </Link>
 
-        <nav className="hidden items-center gap-7 md:flex">
+        <nav className="hidden items-center gap-1 md:flex">
           <Link
             href="/"
-            className="text-sm font-bold text-slate-600 transition hover:text-cyan-700"
+            className="rounded-xl px-4 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-slate-100 hover:text-cyan-700"
           >
             Inicio
           </Link>
 
           <Link
             href="/quienes-somos"
-            className="text-sm font-bold text-slate-600 transition hover:text-cyan-700"
+            className="rounded-xl px-4 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-slate-100 hover:text-cyan-700"
           >
             Quiénes somos
           </Link>
 
           <Link
             href="/servicios"
-            className="text-sm font-bold text-slate-600 transition hover:text-cyan-700"
+            className="rounded-xl px-4 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-slate-100 hover:text-cyan-700"
           >
             Servicios
           </Link>
 
           <Link
             href="/medidas-cuidados"
-            className="text-sm font-bold text-slate-600 transition hover:text-cyan-700"
+            className="rounded-xl px-4 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-slate-100 hover:text-cyan-700"
           >
             Medidas y cuidados
           </Link>
         </nav>
-
-        <Link
-          href="/admin"
-          className="rounded-full border border-cyan-500 bg-white px-5 py-2 text-sm font-bold text-cyan-700 shadow-sm transition hover:bg-cyan-50 hover:shadow-md"
-        >
-          Panel Admin
-        </Link>
       </div>
     </header>
   );

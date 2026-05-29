@@ -1,54 +1,203 @@
+"use client";
+
 import Link from "next/link";
+import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import Header from "@/components/Header";
 
 const categories = [
-  { name: "Poleras", emoji: "👕", slug: "poleras" },
-  { name: "Polerones", emoji: "🧥", slug: "polerones" },
-  { name: "Parkas", emoji: "🥼", slug: "parkas" },
-  { name: "Pantalones", emoji: "👖", slug: "pantalones" },
+  {
+    name: "Poleras",
+    emoji: "👕",
+    slug: "poleras",
+    desc: "Algodón premium y dry-fit de alto rendimiento.",
+    aliases: ["polera", "poleras", "camiseta", "camisetas", "remera", "remeras"],
+  },
+  {
+    name: "Polerones",
+    emoji: "🧥",
+    slug: "polerones",
+    desc: "Abrigo corporativo con costuras reforzadas.",
+    aliases: ["poleron", "polerones", "hoodie", "hoodies", "sudadera", "sweater"],
+  },
+  {
+    name: "Parkas",
+    emoji: "🥼",
+    slug: "parkas",
+    desc: "Modelos impermeables, térmicos y técnicos.",
+    aliases: ["parka", "parkas", "chaqueta", "chaquetas", "cortaviento", "cortavientos"],
+  },
+  {
+    name: "Pantalones",
+    emoji: "👖",
+    slug: "pantalones",
+    desc: "Líneas de carga funcionales y cortes formales.",
+    aliases: ["pantalon", "pantalones", "cargo", "cargos", "jeans"],
+  },
 ];
 
 export default function Home() {
+  const router = useRouter();
+  const [search, setSearch] = useState("");
+  const [searchError, setSearchError] = useState("");
+
+  const aliases = useMemo(
+    () =>
+      categories.flatMap((category) =>
+        category.aliases.map((alias) => ({
+          alias,
+          name: category.name,
+          slug: category.slug,
+        }))
+      ),
+    []
+  );
+
+  function normalize(value: string) {
+    return value
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim();
+  }
+
+  function handleSearch(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+
+    const query = normalize(search);
+    if (!query) {
+      setSearchError("Escribe una categoría para buscar.");
+      return;
+    }
+
+    const match = aliases.find(({ alias, name }) => {
+      const normalizedAlias = normalize(alias);
+      const normalizedName = normalize(name);
+
+      return (
+        query === normalizedAlias ||
+        query === normalizedName ||
+        normalizedAlias.includes(query) ||
+        query.includes(normalizedAlias)
+      );
+    });
+
+    if (!match) {
+      setSearchError("Prueba con poleras, polerones, parkas o pantalones.");
+      return;
+    }
+
+    router.push(`/cotizar/${match.slug}`);
+  }
+
   return (
-    <main className="min-h-screen overflow-hidden">
+    <main className="flex min-h-screen flex-col overflow-hidden bg-[#fafbfc] text-slate-900">
       <Header />
 
-      <section className="relative">
-        <div className="mx-auto max-w-7xl px-6 py-14">
-          <div className="mb-14">
-            <div className="inline-flex items-center gap-3 rounded-full border border-cyan-200 bg-white px-5 py-2 shadow-sm">
-              <div className="h-2 w-2 rounded-full bg-cyan-500" />
-              <p className="text-sm font-semibold tracking-wide text-slate-700">
-                ROKKO · La imagen de tu empresa comienza aquí
+      <section className="relative flex flex-1 items-center justify-center px-6 py-4 lg:py-0">
+        <div className="mx-auto w-full max-w-7xl">
+          <div className="grid gap-8 lg:grid-cols-[1.1fr_1.9fr] lg:items-center xl:gap-14">
+            <div className="space-y-5 animate-fade-in lg:max-w-md">
+              <div className="inline-flex items-center gap-2 rounded-full border border-cyan-100/80 bg-white px-3 py-1.5 shadow-sm shadow-slate-100">
+                <span className="flex h-2 w-2 rounded-full bg-cyan-500" />
+                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
+                  Catálogo Corporativo 2026
+                </p>
+              </div>
+
+              <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl lg:leading-[1.15]">
+                Eleva la identidad de tu{" "}
+                <span className="inline-block bg-gradient-to-r from-cyan-600 to-cyan-400 bg-clip-text text-transparent pb-1">
+                  empresa
+                </span>
+              </h1>
+
+              <p className="text-sm leading-relaxed text-slate-500">
+                Explora nuestra línea de vestuario corporativo profesional. Selecciona una categoría para configurar tu cotización con precios mayoristas automatizados e impresión de logos incluidos.
               </p>
+
+              <div className="pt-1 relative">
+                <form onSubmit={handleSearch} className="relative shadow-sm shadow-slate-100">
+                  <input
+                    type="text"
+                    value={search}
+                    onChange={(e) => {
+                      setSearch(e.target.value);
+                      setSearchError("");
+                    }}
+                    placeholder="¿Qué prenda buscas? Ej: Parkas..."
+                    className="w-full rounded-2xl border border-slate-200/80 bg-white px-5 py-3.5 pr-12 text-sm text-slate-800 outline-none transition-all duration-300 placeholder:text-slate-400 focus:border-cyan-500/40 focus:ring-4 focus:ring-cyan-500/5"
+                  />
+                  <button
+                    type="submit"
+                    aria-label="Buscar categoría"
+                    className="absolute right-2.5 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-xl bg-cyan-500 text-white transition-all hover:bg-cyan-600 active:scale-95"
+                  >
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5-5M10 18a8 8 0 100-16 8 8 0 000 16z" />
+                    </svg>
+                  </button>
+                </form>
+                {searchError && (
+                  <p className="absolute left-1 top-full mt-1 text-[11px] font-semibold text-red-500">{searchError}</p>
+                )}
+              </div>
+
+              <div className="grid grid-cols-3 gap-4 border-t border-slate-100 pt-5">
+                <div>
+                  <p className="text-base font-bold text-slate-800">Descuentos</p>
+                  <p className="text-[11px] font-medium text-slate-400 mt-0.5">Por volumen</p>
+                </div>
+                <div>
+                  <p className="text-base font-bold text-slate-800">Estampado</p>
+                  <p className="text-[11px] font-medium text-slate-400 mt-0.5">Logo incluido</p>
+                </div>
+                <div>
+                  <p className="text-base font-bold text-slate-800">Despacho</p>
+                  <p className="text-[11px] font-medium text-slate-400 mt-0.5">A todo el país</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid gap-5 sm:grid-cols-2 lg:max-h-[80vh]">
+              {categories.map((category, i) => (
+                <Link
+                  key={category.slug}
+                  href={`/cotizar/${category.slug}`}
+                  className="group relative flex flex-col justify-between rounded-3xl border border-slate-200/70 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-cyan-200 hover:shadow-md hover:shadow-cyan-500/5"
+                  style={{ animationDelay: `${(i + 1) * 80}ms` }}
+                >
+                  <div>
+                    <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-100 bg-slate-50 text-xl transition-all duration-300 group-hover:scale-105 group-hover:border-cyan-100/50 group-hover:bg-cyan-50">
+                      {category.emoji}
+                    </div>
+
+                    <h3 className="mt-4 text-lg font-bold text-slate-800 transition-colors group-hover:text-cyan-600">
+                      {category.name}
+                    </h3>
+
+                    <p className="mt-1.5 text-xs leading-relaxed text-slate-400">
+                      {category.desc}
+                    </p>
+                  </div>
+
+                  <div className="mt-5 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-cyan-600">
+                    <span>Explorar</span>
+                    <svg
+                      className="h-3 w-3 transition-transform duration-300 group-hover:translate-x-1"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={3}
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                    </svg>
+                  </div>
+                </Link>
+              ))}
             </div>
           </div>
-
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {categories.map((category) => (
-              <Link
-                key={category.slug}
-                href={`/cotizar/${category.slug}`}
-                className="group rounded-3xl border border-slate-200 bg-white p-8 text-left shadow-sm transition duration-300 hover:-translate-y-1 hover:border-cyan-400 hover:shadow-xl"
-              >
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-cyan-50 text-4xl transition group-hover:bg-cyan-100">
-                  {category.emoji}
-                </div>
-
-                <h3 className="mt-6 text-2xl font-black text-slate-950">
-                  {category.name}
-                </h3>
-
-                <div className="mt-6 text-sm font-bold text-cyan-700">
-                  Cotizar →
-                </div>
-              </Link>
-            ))}
-          </div>
         </div>
-
-        <div className="absolute right-[-120px] top-[-120px] -z-10 h-[420px] w-[420px] rounded-full bg-cyan-400/20 blur-3xl" />
-        <div className="absolute bottom-[-140px] left-[-100px] -z-10 h-[320px] w-[320px] rounded-full bg-cyan-300/10 blur-3xl" />
       </section>
     </main>
   );

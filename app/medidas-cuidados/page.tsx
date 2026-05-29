@@ -21,27 +21,35 @@ const sizeRows = [
 
 export default function MedidasCuidadosPage() {
   return (
-    <main className="min-h-screen bg-[#f6f8fb]">
+    <main className="min-h-screen overflow-hidden">
       <Header />
 
-      <section className="mx-auto max-w-7xl px-6 py-16">
+      <section className="mx-auto max-w-7xl px-6 py-14">
         <div className="max-w-4xl">
-          <p className="text-sm font-black uppercase tracking-[0.35em] text-cyan-600">
-            Medidas y cuidados
-          </p>
+          <div className="animate-fade-in-up">
+            <div className="inline-flex items-center gap-3 rounded-full border border-cyan-200/60 bg-white/90 px-5 py-2 shadow-sm backdrop-blur-sm">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-cyan-400 opacity-75" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-cyan-500" />
+              </span>
+              <p className="text-xs font-black uppercase tracking-[0.35em] text-cyan-700">
+                Medidas y cuidados
+              </p>
+            </div>
+          </div>
 
-          <h1 className="mt-5 text-5xl font-black leading-tight text-slate-950">
+          <h1 className="mt-8 animate-fade-in-up animate-delay-100 text-4xl font-black leading-tight text-slate-950 md:text-5xl">
             Guía para elegir tallas y cuidar tus prendas corporativas.
           </h1>
 
-          <p className="mt-6 text-lg leading-8 text-slate-600">
+          <p className="mt-6 animate-fade-in-up animate-delay-200 max-w-2xl text-base leading-8 text-slate-600">
             Una correcta selección de talla y cuidado de lavado ayuda a mantener
             la presentación, color, forma y durabilidad de cada prenda.
           </p>
         </div>
 
-        <div className="mt-12 grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="mt-12 grid animate-fade-in-up animate-delay-200 gap-8 lg:grid-cols-[1.2fr_0.8fr]">
+          <div className="rounded-3xl border border-slate-200/80 bg-white/80 p-6 shadow-sm backdrop-blur-sm">
             <h2 className="text-2xl font-black text-slate-950">
               Tabla referencial de tallas
             </h2>
@@ -63,7 +71,7 @@ export default function MedidasCuidadosPage() {
 
                 <tbody className="divide-y divide-slate-100">
                   {sizeRows.map((row) => (
-                    <tr key={row[0]} className="hover:bg-slate-50">
+                    <tr key={row[0]} className="transition-colors hover:bg-cyan-50/50">
                       <td className="px-5 py-4 font-black text-slate-950">
                         {row[0]}
                       </td>
@@ -77,17 +85,20 @@ export default function MedidasCuidadosPage() {
             </div>
           </div>
 
-          <aside className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <aside className="rounded-3xl border border-slate-200/80 bg-white/80 p-6 shadow-sm backdrop-blur-sm">
             <h2 className="text-2xl font-black text-slate-950">
               Cuidados de prenda
             </h2>
 
             <div className="mt-6 space-y-3">
-              {careItems.map((item) => (
+              {careItems.map((item, i) => (
                 <div
                   key={item}
-                  className="rounded-2xl bg-slate-50 px-4 py-3 text-sm font-bold text-slate-600"
+                  className="flex items-center gap-3 rounded-2xl bg-slate-50/80 px-4 py-3 text-sm font-bold text-slate-600 transition-colors hover:bg-cyan-50/80"
                 >
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-cyan-100 text-[10px] font-black text-cyan-700">
+                    {i + 1}
+                  </span>
                   {item}
                 </div>
               ))}
@@ -95,8 +106,8 @@ export default function MedidasCuidadosPage() {
           </aside>
         </div>
 
-        <div className="mt-8 grid gap-6 md:grid-cols-3">
-          <div className="rounded-3xl border border-slate-200 bg-white p-7 shadow-sm">
+        <div className="mt-8 grid animate-fade-in-up animate-delay-300 gap-6 md:grid-cols-3">
+          <div className="rounded-3xl border border-slate-200/80 bg-white/80 p-7 shadow-sm backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:border-cyan-300 hover:shadow-md">
             <h3 className="text-xl font-black text-slate-950">
               Antes de cotizar
             </h3>
@@ -106,7 +117,7 @@ export default function MedidasCuidadosPage() {
             </p>
           </div>
 
-          <div className="rounded-3xl border border-slate-200 bg-white p-7 shadow-sm">
+          <div className="rounded-3xl border border-slate-200/80 bg-white/80 p-7 shadow-sm backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:border-cyan-300 hover:shadow-md">
             <h3 className="text-xl font-black text-slate-950">
               Sobre el logo
             </h3>
@@ -116,7 +127,7 @@ export default function MedidasCuidadosPage() {
             </p>
           </div>
 
-          <div className="rounded-3xl border border-slate-200 bg-white p-7 shadow-sm">
+          <div className="rounded-3xl border border-slate-200/80 bg-white/80 p-7 shadow-sm backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:border-cyan-300 hover:shadow-md">
             <h3 className="text-xl font-black text-slate-950">
               Disponibilidad
             </h3>

@@ -1,31 +1,44 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Header from "@/components/Header";
+import { useCallback, useEffect, useState } from "react";
+import { supabase, hasSupabaseConfig } from "@/lib/supabaseClient";
 import AdminLogin from "@/components/admin/AdminLogin";
-import AdminDashboard from "@/components/admin/AdminDashboard";
+import AdminLayout from "@/components/admin/AdminLayout";
 
 export default function AdminPage() {
   const [isAuth, setIsAuth] = useState(false);
+  const [initializing, setInitializing] = useState(hasSupabaseConfig);
 
   useEffect(() => {
-    setIsAuth(sessionStorage.getItem("rokko-admin") === "true");
+    if (!hasSupabaseConfig) return;
+
+    let cancelled = false;
+    supabase!.auth.getSession().then(({ data }) => {
+      if (cancelled) return;
+      setIsAuth(!!data.session);
+      setInitializing(false);
+    });
+
+    return () => { cancelled = true; };
   }, []);
 
-  function logout() {
-    sessionStorage.removeItem("rokko-admin");
+  const handleLogin = useCallback(() => setIsAuth(true), []);
+
+  async function logout() {
+    if (!supabase) return;
+    await supabase.auth.signOut();
     setIsAuth(false);
   }
 
-  return (
-    <main className="min-h-screen bg-[#f6f8fb]">
-      <Header />
+  if (initializing) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-cyan-200 border-t-cyan-500" />
+      </div>
+    );
+  }
 
-      {isAuth ? (
-        <AdminDashboard onLogout={logout} />
-      ) : (
-        <AdminLogin onLogin={() => setIsAuth(true)} />
-      )}
-    </main>
-  );
+  if (!isAuth) return <AdminLogin onLogin={handleLogin} />;
+
+  return <AdminLayout onLogout={logout} />;
 }
