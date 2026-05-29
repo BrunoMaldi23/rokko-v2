@@ -26,7 +26,7 @@ function buildQuoteEmail(
     <tr>
       <td style="padding:10px 12px;border-bottom:1px solid #e2e8f0;color:#94a3b8;font-weight:700;text-align:center">${idx + 1}</td>
       <td style="padding:10px 12px;border-bottom:1px solid #e2e8f0;font-weight:700;color:#0f172a">${item.product}</td>
-      <td style="padding:10px 12px;border-bottom:1px solid #e2e8f0;color:#64748b;font-size:13px">${item.color} · ${item.application} · ${item.logoPosition}<br><span style="font-size:11px;color:#94a3b8">${Object.entries(item.sizes).filter(([, q]) => q > 0).map(([s, q]) => `${s}: ${q}`).join(" · ")}</span></td>
+      <td style="padding:10px 12px;border-bottom:1px solid #e2e8f0;color:#64748b;font-size:13px">${item.color} · ${item.application} · ${item.logoPosition}<br><span style="font-size:11px;color:#94a3b8">${Object.entries(item.sizes as Record<string, number>).filter(([, q]) => q > 0).map(([s, q]) => `${s}: ${q}`).join(" · ")}</span></td>
       <td style="padding:10px 12px;border-bottom:1px solid #e2e8f0;color:#0f172a;font-weight:700;text-align:center">${item.totalUnits}</td>
       <td style="padding:10px 12px;border-bottom:1px solid #e2e8f0;color:#475569;text-align:right">$${item.unitPrice.toLocaleString("es-CL")}</td>
       <td style="padding:10px 12px;border-bottom:1px solid #e2e8f0;color:#0f172a;font-weight:700;text-align:right">$${item.subtotal.toLocaleString("es-CL")}</td>
