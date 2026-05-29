@@ -454,7 +454,7 @@ export default function AdminProducts() {
                         <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-slate-100 bg-white p-1 shadow-sm shadow-slate-100">
                           <Image
                             unoptimized
-                            src={getProductImages(product)[0] || "/rokko.png"}
+                            src={getProductImages(product)[0] || ""}
                             alt={product.name || ""}
                             width={48}
                             height={48}

@@ -108,7 +108,7 @@ function getProductImages(product: Product) {
     imageField && !imageField.startsWith("[") ? [imageField] : [];
 
   return Array.from(
-    new Set([...directImages, ...parsedImages, ...fallbackImage, "/rokko.png"])
+    new Set([...directImages, ...parsedImages, ...fallbackImage])
   ).filter(Boolean);
 }
 
@@ -377,7 +377,7 @@ export default function QuoteBuilder({ initialProducts }: Props) {
               galleryIndexes[product.id] || 0,
               productImages.length - 1
             );
-            const activeImage = productImages[activeImageIndex] || "/rokko.png";
+            const activeImage = productImages[activeImageIndex] || "";
 
             return (
               <div
@@ -748,7 +748,7 @@ export default function QuoteBuilder({ initialProducts }: Props) {
                       src={
                         getProductImages(selectedProduct)[
                           galleryIndexes[selectedProduct.id] || 0
-                        ] || "/rokko.png"
+                        ] || ""
                       }
                       alt={selectedProduct.name}
                       width={280}
