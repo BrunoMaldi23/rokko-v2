@@ -3,6 +3,21 @@
 import { useEffect, useState } from "react";
 import { fetchQuotes, updateQuoteFull, deleteQuote, type QuoteRecord } from "@/lib/quotes";
 
+function sendResponseEmail(quote: QuoteRecord, adminNotes: string) {
+  fetch("/api/send-quote", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      type: "admin_response",
+      folio: quote.folio,
+      client_empresa: quote.client_empresa,
+      client_correo: quote.client_correo,
+      admin_notes: adminNotes,
+      status: quote.status,
+    }),
+  }).catch((err) => console.error("send response email error:", err));
+}
+
 const statusConfig: Record<string, { label: string; bg: string; dot: string }> = {
   pendiente: { label: "Pendiente", bg: "bg-amber-50 text-amber-700 border-amber-200", dot: "bg-amber-400" },
   enviada: { label: "Enviada", bg: "bg-blue-50 text-blue-700 border-blue-200", dot: "bg-blue-400" },
@@ -35,7 +50,10 @@ export default function AdminQuotes() {
     if (ok) {
       const upd = (q: QuoteRecord) => q.id === id ? { ...q, status: "respondida", admin_notes: adminNotes } : q;
       setQuotes((prev) => prev.map(upd));
-      if (selected?.id === id) setSelected(upd(selected));
+      if (selected?.id === id) {
+        setSelected(upd(selected));
+        sendResponseEmail(upd(selected), adminNotes);
+      }
     }
     setSaving(false);
   }
@@ -50,7 +68,10 @@ export default function AdminQuotes() {
     if (ok) {
       const upd = (q: QuoteRecord) => q.id === id ? { ...q, status: "cerrada", admin_notes: adminNotes } : q;
       setQuotes((prev) => prev.map(upd));
-      if (selected?.id === id) setSelected(upd(selected));
+      if (selected?.id === id) {
+        setSelected(upd(selected));
+        sendResponseEmail(upd(selected), adminNotes);
+      }
     }
     setSaving(false);
   }
@@ -92,14 +113,32 @@ export default function AdminQuotes() {
   if (selected) {
     const cfg = statusConfig[selected.status] || statusConfig.pendiente;
     return (
-      <div className="space-y-6 animate-fade-in">
-        <button
-          onClick={() => setSelected(null)}
-          className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-600 transition-all hover:border-cyan-300 hover:text-cyan-700"
-        >
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-          Volver al listado
-        </button>
+      <>
+        <style>{`
+          @media print {
+            body > * { display: none !important; }
+            #admin-quote-detail { display: block !important; position: fixed; inset: 0; overflow: visible; background: #fff; z-index: 999999; padding: 0.5in; }
+            #admin-quote-detail .no-print { display: none !important; }
+            .print\\:hidden { display: none !important; }
+          }
+        `}</style>
+        <div id="admin-quote-detail" className="space-y-6 animate-fade-in">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <button
+            onClick={() => setSelected(null)}
+            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-600 transition-all hover:border-cyan-300 hover:text-cyan-700"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+            Volver al listado
+          </button>
+          <button
+            onClick={() => window.print()}
+            className="inline-flex items-center gap-2 rounded-xl bg-cyan-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-cyan-700"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+            Imprimir
+          </button>
+        </div>
 
         {/* Cabecera */}
         <div className="rounded-2xl border border-cyan-100 bg-white p-6 shadow-sm">
@@ -265,6 +304,7 @@ export default function AdminQuotes() {
           </div>
         )}
       </div>
+    </>
     );
   }
 
