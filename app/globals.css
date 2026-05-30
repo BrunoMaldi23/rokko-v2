@@ -52,7 +52,7 @@ html {
   overflow-x: clip;
   border: 0;
   outline: 0;
-  background: #fafbfc;
+  background: #001f75;
   font-family: var(--font-sans);
 }
 
@@ -63,8 +63,19 @@ body {
   overflow-x: clip;
   border: 0;
   outline: 0;
-  background: #fafbfc;
-  color: #0f172a;
+  
+  /* NUEVO DEGRADADO: Avanza desde tu azul oscuro, pasa por el cian ROKKO 
+     y se suaviza de manera creativa en la esquina con tu cian pálido marca */
+  background: linear-gradient(135deg,
+    #001f75 0%,
+    #003b80 35%,
+    #007fa8 65%,
+    var(--color-cyan-brand) 88%,
+    var(--color-cyan-soft) 100%
+  );
+  
+  background-attachment: fixed;
+  color: #f1f5f9;
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -96,7 +107,7 @@ textarea {
 }
 
 ::selection {
-  background: #00a9d6;
+  background: var(--color-cyan-brand);
   color: #fff;
 }
 

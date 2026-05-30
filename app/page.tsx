@@ -91,28 +91,37 @@ export default function Home() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col overflow-hidden bg-[#fafbfc] text-slate-900">
+    <main 
+      className="flex min-h-screen flex-col overflow-hidden text-white" 
+      /* DEGRADADO EN BASE A CIAN CORPORATIVO PERO SUAVIZADO Y ATENUADO */
+      style={{
+        background: "linear-gradient(135deg, #001a54 0%, #003b82 30%, #0077b6 60%, #00b4d8 85%, #e0f7fa 100%)"
+      }}
+    >
       <Header />
 
       <section className="relative flex flex-1 items-center justify-center px-6 py-4 lg:py-0">
         <div className="mx-auto w-full max-w-7xl">
           <div className="grid gap-8 lg:grid-cols-[1.1fr_1.9fr] lg:items-center xl:gap-14">
             <div className="space-y-5 animate-fade-in lg:max-w-md">
-              <div className="inline-flex items-center gap-2 rounded-full border border-cyan-100/80 bg-white px-3 py-1.5 shadow-sm shadow-slate-100">
-                <span className="flex h-2 w-2 rounded-full bg-cyan-500" />
-                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
+              
+              {/* BADGE CRISTALIZADO EN TONOS CIAN FINOS */}
+              <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-slate-950/40 backdrop-blur-md px-3 py-1.5 shadow-sm">
+                <span className="flex h-2 w-2 rounded-full bg-cyan-400 animate-pulse" />
+                <p className="text-[10px] font-bold uppercase tracking-widest text-cyan-200">
                   Catálogo Corporativo 2026
                 </p>
               </div>
 
-              <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl lg:leading-[1.15]">
+              <h1 className="text-4xl font-extrabold tracking-tight text-white sm:text-5xl lg:leading-[1.15]">
                 Eleva la identidad de tu{" "}
-                <span className="inline-block bg-gradient-to-r from-cyan-600 to-cyan-400 bg-clip-text text-transparent pb-1">
+                {/* GRADIENTE DE TEXTO QUE ENCAJA PERFECTO CON LA MARCA */}
+                <span className="inline-block bg-gradient-to-r from-cyan-200 via-cyan-100 to-white bg-clip-text text-transparent pb-1">
                   empresa
                 </span>
               </h1>
 
-              <p className="text-sm leading-relaxed text-slate-500">
+              <p className="text-sm leading-relaxed text-white/80">
                 Explora nuestra línea de vestuario corporativo profesional. Selecciona una categoría para configurar tu cotización con precios mayoristas automatizados e impresión de logos incluidos.
               </p>
 
@@ -143,18 +152,18 @@ export default function Home() {
                 )}
               </div>
 
-              <div className="grid grid-cols-3 gap-4 border-t border-slate-100 pt-5">
+              <div className="grid grid-cols-3 gap-4 border-t border-white/10 pt-5">
                 <div>
-                  <p className="text-base font-bold text-slate-800">Descuentos</p>
-                  <p className="text-[11px] font-medium text-slate-400 mt-0.5">Por volumen</p>
+                  <p className="text-base font-bold text-white">Descuentos</p>
+                  <p className="text-[11px] font-medium text-white/70 mt-0.5">Por volumen</p>
                 </div>
                 <div>
-                  <p className="text-base font-bold text-slate-800">Estampado</p>
-                  <p className="text-[11px] font-medium text-slate-400 mt-0.5">Logo incluido</p>
+                  <p className="text-base font-bold text-white">Estampado</p>
+                  <p className="text-[11px] font-medium text-white/70 mt-0.5">Logo incluido</p>
                 </div>
                 <div>
-                  <p className="text-base font-bold text-slate-800">Despacho</p>
-                  <p className="text-[11px] font-medium text-slate-400 mt-0.5">A todo el país</p>
+                  <p className="text-base font-bold text-white">Despacho</p>
+                  <p className="text-[11px] font-medium text-white/70 mt-0.5">A todo el país</p>
                 </div>
               </div>
             </div>
@@ -164,11 +173,11 @@ export default function Home() {
                 <Link
                   key={category.slug}
                   href={`/cotizar/${category.slug}`}
-                  className="group relative flex flex-col justify-between rounded-3xl border border-slate-200/70 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-cyan-200 hover:shadow-md hover:shadow-cyan-500/5"
+                  className="group relative flex flex-col justify-between rounded-3xl border border-slate-200/60 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-cyan-200/60 hover:shadow-md hover:shadow-cyan-500/5"
                   style={{ animationDelay: `${(i + 1) * 80}ms` }}
                 >
                   <div>
-                    <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-100 bg-slate-50 text-xl transition-all duration-300 group-hover:scale-105 group-hover:border-cyan-100/50 group-hover:bg-cyan-50">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-100 bg-slate-50 text-xl transition-all duration-300 group-hover:scale-105 group-hover:border-cyan-100/50 group-hover:bg-cyan-50/50">
                       {category.emoji}
                     </div>
 
@@ -181,7 +190,7 @@ export default function Home() {
                     </p>
                   </div>
 
-                  <div className="mt-5 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-cyan-600">
+                  <div className="mt-5 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-cyan-600 transition-colors">
                     <span>Explorar</span>
                     <svg
                       className="h-3 w-3 transition-transform duration-300 group-hover:translate-x-1"
