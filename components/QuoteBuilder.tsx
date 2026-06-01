@@ -43,17 +43,6 @@ const colorMap: Record<string, string> = {
 
 const sizes = ["S", "M", "L", "XL", "2XL", "3XL", "4XL"];
 
-const logoPositions = {
-  "Pecho izquierdo": "left-[43%] top-[38%] w-14",
-  "Pecho derecho": "right-[32%] top-[38%] w-14",
-  "Pecho centro": "left-1/2 top-[39%] w-16 -translate-x-1/2",
-  "Espalda alta": "left-1/2 top-[28%] w-24 -translate-x-1/2",
-  "Manga izquierda": "left-[24%] top-[39%] w-12",
-  "Manga derecha": "right-[24%] top-[39%] w-12",
-};
-
-type LogoPosition = keyof typeof logoPositions;
-
 type Props = {
   initialProducts: Product[];
 };
@@ -455,6 +444,7 @@ export default function QuoteBuilder({ initialProducts }: Props) {
                 selectedColor={selectedColor}
                 galleryIndex={galleryIndex}
                 formLogo={formLogo}
+                logoPreview={logoPreview}
                 onColorSelect={handleColorSelect}
                 onGalleryNav={handleGalleryNav}
                 onFormUpdate={handleFormUpdate}
@@ -540,7 +530,7 @@ export default function QuoteBuilder({ initialProducts }: Props) {
             aria-label="Cerrar ficha"
           />
 
-          <aside className="relative h-full w-full max-w-3xl overflow-y-auto border-l border-slate-200 bg-slate-50 shadow-2xl transition-all">
+          <aside className="relative h-full w-full max-w-5xl overflow-y-auto border-l border-slate-200 bg-slate-50 shadow-2xl transition-all">
             {/* Header Fijo */}
             <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white/90 px-8 py-5 backdrop-blur-md">
               <div>
@@ -634,7 +624,7 @@ export default function QuoteBuilder({ initialProducts }: Props) {
                   </div>
                 </div>
 
-                <div className="mt-6 grid gap-6 md:grid-cols-[1fr_220px]">
+                <div className="mt-6 grid gap-6 md:grid-cols-[1fr_240px]">
                   <LogoEditor
                     productImageUrl={
                       (() => {
@@ -645,6 +635,8 @@ export default function QuoteBuilder({ initialProducts }: Props) {
                         return imgs[galleryIndexes[pid] || 0] || "";
                       })()
                     }
+                    productName={selectedProduct.name}
+                    productShortName={selectedProduct.short_name}
                     logoSrc={logoPreview}
                     onLogoUpload={(file) => {
                       if (logoPreview) URL.revokeObjectURL(logoPreview);
@@ -656,6 +648,13 @@ export default function QuoteBuilder({ initialProducts }: Props) {
                   />
 
                   <div className="flex flex-col justify-center space-y-4">
+                    {logoPreview && (
+                      <div className="rounded-xl border border-accent/20 bg-accent/5 px-4 py-3 text-center">
+                        <p className="text-[10px] font-black uppercase tracking-wider text-accent">Logo cargado</p>
+                        <p className="mt-1 text-[11px] font-bold text-slate-600">{forms[selectedProduct.id]?.logoPosition || "Pecho izquierdo"}</p>
+                        <p className="mt-0.5 text-[10px] text-slate-400">Arrastra para reposicionar</p>
+                      </div>
+                    )}
                     <div>
                       <label className="text-[11px] font-black uppercase tracking-wider text-slate-400 block mb-1.5">Técnica Recomendada</label>
                       <select
@@ -667,6 +666,18 @@ export default function QuoteBuilder({ initialProducts }: Props) {
                         <option>Estampado</option>
                       </select>
                     </div>
+                    {logoPreview && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (logoPreview) URL.revokeObjectURL(logoPreview);
+                          setLogoPreview(null);
+                        }}
+                        className="rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-xs font-bold text-red-600 transition-all hover:bg-red-100"
+                      >
+                        Quitar logo
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1087,6 +1098,7 @@ const ProductCard = memo(function ProductCard({
   selectedColor,
   galleryIndex,
   formLogo,
+  logoPreview,
   onColorSelect,
   onGalleryNav,
   onFormUpdate,
@@ -1099,6 +1111,7 @@ const ProductCard = memo(function ProductCard({
   selectedColor: string;
   galleryIndex: number;
   formLogo: string | undefined;
+  logoPreview: string | null;
   onColorSelect: (productId: string, color: string, colorIndex: number, totalImages: number) => void;
   onGalleryNav: (productId: string, nextIndex: number, totalImages: number) => void;
   onFormUpdate: (productId: string, field: string, value: string) => void;
@@ -1123,6 +1136,13 @@ const ProductCard = memo(function ProductCard({
       <div className="grid gap-5 md:grid-cols-[150px_1fr]">
         <div className="group relative flex h-44 items-center justify-center overflow-hidden rounded-[1.25rem] border border-slate-100 bg-slate-50 p-4 shadow-inner">
           <Image unoptimized src={activeImage} alt={product.name} width={170} height={170} className="h-auto max-h-full w-auto object-contain drop-shadow-sm" />
+          {logoPreview && (
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="relative w-14 h-14 sm:w-16 sm:h-16 opacity-60">
+                <Image unoptimized src={logoPreview} alt="Logo" fill className="object-contain" />
+              </div>
+            </div>
+          )}
           {productImages.length > 1 && (
             <>
               <button

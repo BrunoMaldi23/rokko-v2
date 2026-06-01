@@ -1,19 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useCallback, useState } from "react";
-import { Canvas, Image as FabricImage, Rect } from "fabric";
-
-const PRESET_POSITIONS = [
-  { label: "Pecho izquierdo", left: 0.15, top: 0.35 },
-  { label: "Pecho derecho", left: 0.58, top: 0.35 },
-  { label: "Pecho centro", left: 0.38, top: 0.36 },
-  { label: "Espalda alta", left: 0.38, top: 0.24 },
-  { label: "Manga izquierda", left: 0.06, top: 0.38 },
-  { label: "Manga derecha", left: 0.7, top: 0.38 },
-];
+import { useEffect, useRef, useCallback, useState, useMemo } from "react";
+import { Canvas, Image as FabricImage } from "fabric";
+import { getGarmentConfig, type GarmentView } from "@/lib/garmentMap";
 
 type Props = {
   productImageUrl: string;
+  productName: string;
+  productShortName: string;
   logoSrc: string | null;
   onLogoUpload: (file: File) => void;
   onPositionChange?: (pos: { left: number; top: number; scaleX: number; scaleY: number }) => void;
@@ -22,8 +16,15 @@ type Props = {
   onActivePositionChange?: (label: string) => void;
 };
 
+const CANVAS_W = 600;
+const CANVAS_H = 660;
+
+let canvasInitCounter = 0;
+
 export default function LogoEditor({
   productImageUrl,
+  productName,
+  productShortName,
   logoSrc,
   onLogoUpload,
   onPositionChange,
@@ -31,57 +32,76 @@ export default function LogoEditor({
   activePosition,
   onActivePositionChange,
 }: Props) {
+  const garmentConfig = useMemo(() => getGarmentConfig(productName, productShortName), [productName, productShortName]);
+  const [view, setView] = useState<GarmentView>(garmentConfig.defaultView);
+
   const canvasEl = useRef<HTMLCanvasElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<Canvas | null>(null);
   const logoObjRef = useRef<FabricImage | null>(null);
   const [ready, setReady] = useState(false);
+  const [logoScale, setLogoScale] = useState(0.25);
+  const [imgError, setImgError] = useState(false);
+  const [scaleFactor, setScaleFactor] = useState(1);
+  const initKey = useRef(0);
 
-  const CANVAS_W = 420;
-  const CANVAS_H = 420;
-
+  // --- Canvas init: fixed size, never re-created ---
   useEffect(() => {
     if (!canvasEl.current) return;
+    const key = ++canvasInitCounter;
+    initKey.current = key;
+
     const c = new Canvas(canvasEl.current, {
       width: CANVAS_W,
       height: CANVAS_H,
-      backgroundColor: "#f1f5f9",
+      backgroundColor: "transparent",
       selection: false,
+      preserveObjectStacking: true,
     });
     canvasRef.current = c;
     setReady(true);
+
     return () => {
+      initKey.current = -1;
+      logoObjRef.current = null;
       c.dispose();
       canvasRef.current = null;
-      logoObjRef.current = null;
     };
   }, []);
 
+  // --- Responsive CSS scale + Fabric calcOffset ---
   useEffect(() => {
-    if (!ready || !canvasRef.current) return;
-    const c = canvasRef.current;
-    FabricImage.fromURL(productImageUrl, { crossOrigin: "anonymous" }).then((img) => {
-      const scale = Math.min(CANVAS_W / img.width!, CANVAS_H / img.height!);
-      img.set({
-        scaleX: scale,
-        scaleY: scale,
-        left: (CANVAS_W - img.width! * scale) / 2,
-        top: (CANVAS_H - img.height! * scale) / 2,
-        selectable: false,
-        evented: false,
-      });
-      c.backgroundImage?.dispose();
-      c.backgroundImage = img;
-      c.renderAll();
-    });
-  }, [productImageUrl, ready]);
+    const el = wrapperRef.current;
+    if (!el) return;
+    const measure = () => {
+      const parentW = el.parentElement?.clientWidth || CANVAS_W;
+      const factor = Math.min(parentW / CANVAS_W, 1);
+      setScaleFactor(factor);
+      if (canvasRef.current) canvasRef.current.calcOffset();
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el.parentElement!);
+    return () => ro.disconnect();
+  }, []);
 
+  // --- Recalc canvas offset when ready (needed after resize for correct mouse events) ---
+  useEffect(() => {
+    if (!ready || !canvasRef.current || !wrapperRef.current) return;
+    canvasRef.current.calcOffset();
+    const parentW = wrapperRef.current.parentElement?.clientWidth || CANVAS_W;
+    setScaleFactor(Math.min(parentW / CANVAS_W, 1));
+  }, [ready]);
+
+  // --- Logo image (only when logoSrc changes) ---
   useEffect(() => {
     if (!ready || !canvasRef.current) return;
+    const key = initKey.current;
     const c = canvasRef.current;
 
     if (logoObjRef.current) {
       c.remove(logoObjRef.current);
+      logoObjRef.current.dispose();
       logoObjRef.current = null;
     }
 
@@ -90,86 +110,166 @@ export default function LogoEditor({
       return;
     }
 
-    FabricImage.fromURL(logoSrc, { crossOrigin: "anonymous" }).then((logo) => {
-      logo.set({
-        left: initialPosition?.left ?? CANVAS_W * 0.38,
-        top: initialPosition?.top ?? CANVAS_H * 0.36,
-        scaleX: initialPosition?.scaleX ?? 0.25,
-        scaleY: initialPosition?.scaleY ?? 0.25,
-        cornerColor: "#b8614a",
-        cornerStrokeColor: "#b8614a",
-        cornerSize: 10,
-        transparentCorners: false,
-        borderColor: "#b8614a",
-        padding: 4,
-      });
-      c.add(logo);
-      c.setActiveObject(logo);
-      logoObjRef.current = logo;
-      c.renderAll();
-    });
+    FabricImage.fromURL(logoSrc, { crossOrigin: "anonymous" })
+      .then((logo) => {
+        if (key !== initKey.current || !canvasRef.current) {
+          logo.dispose();
+          return;
+        }
+        const s = initialPosition?.scaleX ?? logoScale;
+        logo.set({
+          left: initialPosition?.left ?? CANVAS_W * 0.38,
+          top: initialPosition?.top ?? CANVAS_H * 0.36,
+          scaleX: s,
+          scaleY: s,
+          cornerColor: "#b8614a",
+          cornerStrokeColor: "#b8614a",
+          cornerSize: 12,
+          transparentCorners: false,
+          borderColor: "#b8614a",
+          padding: 6,
+          borderScaleFactor: 1.5,
+        });
+        c.add(logo);
+        c.setActiveObject(logo);
+        logoObjRef.current = logo;
+        c.renderAll();
+      })
+      .catch(() => {});
   }, [logoSrc, ready]);
 
+  // --- Logo modify handler ---
   useEffect(() => {
     if (!ready || !canvasRef.current) return;
     const c = canvasRef.current;
-
     const handler = () => {
       const obj = logoObjRef.current;
       if (!obj) return;
-      onPositionChange?.({
-        left: obj.left || 0,
-        top: obj.top || 0,
-        scaleX: obj.scaleX || 1,
-        scaleY: obj.scaleY || 1,
-      });
+      const s = obj.scaleX || 1;
+      setLogoScale(s);
+      onPositionChange?.({ left: obj.left || 0, top: obj.top || 0, scaleX: s, scaleY: s });
     };
-
     c.on("object:modified", handler);
     return () => { c.off("object:modified", handler); };
   }, [ready, onPositionChange]);
 
+  // --- Logo slider ---
+  const handleScale = useCallback((val: number) => {
+    setLogoScale(val);
+    if (!canvasRef.current || !logoObjRef.current) return;
+    const logo = logoObjRef.current;
+    logo.set({ scaleX: val, scaleY: val });
+    logo.setCoords();
+    canvasRef.current.renderAll();
+    onPositionChange?.({ left: logo.left || 0, top: logo.top || 0, scaleX: val, scaleY: val });
+  }, [onPositionChange]);
+
+  // --- Preset position ---
   const handlePreset = useCallback((label: string, leftPct: number, topPct: number) => {
     if (!canvasRef.current || !logoObjRef.current) return;
     const logo = logoObjRef.current;
-    logo.set({
-      left: CANVAS_W * leftPct,
-      top: CANVAS_H * topPct,
-    });
+    logo.set({ left: CANVAS_W * leftPct, top: CANVAS_H * topPct });
     logo.setCoords();
     canvasRef.current.renderAll();
-    onPositionChange?.({
-      left: logo.left || 0,
-      top: logo.top || 0,
-      scaleX: logo.scaleX || 1,
-      scaleY: logo.scaleY || 1,
-    });
+    onPositionChange?.({ left: logo.left || 0, top: logo.top || 0, scaleX: logo.scaleX || 1, scaleY: logo.scaleY || 1 });
     onActivePositionChange?.(label);
   }, [onPositionChange, onActivePositionChange]);
 
   const inputRef = useRef<HTMLInputElement>(null);
+  const positions = garmentConfig.positions[view];
+  const availableViews = garmentConfig.views;
 
   return (
-    <div className="space-y-4">
-      <div
-        ref={containerRef}
-        className="relative mx-auto flex items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 shadow-inner"
-        style={{ maxWidth: CANVAS_W }}
-      >
-        <canvas ref={canvasEl} />
+    <div className="space-y-4 w-full">
+      {/* View toggle */}
+      <div className="flex items-center gap-2">
+        {availableViews.map((v) => (
+          <button
+            key={v}
+            type="button"
+            onClick={() => { setView(v); const p = garmentConfig.positions[v][0]; handlePreset(p.label, p.left, p.top); }}
+            className={`rounded-lg px-4 py-1.5 text-[11px] font-bold transition-all ${
+              view === v ? "bg-accent text-white shadow-sm" : "bg-white text-slate-500 border border-slate-200 hover:border-accent"
+            }`}
+          >
+            {v === "frontal" ? "Frontal" : "Espalda"}
+          </button>
+        ))}
       </div>
 
+      {/* Canvas wrapper: product image as <img> background, Fabric overlay on top */}
+      <div className="mx-auto" style={{ maxWidth: CANVAS_W }}>
+        <div
+          ref={wrapperRef}
+          className="relative overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 shadow-inner"
+          style={{ aspectRatio: `${CANVAS_W} / ${CANVAS_H}` }}
+        >
+          {/* Product image as regular <img> (always works) */}
+          {!imgError ? (
+            <img
+              src={productImageUrl}
+              alt="Prenda"
+              className="absolute inset-0 w-full h-full object-contain"
+              onError={() => setImgError(true)}
+            />
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center bg-slate-100">
+              <p className="text-xs font-medium text-slate-400">Imagen no disponible</p>
+            </div>
+          )}
+
+          {/* Fabric canvas on top (transparent, only logo) */}
+          <div
+            className="absolute inset-0 origin-top-left"
+            style={{
+              transform: `scale(${scaleFactor})`,
+              width: CANVAS_W,
+              height: CANVAS_H,
+            }}
+          >
+            <canvas ref={canvasEl} />
+          </div>
+        </div>
+      </div>
+
+      {/* Logo controls */}
+      {logoSrc && (
+        <div className="space-y-3">
+          <div className="flex flex-wrap gap-1.5">
+            {positions.map((pos) => (
+              <button
+                key={pos.label}
+                type="button"
+                onClick={() => handlePreset(pos.label, pos.left, pos.top)}
+                className={`rounded-lg border px-3 py-1.5 text-[11px] font-bold transition-all ${
+                  activePosition === pos.label
+                    ? "border-accent bg-accent text-white shadow-sm"
+                    : "border-slate-200 bg-white text-slate-600 hover:border-accent hover:text-accent"
+                }`}
+              >
+                {pos.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-3">
+            <label className="text-[11px] font-bold text-slate-400 shrink-0">Tamaño</label>
+            <input
+              type="range"
+              min={0.05}
+              max={0.5}
+              step={0.01}
+              value={logoScale}
+              onChange={(e) => handleScale(Number(e.target.value))}
+              className="w-full accent-accent h-1.5 cursor-pointer"
+            />
+            <span className="text-[11px] font-bold text-slate-600 w-8 text-right tabular-nums">{Math.round(logoScale * 100)}%</span>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-wrap items-center gap-3">
-        <input
-          ref={inputRef}
-          type="file"
-          accept="image/png,image/jpeg,image/webp"
-          className="hidden"
-          onChange={(e) => {
-            const f = e.target.files?.[0];
-            if (f) onLogoUpload(f);
-          }}
-        />
+        <input ref={inputRef} type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) onLogoUpload(f); }} />
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
@@ -180,33 +280,10 @@ export default function LogoEditor({
           </svg>
           {logoSrc ? "Cambiar logo" : "Subir logo"}
         </button>
-
         {logoSrc && (
-          <>
-            <span className="text-[11px] text-slate-400">|</span>
-            <span className="text-[11px] font-medium text-slate-400">Arrastra y redimensiona sobre la prenda</span>
-          </>
+          <span className="text-[11px] font-medium text-slate-400">Arrastra y redimensiona sobre la prenda</span>
         )}
       </div>
-
-      {logoSrc && (
-        <div className="flex flex-wrap gap-1.5">
-          {PRESET_POSITIONS.map((pos) => (
-            <button
-              key={pos.label}
-              type="button"
-              onClick={() => handlePreset(pos.label, pos.left, pos.top)}
-              className={`rounded-lg border px-3 py-1.5 text-[11px] font-bold transition-all ${
-                activePosition === pos.label
-                  ? "border-accent bg-accent text-white"
-                  : "border-slate-200 bg-white text-slate-600 hover:border-accent hover:text-accent"
-              }`}
-            >
-              {pos.label}
-            </button>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
