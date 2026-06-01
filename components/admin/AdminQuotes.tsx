@@ -224,7 +224,7 @@ export default function AdminQuotes() {
             onChange={(e) => setAdminNotes(e.target.value)}
             rows={4}
             placeholder="Escribe tu respuesta, observaciones o comentario sobre esta cotización..."
-            className="w-full resize-none rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition-all focus:border-accent focus:shadow-lg focus:shadow-accent/10"
+            className="admin-control resize-none"
           />
 
           <div className="mt-4 flex flex-wrap gap-3">

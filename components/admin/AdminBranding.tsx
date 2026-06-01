@@ -95,7 +95,7 @@ export default function AdminBranding() {
               value={brand.name}
               onChange={(e) => updateBrand("name", e.target.value)}
               placeholder="Ej. ROKKO"
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm text-slate-800 placeholder-slate-400 outline-none transition-all duration-200 focus:border-accent/50 focus:bg-white focus:ring-4 focus:ring-accent/10"
+              className="admin-control"
             />
           </Field>
 
@@ -106,7 +106,7 @@ export default function AdminBranding() {
               onChange={(e) => updateBrand("phone", formatPhone(e.target.value))}
               placeholder="+569 1234 5678"
               maxLength={15}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm text-slate-800 placeholder-slate-400 outline-none transition-all duration-200 focus:border-accent/50 focus:bg-white focus:ring-4 focus:ring-accent/10"
+              className="admin-control"
             />
           </Field>
 
@@ -116,7 +116,7 @@ export default function AdminBranding() {
               value={brand.email}
               onChange={(e) => updateBrand("email", e.target.value)}
               placeholder="correo@empresa.com"
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm text-slate-800 placeholder-slate-400 outline-none transition-all duration-200 focus:border-accent/50 focus:bg-white focus:ring-4 focus:ring-accent/10"
+              className="admin-control"
             />
           </Field>
 
@@ -126,7 +126,7 @@ export default function AdminBranding() {
               value={brand.city}
               onChange={(e) => updateBrand("city", e.target.value)}
               placeholder="Ej. Temuco"
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm text-slate-800 placeholder-slate-400 outline-none transition-all duration-200 focus:border-accent/50 focus:bg-white focus:ring-4 focus:ring-accent/10"
+              className="admin-control"
             />
           </Field>
         </div>
@@ -137,7 +137,7 @@ export default function AdminBranding() {
             onChange={(e) => updateBrand("footer", e.target.value)}
             rows={4}
             placeholder="Mensaje de agradecimiento o condiciones..."
-            className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm text-slate-800 placeholder-slate-400 outline-none transition-all duration-200 focus:border-accent/50 focus:bg-white focus:ring-4 focus:ring-accent/10"
+            className="admin-control resize-none"
           />
         </Field>
 
