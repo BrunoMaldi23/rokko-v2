@@ -399,7 +399,7 @@ export default function AdminProducts() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Buscar por producto o nombre corto..."
-                className="admin-control pl-10"
+                className="admin-control !pl-10"
               />
             </div>
 
