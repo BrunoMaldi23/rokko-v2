@@ -94,28 +94,31 @@ export default function Home() {
     <main className="flex min-h-screen flex-col overflow-hidden">
       <Header />
 
+      {/* blur decorative */}
+      <div className="pointer-events-none absolute -top-40 right-0 h-[500px] w-[500px] -translate-y-1/4 translate-x-1/4 rounded-full bg-gradient-to-br from-accent/10 to-accent-soft/50 blur-[120px]" />
+
       <section className="relative flex flex-1 items-center justify-center px-6 py-4 lg:py-0">
         <div className="mx-auto w-full max-w-7xl">
           <div className="grid gap-8 lg:grid-cols-[1.1fr_1.9fr] lg:items-center xl:gap-14">
             <div className="space-y-5 animate-fade-in lg:max-w-md">
-              <div className="inline-flex items-center gap-3 rounded-full border border-cyan-200/60 bg-white/90 px-5 py-2 shadow-sm backdrop-blur-sm">
+              <div className="inline-flex items-center gap-3 rounded-full border border-[#e5ddd4] bg-white/90 px-5 py-2 shadow-sm backdrop-blur-sm">
                 <span className="relative flex h-2 w-2">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-cyan-400 opacity-75" />
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-cyan-500" />
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-75" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-accent" />
                 </span>
-                <p className="text-xs font-bold uppercase tracking-[0.35em] text-cyan-700">
+                <p className="text-xs font-bold uppercase tracking-[0.35em] text-accent">
                   Catálogo Corporativo 2026
                 </p>
               </div>
 
-              <h1 className="text-4xl font-extrabold tracking-tight text-slate-950 sm:text-5xl lg:leading-[1.15]">
+              <h1 className="text-4xl font-extrabold tracking-tight text-[#1e1e1e] sm:text-5xl lg:leading-[1.15]">
                 Eleva la identidad de tu{" "}
-                <span className="text-cyan-700">
+                <span className="text-accent">
                   empresa
                 </span>
               </h1>
 
-              <p className="text-sm leading-relaxed text-slate-600">
+              <p className="text-sm leading-relaxed text-muted">
                 Explora nuestra línea de vestuario corporativo profesional. Selecciona una categoría para configurar tu cotización con precios mayoristas automatizados e impresión de logos incluidos.
               </p>
 
@@ -129,12 +132,12 @@ export default function Home() {
                       setSearchError("");
                     }}
                     placeholder="¿Qué prenda buscas? Ej: Parkas..."
-                    className="w-full rounded-2xl border border-slate-200/80 bg-white/90 px-5 py-3.5 pr-12 text-sm text-slate-800 outline-none backdrop-blur-sm transition-all duration-300 placeholder:text-slate-400 focus:border-cyan-400 focus:bg-white focus:ring-4 focus:ring-cyan-500/10"
+                    className="w-full rounded-2xl border border-[#e5ddd4] bg-white/90 px-5 py-3.5 pr-12 text-sm text-[#1e1e1e] outline-none backdrop-blur-sm transition-all duration-300 placeholder:text-muted focus:border-accent focus:bg-white focus:ring-4 focus:ring-accent/10"
                   />
                   <button
                     type="submit"
                     aria-label="Buscar categoría"
-                    className="absolute right-2.5 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-xl bg-slate-950 text-white transition-all hover:bg-cyan-700 active:scale-95"
+                    className="absolute right-2.5 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-xl bg-brand-dark text-white transition-all hover:bg-accent active:scale-95"
                   >
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5-5M10 18a8 8 0 100-16 8 8 0 000 16z" />
@@ -146,20 +149,21 @@ export default function Home() {
                 )}
               </div>
 
-              <div className="grid grid-cols-3 gap-4 border-t border-slate-200/60 pt-5">
+              <div className="grid grid-cols-3 gap-4 border-t border-[#e5ddd4] pt-5">
                 <div>
-                  <p className="text-base font-bold text-slate-950">Descuentos</p>
-                  <p className="text-[11px] font-medium text-slate-500 mt-0.5">Por volumen</p>
+                  <p className="text-base font-bold text-[#1e1e1e]">Descuentos</p>
+                  <p className="text-[11px] font-medium text-muted mt-0.5">Por volumen</p>
                 </div>
                 <div>
-                  <p className="text-base font-bold text-slate-950">Estampado</p>
-                  <p className="text-[11px] font-medium text-slate-500 mt-0.5">Logo incluido</p>
+                  <p className="text-base font-bold text-[#1e1e1e]">Estampado</p>
+                  <p className="text-[11px] font-medium text-muted mt-0.5">Logo incluido</p>
                 </div>
                 <div>
-                  <p className="text-base font-bold text-slate-950">Despacho</p>
-                  <p className="text-[11px] font-medium text-slate-500 mt-0.5">A todo el país</p>
+                  <p className="text-base font-bold text-[#1e1e1e]">Despacho</p>
+                  <p className="text-[11px] font-medium text-muted mt-0.5">A todo el país</p>
                 </div>
               </div>
+
             </div>
 
             <div className="grid gap-5 sm:grid-cols-2 lg:max-h-[80vh]">
@@ -167,24 +171,24 @@ export default function Home() {
                 <Link
                   key={category.slug}
                   href={`/cotizar/${category.slug}`}
-                  className="group relative flex flex-col justify-between rounded-3xl border border-slate-200/80 bg-white/80 p-6 shadow-sm backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-cyan-300 hover:shadow-xl hover:shadow-cyan-500/10"
+                  className="group relative flex flex-col justify-between rounded-3xl border border-[#e5ddd4] bg-white/80 p-6 shadow-sm backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-accent hover:shadow-xl hover:shadow-accent/10"
                   style={{ animationDelay: `${(i + 1) * 80}ms` }}
                 >
                   <div>
-                    <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200/80 bg-gradient-to-br from-cyan-50 to-cyan-100/50 text-xl transition-all duration-300 group-hover:scale-105 group-hover:from-cyan-100 group-hover:to-cyan-200/50">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-[#e5ddd4] bg-gradient-to-br from-accent-soft to-[#ecd5cc] text-xl transition-all duration-300 group-hover:scale-105 group-hover:from-[#ecd5cc] group-hover:to-[#e0c0b5]">
                       {category.emoji}
                     </div>
 
-                    <h3 className="mt-4 text-lg font-bold text-slate-950 transition-colors group-hover:text-cyan-700">
+                    <h3 className="mt-4 text-lg font-bold text-[#1e1e1e] transition-colors group-hover:text-accent">
                       {category.name}
                     </h3>
 
-                    <p className="mt-1.5 text-xs leading-relaxed text-slate-500">
+                    <p className="mt-1.5 text-xs leading-relaxed text-muted">
                       {category.desc}
                     </p>
                   </div>
 
-                  <div className="mt-5 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-cyan-700 transition-colors">
+                  <div className="mt-5 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-accent transition-colors">
                     <span>Explorar</span>
                     <svg
                       className="h-3 w-3 transition-transform duration-300 group-hover:translate-x-1"

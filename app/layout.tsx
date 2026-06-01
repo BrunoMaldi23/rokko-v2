@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 
 // Control de responsive y colores del sistema/navegador
 export const viewport: Viewport = {
-  themeColor: "#001f75",
+  themeColor: "#f5f0eb",
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,

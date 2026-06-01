@@ -27,40 +27,40 @@ export default function MedidasCuidadosPage() {
       <section className="mx-auto max-w-7xl px-6 py-14">
         <div className="max-w-4xl">
           <div className="animate-fade-in-up">
-            <div className="inline-flex items-center gap-3 rounded-full border border-cyan-200/60 bg-white/90 px-5 py-2 shadow-sm backdrop-blur-sm">
+            <div className="inline-flex items-center gap-3 rounded-full border border-[#e5ddd4] bg-white/90 px-5 py-2 shadow-sm backdrop-blur-sm">
               <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-cyan-400 opacity-75" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-cyan-500" />
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-75" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-accent" />
               </span>
-              <p className="text-xs font-black uppercase tracking-[0.35em] text-cyan-700">
+              <p className="text-xs font-black uppercase tracking-[0.35em] text-accent">
                 Medidas y cuidados
               </p>
             </div>
           </div>
 
-          <h1 className="mt-8 animate-fade-in-up animate-delay-100 text-4xl font-black leading-tight text-slate-950 md:text-5xl">
+          <h1 className="mt-8 animate-fade-in-up animate-delay-100 text-4xl font-black leading-tight text-[#1e1e1e] md:text-5xl">
             Guía para elegir tallas y cuidar tus prendas corporativas.
           </h1>
 
-          <p className="mt-6 animate-fade-in-up animate-delay-200 max-w-2xl text-base leading-8 text-slate-600">
+          <p className="mt-6 animate-fade-in-up animate-delay-200 max-w-2xl text-base leading-8 text-muted">
             Una correcta selección de talla y cuidado de lavado ayuda a mantener
             la presentación, color, forma y durabilidad de cada prenda.
           </p>
         </div>
 
         <div className="mt-12 grid animate-fade-in-up animate-delay-200 gap-8 lg:grid-cols-[1.2fr_0.8fr]">
-          <div className="rounded-3xl border border-slate-200/80 bg-white/80 p-6 shadow-sm backdrop-blur-sm">
-            <h2 className="text-2xl font-black text-slate-950">
+          <div className="rounded-3xl border border-[#e5ddd4] bg-white/80 p-6 shadow-sm backdrop-blur-sm">
+            <h2 className="text-2xl font-black text-[#1e1e1e]">
               Tabla referencial de tallas
             </h2>
 
-            <p className="mt-2 text-sm text-slate-500">
+            <p className="mt-2 text-sm text-muted">
               Medidas aproximadas para poleras manga corta 100% algodón.
             </p>
 
-            <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200">
+            <div className="mt-6 overflow-hidden rounded-2xl border border-[#e5ddd4]">
               <table className="w-full text-left text-sm">
-                <thead className="bg-slate-50 text-xs uppercase tracking-[0.2em] text-slate-500">
+                <thead className="bg-[#ece5dc] text-xs uppercase tracking-[0.2em] text-muted">
                   <tr>
                     <th className="px-5 py-4">Talla</th>
                     <th className="px-5 py-4">Pecho</th>
@@ -69,15 +69,15 @@ export default function MedidasCuidadosPage() {
                   </tr>
                 </thead>
 
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-[#e5ddd4]">
                   {sizeRows.map((row) => (
-                    <tr key={row[0]} className="transition-colors hover:bg-cyan-50/50">
-                      <td className="px-5 py-4 font-black text-slate-950">
+                    <tr key={row[0]} className="transition-colors hover:bg-accent-soft/50">
+                      <td className="px-5 py-4 font-black text-[#1e1e1e]">
                         {row[0]}
                       </td>
-                      <td className="px-5 py-4 text-slate-600">{row[1]}</td>
-                      <td className="px-5 py-4 text-slate-600">{row[2]}</td>
-                      <td className="px-5 py-4 text-slate-600">{row[3]}</td>
+                      <td className="px-5 py-4 text-muted">{row[1]}</td>
+                      <td className="px-5 py-4 text-muted">{row[2]}</td>
+                      <td className="px-5 py-4 text-muted">{row[3]}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -85,8 +85,8 @@ export default function MedidasCuidadosPage() {
             </div>
           </div>
 
-          <aside className="rounded-3xl border border-slate-200/80 bg-white/80 p-6 shadow-sm backdrop-blur-sm">
-            <h2 className="text-2xl font-black text-slate-950">
+          <aside className="rounded-3xl border border-[#e5ddd4] bg-white/80 p-6 shadow-sm backdrop-blur-sm">
+            <h2 className="text-2xl font-black text-[#1e1e1e]">
               Cuidados de prenda
             </h2>
 
@@ -94,9 +94,9 @@ export default function MedidasCuidadosPage() {
               {careItems.map((item, i) => (
                 <div
                   key={item}
-                  className="flex items-center gap-3 rounded-2xl bg-slate-50/80 px-4 py-3 text-sm font-bold text-slate-600 transition-colors hover:bg-cyan-50/80"
+                  className="flex items-center gap-3 rounded-2xl bg-[#ece5dc]/80 px-4 py-3 text-sm font-bold text-muted transition-colors hover:bg-accent-soft/80"
                 >
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-cyan-100 text-[10px] font-black text-cyan-700">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent-soft text-[10px] font-black text-accent">
                     {i + 1}
                   </span>
                   {item}
@@ -107,31 +107,31 @@ export default function MedidasCuidadosPage() {
         </div>
 
         <div className="mt-8 grid animate-fade-in-up animate-delay-300 gap-6 md:grid-cols-3">
-          <div className="rounded-3xl border border-slate-200/80 bg-white/80 p-7 shadow-sm backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:border-cyan-300 hover:shadow-md">
-            <h3 className="text-xl font-black text-slate-950">
+          <div className="rounded-3xl border border-slate-200/80 bg-white/80 p-7 shadow-sm backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:border-accent hover:shadow-md">
+            <h3 className="text-xl font-black text-[#1e1e1e]">
               Antes de cotizar
             </h3>
-            <p className="mt-3 text-sm leading-6 text-slate-500">
+            <p className="mt-3 text-sm leading-6 text-muted">
               Revisa cantidades por talla para evitar cambios posteriores en la
               orden.
             </p>
           </div>
 
-          <div className="rounded-3xl border border-slate-200/80 bg-white/80 p-7 shadow-sm backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:border-cyan-300 hover:shadow-md">
-            <h3 className="text-xl font-black text-slate-950">
+          <div className="rounded-3xl border border-slate-200/80 bg-white/80 p-7 shadow-sm backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:border-accent hover:shadow-md">
+            <h3 className="text-xl font-black text-[#1e1e1e]">
               Sobre el logo
             </h3>
-            <p className="mt-3 text-sm leading-6 text-slate-500">
+            <p className="mt-3 text-sm leading-6 text-muted">
               El logo debe ser evaluado antes de producir. Si no tiene calidad
               suficiente, puede requerir vectorización.
             </p>
           </div>
 
-          <div className="rounded-3xl border border-slate-200/80 bg-white/80 p-7 shadow-sm backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:border-cyan-300 hover:shadow-md">
-            <h3 className="text-xl font-black text-slate-950">
+          <div className="rounded-3xl border border-slate-200/80 bg-white/80 p-7 shadow-sm backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:border-accent hover:shadow-md">
+            <h3 className="text-xl font-black text-[#1e1e1e]">
               Disponibilidad
             </h3>
-            <p className="mt-3 text-sm leading-6 text-slate-500">
+            <p className="mt-3 text-sm leading-6 text-muted">
               Colores y tallas pueden variar según stock disponible al momento
               de confirmar el pedido.
             </p>
