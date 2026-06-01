@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Header from "@/components/Header";
+import { getAllProducts } from "@/lib/products";
+import type { Product } from "@/types/product";
 
 const categories = [
   {
@@ -11,90 +13,127 @@ const categories = [
     emoji: "\uD83D\uDE55",
     slug: "poleras",
     desc: "Algodón premium y dry-fit de alto rendimiento.",
-    aliases: ["polera", "poleras", "camiseta", "camisetas", "remera", "remeras"],
   },
   {
     name: "Polerones",
     emoji: "\uD83E\uDDE5",
     slug: "polerones",
     desc: "Abrigo corporativo con costuras reforzadas.",
-    aliases: ["poleron", "polerones", "hoodie", "hoodies", "sudadera", "sweater"],
   },
   {
     name: "Parkas",
     emoji: "\uD83E\uDD7C",
     slug: "parkas",
     desc: "Modelos impermeables, térmicos y técnicos.",
-    aliases: ["parka", "parkas", "chaqueta", "chaquetas", "cortaviento", "cortavientos"],
   },
   {
     name: "Pantalones",
     emoji: "\uD83D\uDC56",
     slug: "pantalones",
     desc: "Líneas de carga funcionales y cortes formales.",
-    aliases: ["pantalon", "pantalones", "cargo", "cargos", "jeans"],
   },
 ];
+
+const colorMap: Record<string, string> = {
+  blanco: "#ffffff",
+  negro: "#1a1a1a",
+  "azul marino": "#1e3a5f",
+  azul: "#2563eb",
+  "azul francia": "#1e40af",
+  rojo: "#dc2626",
+  verde: "#16a34a",
+  "verde oliva": "#4d7c0f",
+  gris: "#6b7280",
+  "gris oscuro": "#374151",
+  "gris claro": "#d1d5db",
+  amarillo: "#eab308",
+  naranja: "#ea580c",
+  coral: "#f43f5e",
+  rosado: "#f9a8d4",
+  celeste: "#93c5fd",
+  beige: "#d8c3a5",
+  café: "#78350f",
+  mostaza: "#c9a84c",
+  burdeo: "#7f1d1d",
+  plomo: "#475569",
+  platinum: "#94a3b8",
+};
+
+function colorHex(name: string): string {
+  const key = name.toLowerCase().trim();
+  return colorMap[key] || "#94a3b8";
+}
+
+function normalize(value: string) {
+  return value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
+}
 
 export default function Home() {
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [searchError, setSearchError] = useState("");
+  const [products, setProducts] = useState<Product[]>([]);
+  const [showResults, setShowResults] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const resultsRef = useRef<HTMLDivElement>(null);
 
-  const aliases = useMemo(
-    () =>
-      categories.flatMap((category) =>
-        category.aliases.map((alias) => ({
-          alias,
-          name: category.name,
-          slug: category.slug,
-        }))
-      ),
-    []
-  );
+  useEffect(() => {
+    getAllProducts().then(setProducts);
+  }, []);
 
-  function normalize(value: string) {
-    return value
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .trim();
-  }
+  const results = useMemo(() => {
+    const q = normalize(search);
+    if (!q || q.length < 2) return [];
 
-  function handleSearch(e: React.FormEvent<HTMLFormElement>) {
+    return products.filter((p) => {
+      const name = normalize(p.name);
+      const desc = normalize(p.description || "");
+      const extract = normalize(p.extract || "");
+      const colors = p.colors.map(normalize).join(" ");
+      const techs = p.technologies.map(normalize).join(" ");
+      const cat = normalize(p.category);
+      const haystack = `${name} ${desc} ${extract} ${colors} ${techs} ${cat}`;
+      return haystack.includes(q);
+    }).slice(0, 8);
+  }, [search, products]);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (
+        resultsRef.current &&
+        !resultsRef.current.contains(e.target as Node) &&
+        inputRef.current &&
+        !inputRef.current.contains(e.target as Node)
+      ) {
+        setShowResults(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-
-    const query = normalize(search);
-    if (!query) {
-      setSearchError("Escribe una categoría para buscar.");
+    const q = normalize(search);
+    if (!q) {
+      setSearchError("Escribe al menos 2 caracteres.");
       return;
     }
-
-    const match = aliases.find(({ alias, name }) => {
-      const normalizedAlias = normalize(alias);
-      const normalizedName = normalize(name);
-
-      return (
-        query === normalizedAlias ||
-        query === normalizedName ||
-        normalizedAlias.includes(query) ||
-        query.includes(normalizedAlias)
-      );
-    });
-
-    if (!match) {
-      setSearchError("Prueba con poleras, polerones, parkas o pantalones.");
-      return;
+    if (results.length > 0) {
+      router.push(`/cotizar/${results[0].category}`);
+    } else {
+      setSearchError("No encontramos productos con ese término.");
     }
-
-    router.push(`/cotizar/${match.slug}`);
   }
 
   return (
     <main className="flex min-h-screen flex-col overflow-hidden">
       <Header />
 
-      {/* blur decorative */}
       <div className="pointer-events-none absolute -top-40 right-0 h-[500px] w-[500px] -translate-y-1/4 translate-x-1/4 rounded-full bg-gradient-to-br from-accent/10 to-accent-soft/50 blur-[120px]" />
 
       <section className="relative flex flex-1 items-center justify-center px-6 py-4 lg:py-0">
@@ -122,21 +161,24 @@ export default function Home() {
                 Explora nuestra línea de vestuario corporativo profesional. Selecciona una categoría para configurar tu cotización con precios mayoristas automatizados e impresión de logos incluidos.
               </p>
 
-              <div className="pt-1 relative">
-                <form onSubmit={handleSearch} className="relative">
+              <div className="pt-1 relative z-10">
+                <form onSubmit={handleSubmit} className="relative">
                   <input
+                    ref={inputRef}
                     type="text"
                     value={search}
                     onChange={(e) => {
                       setSearch(e.target.value);
                       setSearchError("");
+                      setShowResults(true);
                     }}
-                    placeholder="¿Qué prenda buscas? Ej: Parkas..."
+                    onFocus={() => search.length >= 2 && setShowResults(true)}
+                    placeholder="Busca por nombre, color, tecnología..."
                     className="w-full rounded-2xl border border-[#e5ddd4] bg-white/90 px-5 py-3.5 pr-12 text-sm text-[#1e1e1e] outline-none backdrop-blur-sm transition-all duration-300 placeholder:text-muted focus:border-accent focus:bg-white focus:ring-4 focus:ring-accent/10"
                   />
                   <button
                     type="submit"
-                    aria-label="Buscar categoría"
+                    aria-label="Buscar"
                     className="absolute right-2.5 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-xl bg-brand-dark text-white transition-all hover:bg-accent active:scale-95"
                   >
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -144,8 +186,63 @@ export default function Home() {
                     </svg>
                   </button>
                 </form>
+
                 {searchError && (
                   <p className="absolute left-1 top-full mt-1 text-[11px] font-semibold text-red-500">{searchError}</p>
+                )}
+
+                {showResults && results.length > 0 && (
+                  <div
+                    ref={resultsRef}
+                    className="absolute left-0 right-0 top-full mt-2 overflow-hidden rounded-2xl border border-[#e5ddd4] bg-white shadow-xl animate-fade-in"
+                  >
+                    {results.map((p) => (
+                      <Link
+                        key={p.id}
+                        href={`/cotizar/${p.category}`}
+                        className="flex items-center gap-4 px-5 py-4 transition-colors hover:bg-accent-soft/50 border-b border-[#e5ddd4]/50 last:border-0"
+                        onClick={() => setShowResults(false)}
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-bold text-[#1e1e1e] truncate">
+                              {p.name}
+                            </span>
+                            <span className="shrink-0 rounded-full bg-accent-soft px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-accent">
+                              {p.category}
+                            </span>
+                          </div>
+                          <div className="mt-1 flex items-center gap-2">
+                            <div className="flex items-center gap-1">
+                              {p.colors.slice(0, 5).map((c) => (
+                                <span
+                                  key={c}
+                                  className="inline-block h-3.5 w-3.5 rounded-full border border-[#e5ddd4]"
+                                  style={{ backgroundColor: colorHex(c) }}
+                                  title={c}
+                                />
+                              ))}
+                              {p.colors.length > 5 && (
+                                <span className="text-[10px] text-muted">+{p.colors.length - 5}</span>
+                              )}
+                            </div>
+                            <span className="text-xs font-bold text-accent">
+                              Desde ${p.price.toLocaleString("es-CL")}
+                            </span>
+                          </div>
+                        </div>
+                        <svg className="h-4 w-4 shrink-0 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                        </svg>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+
+                {showResults && search.length >= 2 && results.length === 0 && !searchError && (
+                  <div className="absolute left-0 right-0 top-full mt-2 rounded-2xl border border-[#e5ddd4] bg-white px-5 py-4 text-sm text-muted shadow-xl animate-fade-in">
+                    No encontramos productos con &ldquo;{search}&rdquo;
+                  </div>
                 )}
               </div>
 
@@ -163,7 +260,6 @@ export default function Home() {
                   <p className="text-[11px] font-medium text-muted mt-0.5">A todo el país</p>
                 </div>
               </div>
-
             </div>
 
             <div className="grid gap-5 sm:grid-cols-2 lg:max-h-[80vh]">
