@@ -72,17 +72,17 @@ export default function AdminCommercial() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-cyan-200 border-t-cyan-500" />
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-accent-soft border-t-accent" />
       </div>
     );
   }
 
   return (
     <div className="grid items-start gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-      <section className="rounded-2xl border border-cyan-100/50 bg-white p-6 shadow-sm shadow-slate-100/50">
+      <section className="rounded-2xl border border-accent-soft/50 bg-white p-6 shadow-sm shadow-slate-100/50">
         <div className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-100 pb-5">
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-cyan-600">
+            <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-accent">
               Reglas de venta
             </p>
             <h2 className="mt-1 text-xl font-bold tracking-tight text-slate-900">
@@ -92,7 +92,7 @@ export default function AdminCommercial() {
               Ajusta los criterios que guian la cotizacion y las condiciones visibles.
             </p>
           </div>
-          <span className="rounded-full border border-cyan-100/30 bg-cyan-50 px-3 py-1 text-xs font-semibold text-cyan-700">
+          <span className="rounded-full border border-accent-soft/30 bg-accent-soft px-3 py-1 text-xs font-semibold text-accent">
             Vista previa activa
           </span>
         </div>
@@ -145,14 +145,14 @@ export default function AdminCommercial() {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="rounded-xl bg-cyan-500 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-cyan-600 disabled:opacity-50"
+            className="rounded-xl bg-accent px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-accent disabled:opacity-50"
           >
             {saving ? "Guardando..." : saved ? "¡Guardado!" : "Guardar configuracion"}
           </button>
           <button
             type="button"
             onClick={() => setRules(defaultRules)}
-            className="rounded-xl border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-600 transition-colors hover:border-cyan-200 hover:bg-cyan-50/30 hover:text-cyan-700"
+            className="rounded-xl border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-600 transition-colors hover:border-accent-soft hover:bg-accent-soft/30 hover:text-accent"
           >
             Restaurar
           </button>
@@ -160,13 +160,13 @@ export default function AdminCommercial() {
       </section>
 
       <aside className="space-y-6 xl:sticky xl:top-28">
-        <section className="rounded-2xl border border-cyan-100/50 bg-white p-6 shadow-sm shadow-slate-100/50">
-          <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-cyan-600">
+        <section className="rounded-2xl border border-accent-soft/50 bg-white p-6 shadow-sm shadow-slate-100/50">
+          <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-accent">
             Resumen actual
           </p>
           <div className="mt-5 grid grid-cols-2 gap-3">
             {summary.map((item) => (
-              <div key={item.id} className="rounded-xl border border-cyan-100/30 bg-[#f4fafd]/40 p-4">
+              <div key={item.id} className="rounded-xl border border-accent-soft/30 bg-[#ece5dc]/40 p-4">
                 <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">
                   {item.label}
                 </p>
@@ -178,8 +178,8 @@ export default function AdminCommercial() {
           </div>
         </section>
 
-        <section className="rounded-2xl border border-cyan-100/40 bg-[#f4fafd]/50 p-6 shadow-sm shadow-slate-100/50">
-          <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-cyan-700">
+        <section className="rounded-2xl border border-accent-soft/40 bg-[#ece5dc]/50 p-6 shadow-sm shadow-slate-100/50">
+          <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-accent">
             Texto de cotizacion
           </p>
           <div className="mt-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-100/30">

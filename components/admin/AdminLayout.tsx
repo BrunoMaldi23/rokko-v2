@@ -93,15 +93,15 @@ export default function AdminLayout({ onLogout }: Props) {
   const activeCopy = pageCopy[activeTab];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-cyan-50/20 to-indigo-50/30 text-slate-900 font-sans antialiased selection:bg-cyan-500/20">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-accent-soft/20 to-indigo-50/30 text-slate-900 font-sans antialiased selection:bg-accent/20">
       <div className="flex min-h-screen">
         <div
           aria-hidden="true"
-          className="fixed inset-y-0 left-0 z-40 hidden w-0.5 bg-[#f4fafd] lg:block"
+          className="fixed inset-y-0 left-0 z-40 hidden w-0.5 bg-[#ece5dc] lg:block"
         />
         
         {/* SIDEBAR - COLOR CIAN PÁLIDO PREMIUM (image_d78a23.png) */}
-        <aside className="fixed inset-y-0 left-0 z-30 hidden w-72 shrink-0 flex-col border-r border-cyan-100/50 bg-[#f4fafd] backface-hidden lg:flex">
+        <aside className="fixed inset-y-0 left-0 z-30 hidden w-72 shrink-0 flex-col border-r border-accent-soft/50 bg-[#ece5dc] backface-hidden lg:flex">
           
           {/* Contenedor del Logo */}
           <div className="flex items-center justify-start px-7 py-8">
@@ -126,20 +126,20 @@ export default function AdminLayout({ onLogout }: Props) {
                   onClick={() => setActiveTab(item.id)}
                   className={`group relative flex w-full items-center gap-3.5 rounded-xl px-4 py-3 text-left transition-all duration-200 ${
                     active
-                      ? "bg-cyan-500/10 text-cyan-700 font-medium"
-                      : "text-slate-500 hover:bg-cyan-50/50 hover:text-slate-900"
+                      ? "bg-accent/10 text-accent font-medium"
+                      : "text-slate-500 hover:bg-accent-soft/50 hover:text-slate-900"
                   }`}
                 >
                   {/* Indicador de pestaña activa en el borde izquierdo */}
                   {active && (
-                    <div className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-cyan-500 shadow-md shadow-cyan-500/50" />
+                    <div className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-accent shadow-md shadow-accent/50" />
                   )}
                   
                   {/* Icono de la pestaña */}
                   <div
                     className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-all duration-200 ${
                       active
-                        ? "bg-cyan-500 text-white shadow-sm"
+                        ? "bg-accent text-white shadow-sm"
                         : "bg-slate-200/60 text-slate-500 group-hover:bg-slate-200 group-hover:text-slate-700"
                     }`}
                   >
@@ -157,7 +157,7 @@ export default function AdminLayout({ onLogout }: Props) {
                     </span>
                     <span
                       className={`block truncate text-xs transition-colors ${
-                        active ? "text-cyan-600" : "text-slate-400 group-hover:text-slate-500"
+                        active ? "text-accent" : "text-slate-400 group-hover:text-slate-500"
                       }`}
                     >
                       {item.description}
@@ -169,7 +169,7 @@ export default function AdminLayout({ onLogout }: Props) {
           </nav>
 
           {/* Botón de Cerrar Sesión inferior */}
-          <div className="border-t border-cyan-100/50 p-4 bg-[#eff7fc]/50">
+          <div className="border-t border-accent-soft/50 p-4 bg-[#ece5dc]/50">
             <button
               onClick={onLogout}
               className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50/60 px-4 py-2.5 text-sm font-medium text-red-600 transition-all duration-200 hover:bg-red-500 hover:text-white hover:shadow-md hover:shadow-red-500/10 active:scale-[0.98]"
@@ -192,7 +192,7 @@ export default function AdminLayout({ onLogout }: Props) {
             <div className="mx-auto flex max-w-7xl flex-col gap-4 px-6 py-6 md:px-8 lg:px-10">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-wider text-cyan-600">
+                  <p className="text-xs font-bold uppercase tracking-wider text-accent">
                     {navigation.find((item) => item.id === activeTab)?.label}
                   </p>
                   <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 md:text-3xl">
@@ -204,9 +204,9 @@ export default function AdminLayout({ onLogout }: Props) {
                 </div>
                 
                 {/* Status Badge */}
-                <div className="flex items-center gap-2 rounded-full bg-cyan-50 px-3.5 py-1.5 border border-cyan-100">
-                  <div className="h-2 w-2 rounded-full bg-cyan-500 animate-pulse" />
-                  <span className="text-xs font-medium tracking-wide text-cyan-700">
+                <div className="flex items-center gap-2 rounded-full bg-accent-soft px-3.5 py-1.5 border border-accent-soft">
+                  <div className="h-2 w-2 rounded-full bg-accent animate-pulse" />
+                  <span className="text-xs font-medium tracking-wide text-accent">
                     Admin activo
                   </span>
                 </div>
@@ -222,7 +222,7 @@ export default function AdminLayout({ onLogout }: Props) {
                       onClick={() => setActiveTab(item.id)}
                       className={`rounded-xl px-3 py-2 text-center text-sm font-medium transition-all ${
                         active
-                          ? "bg-cyan-500 text-white font-semibold shadow-md shadow-cyan-500/20"
+                          ? "bg-accent text-white font-semibold shadow-md shadow-accent/20"
                           : "bg-white text-slate-600 hover:bg-slate-50 border border-slate-200"
                       }`}
                     >

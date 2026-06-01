@@ -67,7 +67,7 @@ export default function AdminBranding() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-cyan-200 border-t-cyan-500" />
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-accent-soft border-t-accent" />
       </div>
     );
   }
@@ -75,9 +75,9 @@ export default function AdminBranding() {
   return (
     <div className="grid gap-8 xl:grid-cols-[1.1fr_0.9fr] items-start animate-fade-in">
 
-      <section className="rounded-2xl border border-cyan-100/50 bg-white p-6 shadow-sm shadow-slate-100/50">
+      <section className="rounded-2xl border border-accent-soft/50 bg-white p-6 shadow-sm shadow-slate-100/50">
         <div className="border-b border-slate-100 pb-5">
-          <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-cyan-600">
+          <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-accent">
             Identidad
           </p>
           <h2 className="mt-1.5 text-xl font-bold tracking-tight text-slate-900">
@@ -95,7 +95,7 @@ export default function AdminBranding() {
               value={brand.name}
               onChange={(e) => updateBrand("name", e.target.value)}
               placeholder="Ej. ROKKO"
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm text-slate-800 placeholder-slate-400 outline-none transition-all duration-200 focus:border-cyan-500/50 focus:bg-white focus:ring-4 focus:ring-cyan-500/10"
+              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm text-slate-800 placeholder-slate-400 outline-none transition-all duration-200 focus:border-accent/50 focus:bg-white focus:ring-4 focus:ring-accent/10"
             />
           </Field>
 
@@ -106,7 +106,7 @@ export default function AdminBranding() {
               onChange={(e) => updateBrand("phone", formatPhone(e.target.value))}
               placeholder="+569 1234 5678"
               maxLength={15}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm text-slate-800 placeholder-slate-400 outline-none transition-all duration-200 focus:border-cyan-500/50 focus:bg-white focus:ring-4 focus:ring-cyan-500/10"
+              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm text-slate-800 placeholder-slate-400 outline-none transition-all duration-200 focus:border-accent/50 focus:bg-white focus:ring-4 focus:ring-accent/10"
             />
           </Field>
 
@@ -116,7 +116,7 @@ export default function AdminBranding() {
               value={brand.email}
               onChange={(e) => updateBrand("email", e.target.value)}
               placeholder="correo@empresa.com"
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm text-slate-800 placeholder-slate-400 outline-none transition-all duration-200 focus:border-cyan-500/50 focus:bg-white focus:ring-4 focus:ring-cyan-500/10"
+              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm text-slate-800 placeholder-slate-400 outline-none transition-all duration-200 focus:border-accent/50 focus:bg-white focus:ring-4 focus:ring-accent/10"
             />
           </Field>
 
@@ -126,7 +126,7 @@ export default function AdminBranding() {
               value={brand.city}
               onChange={(e) => updateBrand("city", e.target.value)}
               placeholder="Ej. Temuco"
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm text-slate-800 placeholder-slate-400 outline-none transition-all duration-200 focus:border-cyan-500/50 focus:bg-white focus:ring-4 focus:ring-cyan-500/10"
+              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm text-slate-800 placeholder-slate-400 outline-none transition-all duration-200 focus:border-accent/50 focus:bg-white focus:ring-4 focus:ring-accent/10"
             />
           </Field>
         </div>
@@ -137,20 +137,20 @@ export default function AdminBranding() {
             onChange={(e) => updateBrand("footer", e.target.value)}
             rows={4}
             placeholder="Mensaje de agradecimiento o condiciones..."
-            className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm text-slate-800 placeholder-slate-400 outline-none transition-all duration-200 focus:border-cyan-500/50 focus:bg-white focus:ring-4 focus:ring-cyan-500/10"
+            className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm text-slate-800 placeholder-slate-400 outline-none transition-all duration-200 focus:border-accent/50 focus:bg-white focus:ring-4 focus:ring-accent/10"
           />
         </Field>
 
         <button
           onClick={handleSave}
           disabled={saving}
-          className="mt-6 w-full sm:w-auto rounded-xl bg-cyan-500 px-6 py-3 text-sm font-semibold text-white transition-all duration-200 hover:bg-cyan-600 hover:shadow-lg hover:shadow-cyan-500/20 active:scale-[0.98] disabled:opacity-50"
+          className="mt-6 w-full sm:w-auto rounded-xl bg-accent px-6 py-3 text-sm font-semibold text-white transition-all duration-200 hover:bg-accent hover:shadow-lg hover:shadow-accent/20 active:scale-[0.98] disabled:opacity-50"
         >
           {saving ? "Guardando..." : saved ? "¡Guardado!" : "Guardar datos de marca"}
         </button>
       </section>
 
-      <aside className="sticky top-28 rounded-2xl border border-cyan-100/50 bg-[#f4fafd]/50 p-6 shadow-sm shadow-slate-100/50">
+      <aside className="sticky top-28 rounded-2xl border border-accent-soft/50 bg-[#ece5dc]/50 p-6 shadow-sm shadow-slate-100/50">
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-slate-400">
@@ -160,13 +160,13 @@ export default function AdminBranding() {
               Cotización comercial
             </h3>
           </div>
-          <span className="rounded-full bg-cyan-50 px-3 py-1 text-xs font-semibold text-cyan-600 border border-cyan-100/30">
+          <span className="rounded-full bg-accent-soft px-3 py-1 text-xs font-semibold text-accent border border-accent-soft/30">
             Documento
           </span>
         </div>
 
         <div className="mt-6 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl shadow-slate-200/60">
-          <div className="bg-gradient-to-r from-cyan-600 to-cyan-500 px-6 py-6 text-white">
+          <div className="bg-gradient-to-r from-accent to-accent px-6 py-6 text-white">
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-3.5">
                 <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/15 text-base font-bold text-white backdrop-blur-md border border-white/10">
@@ -174,7 +174,7 @@ export default function AdminBranding() {
                 </div>
                 <div>
                   <p className="text-lg font-bold tracking-tight leading-tight">{brand.name || "ROKKO"}</p>
-                  <p className="text-xs font-medium text-cyan-100/80 mt-0.5">Vestuario corporativo</p>
+                  <p className="text-xs font-medium text-accent-soft/80 mt-0.5">Vestuario corporativo</p>
                 </div>
               </div>
               <p className="text-[11px] font-bold uppercase tracking-widest bg-white/10 px-2.5 py-1 rounded-md border border-white/10">PDF</p>
@@ -202,7 +202,7 @@ export default function AdminBranding() {
               ))}
             </div>
 
-            <div className="rounded-xl bg-[#f4fafd]/50 p-4 border border-cyan-100/20">
+            <div className="rounded-xl bg-[#ece5dc]/50 p-4 border border-accent-soft/20">
               <p className="text-xs font-medium leading-relaxed text-slate-500 italic">
                 &quot;{brand.footer || "..."}&quot;
               </p>

@@ -54,7 +54,7 @@ export default function AdminOverview() {
         {metrics.map((metric) => (
           <article 
             key={metric.id} 
-            className="rounded-2xl border border-cyan-100/50 bg-white p-5 shadow-sm shadow-slate-100/50 transition-all duration-200 hover:shadow-md hover:shadow-slate-200/40"
+            className="rounded-2xl border border-accent-soft/50 bg-white p-5 shadow-sm shadow-slate-100/50 transition-all duration-200 hover:shadow-md hover:shadow-slate-200/40"
           >
             <div className="flex items-start justify-between gap-4">
               <div>
@@ -69,7 +69,7 @@ export default function AdminOverview() {
                   </p>
                 )}
               </div>
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-cyan-500/10 text-cyan-600 border border-cyan-100/30">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-accent border border-accent-soft/30">
                 <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4 19V5M4 19h16M8 15v-4M12 15V8M16 15v-7" />
                 </svg>
@@ -84,9 +84,9 @@ export default function AdminOverview() {
       <div className="grid gap-6 xl:grid-cols-[1.25fr_0.75fr]">
         
         {/* PANEL DE DISTRIBUCIÓN POR CATEGORÍAS */}
-        <section className="rounded-2xl border border-cyan-100/50 bg-white p-6 shadow-sm shadow-slate-100/50">
+        <section className="rounded-2xl border border-accent-soft/50 bg-white p-6 shadow-sm shadow-slate-100/50">
           <div className="border-b border-slate-100 pb-4">
-            <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-cyan-600">
+            <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-accent">
               Catálogo
             </p>
             <h2 className="mt-1 text-xl font-bold tracking-tight text-slate-900">
@@ -101,7 +101,7 @@ export default function AdminOverview() {
             {loading && (
               <div className="space-y-4">
                 {[1, 2, 3].map((n) => (
-                  <div key={n} className="rounded-xl border border-cyan-100/20 bg-[#f4fafd]/50 p-4 animate-pulse">
+                  <div key={n} className="rounded-xl border border-accent-soft/20 bg-[#ece5dc]/50 p-4 animate-pulse">
                     <div className="flex justify-between">
                       <div className="h-4 w-24 rounded bg-slate-200" />
                       <div className="h-4 w-16 rounded bg-slate-200" />
@@ -119,18 +119,18 @@ export default function AdminOverview() {
                 return (
                   <div 
                     key={category} 
-                    className="rounded-xl border border-cyan-100/30 bg-[#f4fafd]/40 p-4 transition-colors hover:bg-[#f4fafd]/70"
+                    className="rounded-xl border border-accent-soft/30 bg-[#ece5dc]/40 p-4 transition-colors hover:bg-[#ece5dc]/70"
                   >
                     <div className="flex items-center justify-between gap-4">
                       <p className="text-sm font-bold capitalize text-slate-800">{category}</p>
                       <div className="text-right">
-                        <span className="text-sm font-extrabold text-cyan-700">{total}</span>
+                        <span className="text-sm font-extrabold text-accent">{total}</span>
                         <span className="text-xs font-medium text-slate-400 ml-1">({percentage}%)</span>
                       </div>
                     </div>
                     <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-200/60 border border-slate-100">
                       <div 
-                        className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-cyan-400 shadow-sm transition-all duration-500" 
+                        className="h-full rounded-full bg-gradient-to-r from-accent to-accent shadow-sm transition-all duration-500" 
                         style={{ width: `${percentage}%` }} 
                       />
                     </div>
@@ -152,9 +152,9 @@ export default function AdminOverview() {
         </section>
 
         {/* PANEL DE OPERACIÓN DIARIA / TAREAS */}
-        <section className="rounded-2xl border border-cyan-100/50 bg-white p-6 shadow-sm shadow-slate-100/50">
+        <section className="rounded-2xl border border-accent-soft/50 bg-white p-6 shadow-sm shadow-slate-100/50">
           <div className="border-b border-slate-100 pb-4">
-            <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-cyan-600">
+            <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-accent">
               Operación diaria
             </p>
             <h2 className="mt-1 text-xl font-bold tracking-tight text-slate-900">
@@ -174,9 +174,9 @@ export default function AdminOverview() {
             ].map((task) => (
               <div 
                 key={task} 
-                className="flex items-start gap-3 rounded-xl border border-cyan-100/20 bg-[#f4fafd]/30 px-4 py-3 transition-colors hover:border-cyan-100/40"
+                className="flex items-start gap-3 rounded-xl border border-accent-soft/20 bg-[#ece5dc]/30 px-4 py-3 transition-colors hover:border-accent-soft/40"
               >
-                <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-cyan-500 shadow-sm shadow-cyan-500/50" />
+                <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-accent shadow-sm shadow-accent/50" />
                 <p className="text-sm font-medium leading-relaxed text-slate-600">
                   {task}
                 </p>

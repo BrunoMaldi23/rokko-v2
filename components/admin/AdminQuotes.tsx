@@ -104,7 +104,7 @@ export default function AdminQuotes() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-cyan-200 border-t-cyan-500" />
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-accent-soft border-t-accent" />
       </div>
     );
   }
@@ -126,14 +126,14 @@ export default function AdminQuotes() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <button
             onClick={() => setSelected(null)}
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-600 transition-all hover:border-cyan-300 hover:text-cyan-700"
+            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-600 transition-all hover:border-accent hover:text-accent"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
             Volver al listado
           </button>
           <button
             onClick={() => window.print()}
-            className="inline-flex items-center gap-2 rounded-xl bg-cyan-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-cyan-700"
+            className="inline-flex items-center gap-2 rounded-xl bg-accent px-5 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-accent"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
             Imprimir
@@ -141,14 +141,14 @@ export default function AdminQuotes() {
         </div>
 
         {/* Cabecera */}
-        <div className="rounded-2xl border border-cyan-100 bg-white p-6 shadow-sm">
+        <div className="rounded-2xl border border-accent-soft bg-white p-6 shadow-sm">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-cyan-50 text-cyan-600">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-accent-soft text-accent">
                 <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
               </div>
               <div>
-                <p className="text-xs font-black uppercase tracking-[0.18em] text-cyan-600">{selected.folio}</p>
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-accent">{selected.folio}</p>
                 <h2 className="mt-0.5 text-xl font-black text-slate-950">{selected.client_empresa}</h2>
               </div>
             </div>
@@ -204,7 +204,7 @@ export default function AdminQuotes() {
             </p>
             <div className="text-right">
               <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total</p>
-              <p className="text-2xl font-black text-cyan-700">${selected.total.toLocaleString("es-CL")}</p>
+              <p className="text-2xl font-black text-accent">${selected.total.toLocaleString("es-CL")}</p>
             </div>
           </div>
         </div>
@@ -224,14 +224,14 @@ export default function AdminQuotes() {
             onChange={(e) => setAdminNotes(e.target.value)}
             rows={4}
             placeholder="Escribe tu respuesta, observaciones o comentario sobre esta cotización..."
-            className="w-full resize-none rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition-all focus:border-cyan-400 focus:shadow-lg focus:shadow-cyan-500/10"
+            className="w-full resize-none rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition-all focus:border-accent focus:shadow-lg focus:shadow-accent/10"
           />
 
           <div className="mt-4 flex flex-wrap gap-3">
             <button
               onClick={() => handleSaveNotes(selected.id)}
               disabled={saving || !adminNotes.trim()}
-              className="rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-bold text-slate-600 transition-all hover:border-cyan-300 hover:text-cyan-700 disabled:opacity-40"
+              className="rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-bold text-slate-600 transition-all hover:border-accent hover:text-accent disabled:opacity-40"
             >
               {saving ? "Guardando..." : "Guardar comentario"}
             </button>
@@ -264,7 +264,7 @@ export default function AdminQuotes() {
           </div>
 
           {selected.admin_notes && (
-            <div className="mt-5 rounded-xl border border-cyan-100 bg-cyan-50/50 p-4">
+            <div className="mt-5 rounded-xl border border-accent-soft bg-accent-soft/50 p-4">
               <div className="flex items-center gap-2 mb-2">
                 <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-0.5 text-[10px] font-black ${cfg.bg}`}>
                   <span className={`h-1.5 w-1.5 rounded-full ${cfg.dot}`} />
@@ -272,7 +272,7 @@ export default function AdminQuotes() {
                 </span>
                 <span className="text-[10px] font-bold text-slate-400">— Comentario registrado</span>
               </div>
-              <p className="text-sm text-cyan-800">{selected.admin_notes}</p>
+              <p className="text-sm text-accent">{selected.admin_notes}</p>
             </div>
           )}
         </div>
@@ -310,14 +310,14 @@ export default function AdminQuotes() {
 
   /* ─── LISTADO ─── */
   return (
-    <section className="overflow-hidden rounded-2xl border border-cyan-100 bg-white shadow-sm">
-      <div className="flex flex-wrap items-start justify-between gap-4 border-b border-cyan-100 px-6 py-5">
+    <section className="overflow-hidden rounded-2xl border border-accent-soft bg-white shadow-sm">
+      <div className="flex flex-wrap items-start justify-between gap-4 border-b border-accent-soft px-6 py-5">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-50 text-cyan-600">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent-soft text-accent">
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
           </div>
           <div>
-            <p className="text-xs font-black uppercase tracking-[0.18em] text-cyan-600">Seguimiento</p>
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-accent">Seguimiento</p>
             <h2 className="text-xl font-black text-slate-950">Cotizaciones recibidas</h2>
           </div>
         </div>
@@ -352,7 +352,7 @@ export default function AdminQuotes() {
                 const cfg = statusConfig[quote.status] || statusConfig.pendiente;
                 const hasNotes = quote.admin_notes?.trim();
                 return (
-                  <tr key={quote.id} className="group transition-all hover:bg-cyan-50/40 cursor-pointer" onClick={() => openDetail(quote)}>
+                  <tr key={quote.id} className="group transition-all hover:bg-accent-soft/40 cursor-pointer" onClick={() => openDetail(quote)}>
                     <td className="px-6 py-4">
                       <span className="font-black text-slate-950 text-xs tracking-wide">{quote.folio}</span>
                     </td>
@@ -373,7 +373,7 @@ export default function AdminQuotes() {
                     </td>
                     <td className="px-6 py-4">
                       {hasNotes ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-cyan-50 px-2.5 py-1 text-[10px] font-bold text-cyan-700">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-accent-soft px-2.5 py-1 text-[10px] font-bold text-accent">
                           <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h6m-6 4h2" /></svg>
                           Nota
                         </span>
@@ -385,7 +385,7 @@ export default function AdminQuotes() {
                       <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
                           onClick={(e) => { e.stopPropagation(); openDetail(quote); }}
-                          className="rounded-lg border border-cyan-200 bg-white p-2 text-cyan-600 transition-all hover:bg-cyan-50 hover:border-cyan-300"
+                          className="rounded-lg border border-accent-soft bg-white p-2 text-accent transition-all hover:bg-accent-soft hover:border-accent"
                           title="Ver detalle"
                         >
                           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>

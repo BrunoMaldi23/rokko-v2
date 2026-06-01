@@ -81,7 +81,7 @@ export default function AdminLogin({ onLogin }: Props) {
   }
 
   return (
-    <div className="min-h-screen flex" style={{ background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)" }}>
+    <div className="min-h-screen flex" style={{ background: "linear-gradient(135deg, #b8614a 0%, #2d3436 100%)" }}>
       <style>{`
         @keyframes fade-in { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
         @keyframes slide-in-left { from{opacity:0;transform:translateX(-40px)} to{opacity:1;transform:translateX(0)} }
@@ -91,7 +91,7 @@ export default function AdminLogin({ onLogin }: Props) {
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
         .gradient-text {
-          background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+          background: linear-gradient(135deg, #f5e6e0 0%, #b8614a 100%);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
@@ -103,7 +103,7 @@ export default function AdminLogin({ onLogin }: Props) {
         className="hidden lg:flex flex-col relative overflow-hidden"
         style={{
           width: "50%",
-          background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)",
+          background: "linear-gradient(135deg, #2d3436 0%, #1e1e1e 50%, #1e1e1e 100%)",
           position: "relative",
         }}
       >
@@ -111,14 +111,14 @@ export default function AdminLogin({ onLogin }: Props) {
         <div style={{
           position: "absolute",
           inset: 0,
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fillRule='evenodd'%3E%3Cg fill='%23667eea' fillOpacity='0.08'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fillRule='evenodd'%3E%3Cg fill='%23b8614a' fillOpacity='0.08'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
           backgroundRepeat: "repeat",
         }} />
 
         {/* Gradiente superior */}
         <div style={{
           position: "absolute", top: 0, left: 0, right: 0, height: 4,
-          background: "linear-gradient(90deg, #667eea, #764ba2, #f093fb, #764ba2, #667eea)",
+          background: "linear-gradient(90deg, #b8614a, #2d3436, #f5e6e0, #2d3436, #b8614a)",
         }} />
 
         {/* Logo */}
@@ -170,7 +170,7 @@ export default function AdminLogin({ onLogin }: Props) {
           left: 0,
           right: 0,
           height: 200,
-          background: "linear-gradient(180deg, transparent, rgba(102,126,234,0.1))",
+          background: "linear-gradient(180deg, transparent, rgba(184,97,74,0.1))",
           pointerEvents: "none",
         }} />
       </div>
@@ -193,7 +193,7 @@ export default function AdminLogin({ onLogin }: Props) {
             borderRadius: 32,
             padding: "48px 40px",
             boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)",
-            border: "1px solid rgba(102,126,234,0.15)",
+            border: "1px solid rgba(184,97,74,0.15)",
             animation: mounted ? "fade-in 0.6s ease-out" : "none",
           }}
         >
@@ -261,9 +261,9 @@ export default function AdminLogin({ onLogin }: Props) {
                     animation: error ? "shake 0.4s ease" : "none",
                   }}
                   onFocus={(e) => {
-                    e.currentTarget.style.borderColor = "#667eea";
+                    e.currentTarget.style.borderColor = "#b8614a";
                     e.currentTarget.style.background = "white";
-                    e.currentTarget.style.boxShadow = "0 0 0 4px rgba(102,126,234,0.1)";
+                    e.currentTarget.style.boxShadow = "0 0 0 4px rgba(184,97,74,0.1)";
                   }}
                   onBlur={(e) => {
                     e.currentTarget.style.borderColor = error ? "#fca5a5" : "#e2e8f0";
@@ -305,9 +305,9 @@ export default function AdminLogin({ onLogin }: Props) {
                       animation: error ? "shake 0.4s ease" : "none",
                     }}
                     onFocus={(e) => {
-                      e.currentTarget.style.borderColor = "#667eea";
+                      e.currentTarget.style.borderColor = "#b8614a";
                       e.currentTarget.style.background = "white";
-                      e.currentTarget.style.boxShadow = "0 0 0 4px rgba(102,126,234,0.1)";
+                      e.currentTarget.style.boxShadow = "0 0 0 4px rgba(184,97,74,0.1)";
                     }}
                     onBlur={(e) => {
                       e.currentTarget.style.borderColor = error ? "#fca5a5" : "#e2e8f0";
@@ -330,7 +330,7 @@ export default function AdminLogin({ onLogin }: Props) {
                       display: "flex",
                       transition: "color 0.2s",
                     }}
-                    onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "#667eea"; }}
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "#b8614a"; }}
                     onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "#94a3b8"; }}
                   >
                     {showPass ? (
@@ -377,7 +377,7 @@ export default function AdminLogin({ onLogin }: Props) {
                       width: 18,
                       height: 18,
                       borderRadius: 5,
-                      accentColor: "#667eea",
+                      accentColor: "#b8614a",
                       cursor: "pointer",
                     }}
                   />
@@ -389,14 +389,14 @@ export default function AdminLogin({ onLogin }: Props) {
                   style={{
                     fontSize: 13,
                     fontWeight: 600,
-                    color: "#667eea",
+                    color: "#b8614a",
                     background: "none",
                     border: "none",
                     cursor: "pointer",
                     transition: "color 0.2s",
                   }}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "#764ba2"; }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "#667eea"; }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "#2d3436"; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "#b8614a"; }}
                 >
                   ¿Olvidaste tu contraseña?
                 </button>
@@ -409,7 +409,7 @@ export default function AdminLogin({ onLogin }: Props) {
                 style={{
                   width: "100%",
                   padding: "16px 0",
-                  background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                  background: "linear-gradient(135deg, #b8614a 0%, #2d3436 100%)",
                   color: "white",
                   border: "none",
                   borderRadius: 16,
@@ -423,18 +423,18 @@ export default function AdminLogin({ onLogin }: Props) {
                   gap: 10,
                   transition: "all 0.3s ease",
                   opacity: loading ? 0.8 : 1,
-                  boxShadow: "0 8px 20px -6px rgba(102,126,234,0.5)",
+                  boxShadow: "0 8px 20px -6px rgba(184,97,74,0.5)",
                   marginTop: 8,
                 }}
                 onMouseEnter={(e) => {
                   if (!loading) {
                     (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-2px)";
-                    (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 12px 28px -8px rgba(102,126,234,0.6)";
+                    (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 12px 28px -8px rgba(184,97,74,0.6)";
                   }
                 }}
                 onMouseLeave={(e) => {
                   (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)";
-                  (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 8px 20px -6px rgba(102,126,234,0.5)";
+                  (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 8px 20px -6px rgba(184,97,74,0.5)";
                 }}
                 onMouseDown={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = "scale(0.98)"; }}
                 onMouseUp={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-2px)"; }}

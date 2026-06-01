@@ -348,12 +348,12 @@ export default function AdminProducts() {
 
   return (
     <>
-      <section className="overflow-hidden rounded-2xl border border-cyan-100/50 bg-white shadow-sm shadow-slate-100/50 animate-fade-in">
+      <section className="overflow-hidden rounded-2xl border border-accent-soft/50 bg-white shadow-sm shadow-slate-100/50 animate-fade-in">
         {/* CABECERA DE LA TABLA */}
         <div className="border-b border-slate-100 bg-white px-5 py-6 sm:px-6">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
-              <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-cyan-600">
+              <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-accent">
                 Inventario
               </p>
               <h2 className="mt-1 text-xl font-bold tracking-tight text-slate-900">Productos publicados</h2>
@@ -364,7 +364,7 @@ export default function AdminProducts() {
 
             <div className="flex flex-wrap items-center gap-4 self-end md:self-auto">
               {/* Bloque de Métricas (Inspirado en image_d77835.png) */}
-              <div className="grid grid-cols-3 overflow-hidden rounded-xl border border-cyan-100/30 bg-[#f4fafd]/50">
+              <div className="grid grid-cols-3 overflow-hidden rounded-xl border border-accent-soft/30 bg-[#ece5dc]/50">
                 <Metric label="Total" value={products.length} />
                 <Metric label="Activos" value={activeProducts} />
                 <Metric label="Vista" value={filteredProducts.length} />
@@ -373,7 +373,7 @@ export default function AdminProducts() {
               {/* Botón Añadir Producto (CRUD) */}
               <button
                 onClick={handleCreateClick}
-                className="inline-flex items-center gap-2 rounded-xl bg-cyan-500 px-4 py-3 text-sm font-semibold text-white transition-all duration-200 hover:bg-cyan-600 hover:shadow-lg hover:shadow-cyan-500/10 active:scale-[0.98]"
+                className="inline-flex items-center gap-2 rounded-xl bg-accent px-4 py-3 text-sm font-semibold text-white transition-all duration-200 hover:bg-accent hover:shadow-lg hover:shadow-accent/10 active:scale-[0.98]"
               >
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -399,14 +399,14 @@ export default function AdminProducts() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Buscar por producto o nombre corto..."
-                className="w-full rounded-xl border border-slate-200 bg-slate-50/50 py-3 pl-10 pr-4 text-sm text-slate-800 outline-none transition-all duration-200 focus:border-cyan-500/50 focus:bg-white focus:ring-4 focus:ring-cyan-500/10"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50/50 py-3 pl-10 pr-4 text-sm text-slate-800 outline-none transition-all duration-200 focus:border-accent/50 focus:bg-white focus:ring-4 focus:ring-accent/10"
               />
             </div>
 
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm font-medium text-slate-700 outline-none transition-all duration-200 focus:border-cyan-500/50 focus:bg-white focus:ring-4 focus:ring-cyan-500/10"
+              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm font-medium text-slate-700 outline-none transition-all duration-200 focus:border-accent/50 focus:bg-white focus:ring-4 focus:ring-accent/10"
             >
               {categories.map((item) => (
                 <option key={item.value} value={item.value}>
@@ -439,7 +439,7 @@ export default function AdminProducts() {
                 <tr>
                   <td colSpan={6} className="px-6 py-16 text-center text-slate-400 font-medium">
                     <span className="inline-flex items-center gap-3">
-                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-cyan-100 border-t-cyan-500" />
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-accent-soft border-t-accent" />
                       Cargando catálogo de productos...
                     </span>
                   </td>
@@ -448,7 +448,7 @@ export default function AdminProducts() {
 
               {!loading &&
                 filteredProducts.map((product) => (
-                  <tr key={product.id} className="transition-colors duration-150 hover:bg-[#f4fafd]/30">
+                  <tr key={product.id} className="transition-colors duration-150 hover:bg-[#ece5dc]/30">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-4">
                         <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-slate-100 bg-white p-1 shadow-sm shadow-slate-100">
@@ -487,7 +487,7 @@ export default function AdminProducts() {
                         onClick={() => toggleActive(product)}
                         className={`inline-flex min-w-[80px] items-center justify-center rounded-full px-2.5 py-1 text-xs font-semibold transition-all duration-200 ${
                           product.active
-                            ? "bg-cyan-50 text-cyan-700 hover:bg-cyan-100 border border-cyan-200/30"
+                            ? "bg-accent-soft text-accent hover:bg-accent-soft border border-accent-soft/30"
                             : "bg-slate-50 text-slate-400 hover:bg-slate-100 border border-slate-200/40"
                         }`}
                       >
@@ -537,10 +537,10 @@ export default function AdminProducts() {
 
           <aside className="absolute inset-y-0 right-0 flex w-full max-w-xl flex-col bg-white shadow-2xl animate-slide-over">
             {/* Cabecera del Panel */}
-            <div className="border-b border-slate-100 bg-[#f4fafd]/40 px-6 py-5">
+            <div className="border-b border-slate-100 bg-[#ece5dc]/40 px-6 py-5">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-cyan-600">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-accent">
                     {isNewProduct ? "Gestión de catálogo" : "Editor de producto"}
                   </p>
                   <h3 className="mt-1 text-2xl font-bold tracking-tight text-slate-900">
@@ -549,7 +549,7 @@ export default function AdminProducts() {
                 </div>
                 <button
                   onClick={() => setIsPanelOpen(false)}
-                  className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-400 transition-colors hover:text-cyan-600 hover:border-cyan-200"
+                  className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-400 transition-colors hover:text-accent hover:border-accent-soft"
                   aria-label="Cerrar"
                 >
                   <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
@@ -580,7 +580,7 @@ export default function AdminProducts() {
                       value={editingProduct.short_name || ""}
                       onChange={(e) => updateField("short_name", e.target.value)}
                       placeholder="Ej. Heavy Cotton MC"
-                      className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm text-slate-800 outline-none transition-all duration-200 focus:border-cyan-500/50 focus:bg-white focus:ring-4 focus:ring-cyan-500/10"
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm text-slate-800 outline-none transition-all duration-200 focus:border-accent/50 focus:bg-white focus:ring-4 focus:ring-accent/10"
                     />
                   </InputBlock>
 
@@ -588,7 +588,7 @@ export default function AdminProducts() {
                     <select
                       value={editingProduct.category || "poleras"}
                       onChange={(e) => updateField("category", e.target.value)}
-                      className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm text-slate-700 outline-none transition-all duration-200 focus:border-cyan-500/50 focus:bg-white focus:ring-4 focus:ring-cyan-500/10"
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm text-slate-700 outline-none transition-all duration-200 focus:border-accent/50 focus:bg-white focus:ring-4 focus:ring-accent/10"
                     >
                       {categories
                         .filter((item) => item.value !== "todas")
@@ -606,7 +606,7 @@ export default function AdminProducts() {
                     value={editingProduct.name || ""}
                     onChange={(e) => updateField("name", e.target.value)}
                     placeholder="Ej. Polera Heavy Cotton Manga Corta"
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm text-slate-800 outline-none transition-all duration-200 focus:border-cyan-500/50 focus:bg-white focus:ring-4 focus:ring-cyan-500/10"
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm text-slate-800 outline-none transition-all duration-200 focus:border-accent/50 focus:bg-white focus:ring-4 focus:ring-accent/10"
                   />
                 </InputBlock>
 
@@ -616,7 +616,7 @@ export default function AdminProducts() {
                     onChange={(e) => updateField("description", e.target.value)}
                     rows={3}
                     placeholder="Detalles sobre el material, tallajes o especificaciones base del producto..."
-                    className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm text-slate-800 outline-none transition-all duration-200 focus:border-cyan-500/50 focus:bg-white focus:ring-4 focus:ring-cyan-500/10"
+                    className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm text-slate-800 outline-none transition-all duration-200 focus:border-accent/50 focus:bg-white focus:ring-4 focus:ring-accent/10"
                   />
                 </InputBlock>
 
@@ -626,7 +626,7 @@ export default function AdminProducts() {
                       value={editingProduct.slug || ""}
                       onChange={(e) => updateField("slug", e.target.value)}
                       placeholder="ej. heavy-cotton-mc"
-                      className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm text-slate-800 outline-none transition-all duration-200 focus:border-cyan-500/50 focus:bg-white focus:ring-4 focus:ring-cyan-500/10"
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm text-slate-800 outline-none transition-all duration-200 focus:border-accent/50 focus:bg-white focus:ring-4 focus:ring-accent/10"
                     />
                   </InputBlock>
 
@@ -635,7 +635,7 @@ export default function AdminProducts() {
                       value={editingProduct.extract || ""}
                       onChange={(e) => updateField("extract", e.target.value)}
                       placeholder="Resumen breve del producto"
-                      className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm text-slate-800 outline-none transition-all duration-200 focus:border-cyan-500/50 focus:bg-white focus:ring-4 focus:ring-cyan-500/10"
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm text-slate-800 outline-none transition-all duration-200 focus:border-accent/50 focus:bg-white focus:ring-4 focus:ring-accent/10"
                     />
                   </InputBlock>
                 </div>
@@ -647,10 +647,10 @@ export default function AdminProducts() {
                       onChange={(e) => updateImageGalleryFromText(e.target.value)}
                       rows={3}
                       placeholder="Pega URLs o rutas, una por linea. Tambien puedes cargar varias imagenes desde tu equipo."
-                      className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm text-slate-800 outline-none transition-all duration-200 focus:border-cyan-500/50 focus:bg-white focus:ring-4 focus:ring-cyan-500/10"
+                      className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm text-slate-800 outline-none transition-all duration-200 focus:border-accent/50 focus:bg-white focus:ring-4 focus:ring-accent/10"
                     />
                     <div className="flex flex-wrap items-center gap-3">
-                      <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-cyan-200 bg-cyan-50 px-4 py-2.5 text-xs font-semibold text-cyan-700 transition-colors hover:bg-cyan-100 disabled:opacity-50 disabled:cursor-not-allowed">
+                      <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-accent-soft bg-accent-soft px-4 py-2.5 text-xs font-semibold text-accent transition-colors hover:bg-accent-soft disabled:opacity-50 disabled:cursor-not-allowed">
                         <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M12 16V4m0 0 4 4m-4-4-4 4M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
                         </svg>
@@ -697,8 +697,8 @@ export default function AdminProducts() {
                                 onClick={() => setPrimaryGalleryImage(image)}
                                 className={`flex-1 rounded-lg px-2 py-1.5 text-[10px] font-bold transition-colors ${
                                   index === 0
-                                    ? "bg-cyan-500 text-white"
-                                    : "bg-white text-slate-500 hover:text-cyan-700"
+                                    ? "bg-accent text-white"
+                                    : "bg-white text-slate-500 hover:text-accent"
                                 }`}
                               >
                                 {index === 0 ? "Principal" : "Principal"}
@@ -722,8 +722,8 @@ export default function AdminProducts() {
                 </InputBlock>
 
                 {/* Sección de Precios */}
-                <div className="rounded-2xl border border-cyan-100/30 bg-[#f4fafd]/40 p-5">
-                  <p className="mb-4 text-xs font-bold uppercase tracking-[0.14em] text-cyan-600">
+                <div className="rounded-2xl border border-accent-soft/30 bg-[#ece5dc]/40 p-5">
+                  <p className="mb-4 text-xs font-bold uppercase tracking-[0.14em] text-accent">
                     Estructura de precios (CLP)
                   </p>
                   <div className="grid gap-3 sm:grid-cols-3">
@@ -732,7 +732,7 @@ export default function AdminProducts() {
                         type="number"
                         value={editingProduct.price ?? ""}
                         onChange={(e) => updateField("price", e.target.value)}
-                        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition-all duration-200 focus:border-cyan-500/50 focus:ring-4 focus:ring-cyan-500/10"
+                        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition-all duration-200 focus:border-accent/50 focus:ring-4 focus:ring-accent/10"
                       />
                     </InputBlock>
                     <InputBlock label="P. Mayorista">
@@ -740,7 +740,7 @@ export default function AdminProducts() {
                         type="number"
                         value={editingProduct.wholesale_price ?? ""}
                         onChange={(e) => updateField("wholesale_price", e.target.value)}
-                        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition-all duration-200 focus:border-cyan-500/50 focus:ring-4 focus:ring-cyan-500/10"
+                        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition-all duration-200 focus:border-accent/50 focus:ring-4 focus:ring-accent/10"
                       />
                     </InputBlock>
                     <InputBlock label="Min. Unidades">
@@ -774,7 +774,7 @@ export default function AdminProducts() {
                 </div>
 
                 <div className="rounded-2xl border border-slate-200 bg-white p-5">
-                  <p className="text-xs font-bold uppercase tracking-[0.14em] text-cyan-600">
+                  <p className="text-xs font-bold uppercase tracking-[0.14em] text-accent">
                     Colores disponibles
                   </p>
                   <div className="mt-4 flex flex-wrap gap-3">
@@ -788,14 +788,14 @@ export default function AdminProducts() {
                           title={color.name}
                           className={`flex h-9 w-9 items-center justify-center rounded-full border-2 shadow-sm transition-all hover:scale-105 ${
                             selected
-                              ? "border-cyan-400 ring-2 ring-cyan-300 ring-offset-2"
-                              : "border-slate-200 hover:border-cyan-200"
+                              ? "border-accent ring-2 ring-accent ring-offset-2"
+                              : "border-slate-200 hover:border-accent-soft"
                           }`}
                           style={{ backgroundColor: color.hex }}
                           aria-label={`Seleccionar color ${color.name}`}
                         >
                           {selected && (
-                            <span className="h-2.5 w-2.5 rounded-full bg-cyan-400 shadow-[0_0_0_2px_white]" />
+                            <span className="h-2.5 w-2.5 rounded-full bg-accent shadow-[0_0_0_2px_white]" />
                           )}
                         </button>
                       );
@@ -807,7 +807,7 @@ export default function AdminProducts() {
                 </div>
 
                 <div className="rounded-2xl border border-slate-200 bg-white p-5">
-                  <p className="text-xs font-bold uppercase tracking-[0.14em] text-cyan-600">
+                  <p className="text-xs font-bold uppercase tracking-[0.14em] text-accent">
                     Tallas disponibles
                   </p>
                   <div className="mt-4 grid grid-cols-4 gap-2 sm:grid-cols-7">
@@ -820,8 +820,8 @@ export default function AdminProducts() {
                           onClick={() => toggleArrayValue("sizes", size)}
                           className={`rounded-xl border px-3 py-3 text-sm font-bold transition-all ${
                             selected
-                              ? "border-cyan-400 bg-cyan-50 text-cyan-700 shadow-sm shadow-cyan-100"
-                              : "border-slate-200 bg-slate-50 text-slate-400 hover:border-cyan-200 hover:bg-white"
+                              ? "border-accent bg-accent-soft text-accent shadow-sm shadow-[#e5ddd4]"
+                              : "border-slate-200 bg-slate-50 text-slate-400 hover:border-accent-soft hover:bg-white"
                           }`}
                         >
                           {size}
@@ -837,7 +837,7 @@ export default function AdminProducts() {
                       value={editingProduct.composition || ""}
                       onChange={(e) => updateField("composition", e.target.value)}
                       placeholder="Ej. 80% algodon, 180 g/m2"
-                      className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm text-slate-800 outline-none transition-all duration-200 focus:border-cyan-500/50 focus:bg-white focus:ring-4 focus:ring-cyan-500/10"
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm text-slate-800 outline-none transition-all duration-200 focus:border-accent/50 focus:bg-white focus:ring-4 focus:ring-accent/10"
                     />
                     <div className="mt-3 flex flex-wrap gap-2">
                       {fabricOptions.map((fabric) => {
@@ -849,8 +849,8 @@ export default function AdminProducts() {
                             onClick={() => updateField("composition", fabric)}
                             className={`rounded-full border px-3 py-1.5 text-[11px] font-semibold transition-colors ${
                               selected
-                                ? "border-cyan-300 bg-cyan-50 text-cyan-700"
-                                : "border-slate-200 bg-white text-slate-500 hover:border-cyan-200 hover:text-cyan-700"
+                                ? "border-accent bg-accent-soft text-accent"
+                                : "border-slate-200 bg-white text-slate-500 hover:border-accent-soft hover:text-accent"
                             }`}
                           >
                             {fabric}
@@ -865,13 +865,13 @@ export default function AdminProducts() {
                       value={editingProduct.weight || ""}
                       onChange={(e) => updateField("weight", e.target.value)}
                       placeholder="Ej. 180 g/m2"
-                      className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm text-slate-800 outline-none transition-all duration-200 focus:border-cyan-500/50 focus:bg-white focus:ring-4 focus:ring-cyan-500/10"
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm text-slate-800 outline-none transition-all duration-200 focus:border-accent/50 focus:bg-white focus:ring-4 focus:ring-accent/10"
                     />
                   </InputBlock>
                 </div>
 
                 <div className="rounded-2xl border border-slate-200 bg-white p-5">
-                  <p className="text-xs font-bold uppercase tracking-[0.14em] text-cyan-600">
+                  <p className="text-xs font-bold uppercase tracking-[0.14em] text-accent">
                     Tecnologias destacadas
                   </p>
                   <div className="mt-4 flex flex-wrap gap-2">
@@ -884,8 +884,8 @@ export default function AdminProducts() {
                           onClick={() => toggleArrayValue("technologies", tech)}
                           className={`rounded-full border px-3 py-2 text-xs font-semibold transition-colors ${
                             selected
-                              ? "border-cyan-300 bg-cyan-50 text-cyan-700"
-                              : "border-slate-200 bg-slate-50 text-slate-500 hover:border-cyan-200 hover:bg-white"
+                              ? "border-accent bg-accent-soft text-accent"
+                              : "border-slate-200 bg-slate-50 text-slate-500 hover:border-accent-soft hover:bg-white"
                           }`}
                         >
                           {tech}
@@ -897,12 +897,12 @@ export default function AdminProducts() {
                     value={formatList(editingProduct.technologies)}
                     onChange={(e) => updateListField("technologies", e.target.value)}
                     placeholder="Agregar manualmente separado por comas"
-                    className="mt-4 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-xs text-slate-700 outline-none transition-all focus:border-cyan-500/50 focus:bg-white"
+                    className="mt-4 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-xs text-slate-700 outline-none transition-all focus:border-accent/50 focus:bg-white"
                   />
                 </div>
 
                 <div className="rounded-2xl border border-slate-200 bg-white p-5">
-                  <p className="text-xs font-bold uppercase tracking-[0.14em] text-cyan-600">
+                  <p className="text-xs font-bold uppercase tracking-[0.14em] text-accent">
                     Certificaciones
                   </p>
                   <div className="mt-4 flex flex-wrap gap-2">
@@ -915,8 +915,8 @@ export default function AdminProducts() {
                           onClick={() => toggleArrayValue("certifications", certification)}
                           className={`rounded-full border px-3 py-2 text-xs font-semibold transition-colors ${
                             selected
-                              ? "border-cyan-300 bg-cyan-50 text-cyan-700"
-                              : "border-slate-200 bg-slate-50 text-slate-500 hover:border-cyan-200 hover:bg-white"
+                              ? "border-accent bg-accent-soft text-accent"
+                              : "border-slate-200 bg-slate-50 text-slate-500 hover:border-accent-soft hover:bg-white"
                           }`}
                         >
                           {certification}
@@ -928,11 +928,11 @@ export default function AdminProducts() {
                     value={formatList(editingProduct.certifications)}
                     onChange={(e) => updateListField("certifications", e.target.value)}
                     placeholder="Agregar manualmente separado por comas"
-                    className="mt-4 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-xs text-slate-700 outline-none transition-all focus:border-cyan-500/50 focus:bg-white"
+                    className="mt-4 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-xs text-slate-700 outline-none transition-all focus:border-accent/50 focus:bg-white"
                   />
                 </div>
 
-                <label className="flex items-center justify-between rounded-2xl border border-cyan-100/40 bg-[#f4fafd]/40 px-4 py-3">
+                <label className="flex items-center justify-between rounded-2xl border border-accent-soft/40 bg-[#ece5dc]/40 px-4 py-3">
                   <span>
                     <span className="block text-sm font-semibold text-slate-800">Producto activo</span>
                     <span className="block text-xs text-slate-500">Visible para cotizar en el catalogo.</span>
@@ -945,7 +945,7 @@ export default function AdminProducts() {
                         prev ? { ...prev, active: e.target.checked } : prev
                       )
                     }
-                    className="h-5 w-5 accent-cyan-500"
+                    className="h-5 w-5 accent-accent"
                   />
                 </label>
               </div>
@@ -976,7 +976,7 @@ export default function AdminProducts() {
                 <button
                   onClick={saveProduct}
                   disabled={saving}
-                  className="rounded-xl bg-cyan-500 px-6 py-3 text-sm font-semibold text-white transition-all duration-200 hover:bg-cyan-600 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="rounded-xl bg-accent px-6 py-3 text-sm font-semibold text-white transition-all duration-200 hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {saving ? "Guardando..." : isNewProduct ? "Crear producto" : "Guardar cambios"}
                 </button>
@@ -992,7 +992,7 @@ export default function AdminProducts() {
 function Metric({ label, value }: { label: string; value: number }) {
   return (
     <div className="min-w-[76px] px-4 py-2.5 text-center sm:min-w-[88px]">
-      <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-cyan-600/80">{label}</p>
+      <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-accent/80">{label}</p>
       <p className="mt-0.5 text-base font-extrabold tracking-tight text-slate-900">{value}</p>
     </div>
   );
