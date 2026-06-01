@@ -124,10 +124,10 @@ export default function AdminLayout({ onLogout }: Props) {
                 <button
                   key={item.id}
                   onClick={() => setActiveTab(item.id)}
-                  className={`group relative flex w-full items-center gap-3.5 rounded-xl px-4 py-3 text-left transition-all duration-200 ${
+                  className={`group relative flex w-full items-center gap-3.5 rounded-xl px-4 py-3 text-left transition-all duration-200 border ${
                     active
-                      ? "bg-accent/10 text-accent font-medium"
-                      : "text-slate-500 hover:bg-accent-soft/50 hover:text-slate-900"
+                      ? "border-accent/30 bg-accent/10 text-accent font-medium shadow-sm"
+                      : "border-transparent text-slate-500 hover:border-accent-soft/50 hover:bg-accent-soft/30 hover:text-slate-900"
                   }`}
                 >
                   {/* Indicador de pestaña activa en el borde izquierdo */}
