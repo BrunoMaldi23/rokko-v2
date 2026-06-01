@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useDeferredValue, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Header from "@/components/Header";
 import { getAllProducts } from "@/lib/products";
@@ -85,21 +85,28 @@ export default function Home() {
     getAllProducts().then(setProducts);
   }, []);
 
+  const normalizedProducts = useMemo(
+    () =>
+      products.map((p) => ({
+        product: p,
+        haystack: normalize(
+          `${p.name} ${p.description || ""} ${p.extract || ""} ${p.colors.map(normalize).join(" ")} ${p.technologies.map(normalize).join(" ")} ${normalize(p.category)}`
+        ),
+      })),
+    [products]
+  );
+
+  const deferredSearch = useDeferredValue(search);
+
   const results = useMemo(() => {
-    const q = normalize(search);
+    const q = normalize(deferredSearch);
     if (!q || q.length < 2) return [];
 
-    return products.filter((p) => {
-      const name = normalize(p.name);
-      const desc = normalize(p.description || "");
-      const extract = normalize(p.extract || "");
-      const colors = p.colors.map(normalize).join(" ");
-      const techs = p.technologies.map(normalize).join(" ");
-      const cat = normalize(p.category);
-      const haystack = `${name} ${desc} ${extract} ${colors} ${techs} ${cat}`;
-      return haystack.includes(q);
-    }).slice(0, 8);
-  }, [search, products]);
+    return normalizedProducts
+      .filter(({ haystack }) => haystack.includes(q))
+      .slice(0, 8)
+      .map(({ product }) => product);
+  }, [deferredSearch, normalizedProducts]);
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -115,6 +122,18 @@ export default function Home() {
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
+
+  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearch(e.target.value);
+    setSearchError("");
+    setShowResults(true);
+  }, []);
+
+  const handleSearchFocus = useCallback(() => {
+    if (search.length >= 2) setShowResults(true);
+  }, [search]);
+
+  const handleResultClick = useCallback(() => setShowResults(false), []);
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -167,12 +186,8 @@ export default function Home() {
                     ref={inputRef}
                     type="text"
                     value={search}
-                    onChange={(e) => {
-                      setSearch(e.target.value);
-                      setSearchError("");
-                      setShowResults(true);
-                    }}
-                    onFocus={() => search.length >= 2 && setShowResults(true)}
+                    onChange={handleSearchChange}
+                    onFocus={handleSearchFocus}
                     placeholder="Busca por nombre, color, tecnología..."
                     className="w-full rounded-2xl border border-[#e5ddd4] bg-white/90 px-5 py-3.5 pr-12 text-sm text-[#1e1e1e] outline-none backdrop-blur-sm transition-all duration-300 placeholder:text-muted focus:border-accent focus:bg-white focus:ring-4 focus:ring-accent/10"
                   />
@@ -201,7 +216,7 @@ export default function Home() {
                         key={p.id}
                         href={`/cotizar/${p.category}`}
                         className="flex items-center gap-4 px-5 py-4 transition-colors hover:bg-accent-soft/50 border-b border-[#e5ddd4]/50 last:border-0"
-                        onClick={() => setShowResults(false)}
+                        onClick={handleResultClick}
                       >
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">

@@ -8,6 +8,7 @@ export type Product = {
   extract: string | null;
   image: string | null;
   images?: string[] | null;
+  color_images?: Record<string, string[]> | null;
   price: number;
   wholesale_price: number | null;
   wholesale_from: number | null;

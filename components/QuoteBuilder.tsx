@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useRef, useMemo, memo } from "react";
 import { certificationLogos } from "@/data/catalog";
 import type { Product } from "@/types/product";
 import { saveQuote } from "@/lib/quotes";
@@ -9,6 +9,7 @@ import { formatRut } from "@/lib/rut";
 import { formatPhone } from "@/lib/phone";
 import { fetchBrandSettings, fetchCommercialSettings } from "@/lib/settings";
 import { printElement } from "@/lib/print";
+import LogoEditor from "@/components/LogoEditor";
 
 const colorMap: Record<string, string> = {
   amarillo: "#eab308",
@@ -119,6 +120,7 @@ export default function QuoteBuilder({ initialProducts }: Props) {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [quoteOpen, setQuoteOpen] = useState(false);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [logoCustomPos, setLogoCustomPos] = useState<{ left: number; top: number; scaleX: number; scaleY: number } | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const [savingQuote, setSavingQuote] = useState(false);
   const [emailStatus, setEmailStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
@@ -139,6 +141,83 @@ export default function QuoteBuilder({ initialProducts }: Props) {
     telefono: "+56 9",
     observaciones: "",
   });
+
+  const formsRef = useRef(forms);
+  formsRef.current = forms;
+  const productsRef = useRef(initialProducts);
+  productsRef.current = initialProducts;
+
+  const handleColorSelect = useCallback((productId: string, color: string, _colorIndex: number, totalImages: number) => {
+    setForms((prev) => ({
+      ...prev,
+      [productId]: { ...(prev[productId] || {}), color },
+    }));
+    if (totalImages > 1) {
+      setGalleryIndexes((prev) => ({
+        ...prev,
+        [productId]: 0,
+      }));
+    }
+  }, []);
+
+  const handleGalleryNav = useCallback((productId: string, nextIndex: number, totalImages: number) => {
+    setGalleryIndexes((prev) => ({
+      ...prev,
+      [productId]: (nextIndex + totalImages) % totalImages,
+    }));
+  }, []);
+
+  const handleFormUpdate = useCallback((productId: string, field: string, value: string) => {
+    setForms((prev) => ({
+      ...prev,
+      [productId]: { ...(prev[productId] || {}), [field]: value },
+    }));
+  }, []);
+
+  const handleSizeUpdate = useCallback((productId: string, size: string, value: string) => {
+    const quantity = Number(value) || 0;
+    setForms((prev) => ({
+      ...prev,
+      [productId]: {
+        ...(prev[productId] || {}),
+        sizes: { ...(prev[productId]?.sizes || {}), [size]: quantity },
+      },
+    }));
+  }, []);
+
+  const handleAddToCart = useCallback((productId: string) => {
+    const product = productsRef.current.find((p) => p.id === productId);
+    if (!product) return;
+    const form = formsRef.current[productId] || {};
+    const productSizes = form.sizes || {};
+    const totalUnits = Object.values(productSizes).reduce((sum, qty) => sum + Number(qty || 0), 0);
+    if (totalUnits <= 0) {
+      alert("Debes ingresar al menos una cantidad.");
+      return;
+    }
+    const unitPrice =
+      product.wholesale_from && product.wholesale_price && totalUnits >= product.wholesale_from
+        ? product.wholesale_price
+        : product.price;
+    setCart((prev) => [
+      ...prev,
+      {
+        id: Date.now(),
+        product: product.name,
+        productId: product.id,
+        sizes: productSizes,
+        totalUnits,
+        subtotal: unitPrice * totalUnits,
+        color: form.color || product.colors?.[0] || "Sin color",
+        unitPrice,
+        logo: form.logo || "Pecho incluido",
+        application: form.application || "Bordado",
+        logoPosition: form.logoPosition || "Pecho izquierdo",
+      },
+    ]);
+    setShowSuccess(true);
+    setTimeout(() => setShowSuccess(false), 2000);
+  }, []);
 
   function updateForm(productId: string, field: keyof ProductForm, value: string) {
     setForms((prev) => ({
@@ -201,6 +280,7 @@ export default function QuoteBuilder({ initialProducts }: Props) {
   function handleLogoUpload(file?: File) {
     if (!file) return;
 
+    if (logoPreview) URL.revokeObjectURL(logoPreview);
     const url = URL.createObjectURL(file);
     setLogoPreview(url);
   }
@@ -245,22 +325,17 @@ export default function QuoteBuilder({ initialProducts }: Props) {
     setTimeout(() => setShowSuccess(false), 2000);
   }
 
-  function removeItem(id: number) {
+  const removeItem = useCallback((id: number) => {
     setCart((prev) => prev.filter((item) => item.id !== id));
-  }
+  }, []);
 
-  function openQuoteModal() {
-    if (cart.length === 0) {
-      alert("Agrega al menos un producto antes de generar cotización.");
-      return;
-    }
-
+  const openQuoteModal = useCallback(() => {
     setQuoteOpen(true);
-  }
+  }, []);
 
-  const total = cart.reduce((sum, item) => sum + item.subtotal, 0);
+  const total = useMemo(() => cart.reduce((sum, item) => sum + item.subtotal, 0), [cart]);
 
-  async function handleSubmitQuote() {
+  const handleSubmitQuote = useCallback(async () => {
     if (!clientData.empresa.trim()) {
       alert("Ingresa el nombre de la empresa o institución.");
       return;
@@ -321,9 +396,11 @@ export default function QuoteBuilder({ initialProducts }: Props) {
     }
 
     setSavingQuote(false);
-  }
+  }, [clientData, cart, total, brand, commercial]);
 
-  function resetQuote() {
+  const resetQuote = useCallback(() => {
+    if (logoPreview) URL.revokeObjectURL(logoPreview);
+    setLogoPreview(null);
     setQuoteOpen(false);
     setSubmittedFolio(null);
     setClientData({
@@ -335,7 +412,7 @@ export default function QuoteBuilder({ initialProducts }: Props) {
       observaciones: "",
     });
     setCart([]);
-  }
+  }, [logoPreview]);
 
   return (
     <>
@@ -367,207 +444,24 @@ export default function QuoteBuilder({ initialProducts }: Props) {
 
           {initialProducts.map((product, i) => {
             const selectedColor = forms[product.id]?.color || product.colors?.[0] || "Seleccionar";
-            const productSizes = product.sizes?.length ? product.sizes : sizes;
-            const description =
-              product.extract ||
-              [product.composition, product.weight].filter(Boolean).join(", ") ||
-              product.description;
-            const productImages = getProductImages(product);
-            const activeImageIndex = Math.min(
-              galleryIndexes[product.id] || 0,
-              productImages.length - 1
-            );
-            const activeImage = productImages[activeImageIndex] || "";
+            const formLogo = forms[product.id]?.logo;
+            const galleryIndex = galleryIndexes[product.id] || 0;
 
             return (
-              <div
+              <ProductCard
                 key={product.id}
-                className="animate-fade-in-up rounded-[1.6rem] border border-slate-200 bg-white p-5 shadow-[0_10px_30px_rgba(15,23,42,0.08)] transition-all hover:border-cyan-200 hover:shadow-[0_16px_42px_rgba(8,145,178,0.12)]"
-                style={{ animationDelay: `${i * 80}ms` }}
-              >
-                <div className="grid gap-5 md:grid-cols-[150px_1fr]">
-                  <div className="group relative flex h-44 items-center justify-center overflow-hidden rounded-[1.25rem] border border-slate-100 bg-slate-50 p-4 shadow-inner">
-                    <Image
-                      unoptimized
-                      src={activeImage}
-                      alt={product.name}
-                      width={170}
-                      height={170}
-                      className="h-auto max-h-full w-auto object-contain drop-shadow-sm"
-                    />
-
-                    {productImages.length > 1 && (
-                      <>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setGalleryIndex(
-                              product.id,
-                              activeImageIndex - 1,
-                              productImages.length
-                            )
-                          }
-                          className="absolute left-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-white/80 bg-white/90 text-slate-700 opacity-0 shadow-sm transition-all hover:border-cyan-200 hover:text-cyan-700 group-hover:opacity-100"
-                          aria-label="Imagen anterior"
-                        >
-                          <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 18l-6-6 6-6" />
-                          </svg>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setGalleryIndex(
-                              product.id,
-                              activeImageIndex + 1,
-                              productImages.length
-                            )
-                          }
-                          className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-white/80 bg-white/90 text-slate-700 opacity-0 shadow-sm transition-all hover:border-cyan-200 hover:text-cyan-700 group-hover:opacity-100"
-                          aria-label="Imagen siguiente"
-                        >
-                          <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 18l6-6-6-6" />
-                          </svg>
-                        </button>
-                        <div className="absolute bottom-2 left-1/2 flex -translate-x-1/2 gap-1.5 rounded-full bg-white/85 px-2 py-1 shadow-sm">
-                          {productImages.map((image, index) => (
-                            <button
-                              key={`${image}-${index}`}
-                              type="button"
-                              onClick={() =>
-                                setGalleryIndex(product.id, index, productImages.length)
-                              }
-                              className={`h-1.5 rounded-full transition-all ${
-                                index === activeImageIndex
-                                  ? "w-5 bg-cyan-500"
-                                  : "w-1.5 bg-slate-300 hover:bg-slate-400"
-                              }`}
-                              aria-label={`Ver imagen ${index + 1}`}
-                            />
-                          ))}
-                        </div>
-                      </>
-                    )}
-                  </div>
-
-                  <div>
-                    <div className="flex flex-wrap items-start justify-between gap-4">
-                      <div className="min-w-0 flex-1">
-                        <p className="text-[11px] font-black uppercase tracking-[0.35em] text-cyan-700">
-                          {product.short_name}
-                        </p>
-                        <h2 className="mt-2 max-w-xl text-2xl font-black leading-tight text-slate-950 sm:text-3xl">
-                          {product.name}
-                        </h2>
-                        {description && (
-                          <p className="mt-2 text-sm font-medium leading-6 text-slate-500">
-                            {description}
-                          </p>
-                        )}
-                      </div>
-
-                      <div className="shrink-0 text-right">
-                        <p className="text-[11px] font-black uppercase tracking-[0.28em] text-slate-400">Desde</p>
-                        <p className="text-2xl font-black leading-none text-cyan-700">
-                          ${product.price.toLocaleString("es-CL")}
-                        </p>
-                        <p className="mt-1 text-[11px] font-semibold text-slate-400">IVA incluido</p>
-                      </div>
-                    </div>
-
-                    <div className="mt-5 flex flex-wrap gap-2">
-                      {(product.technologies || []).slice(0, 4).map((tech) => (
-                        <span key={tech} className="rounded-full bg-cyan-50 px-3 py-1 text-[11px] font-black text-cyan-700">
-                          {tech}
-                        </span>
-                      ))}
-                    </div>
-
-                    <div className="mt-6 grid gap-5 md:grid-cols-[1fr_200px]">
-                      <div>
-                        <label className="mb-2 block text-xs font-black uppercase tracking-[0.28em] text-slate-500">
-                          Color: <span className="text-cyan-700">{selectedColor}</span>
-                        </label>
-                        <div className="flex flex-wrap gap-2">
-                          {(product.colors || []).map((color, colorIndex) => {
-                            const selected = selectedColor === color;
-                            const hex = colorMap[color.toLowerCase()] || "#ccc";
-                            return (
-                              <button
-                                key={color}
-                                onClick={() => selectProductColor(product, color, colorIndex)}
-                                title={color}
-                                className={`h-8 w-8 rounded-full border shadow-sm transition-all hover:scale-105 ${
-                                  selected ? "border-white ring-2 ring-cyan-400 ring-offset-2" : "border-slate-300"
-                                }`}
-                                style={{ backgroundColor: hex }}
-                              />
-                            );
-                          })}
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="mb-2 block text-xs font-black uppercase tracking-[0.22em] text-slate-500">
-                          Logo incluido
-                        </label>
-                        <select
-                          value={forms[product.id]?.logo || "Pecho incluido"}
-                          onChange={(e) => updateForm(product.id, "logo", e.target.value)}
-                          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition-all focus:border-cyan-400 focus:shadow-lg focus:shadow-cyan-500/10"
-                        >
-                          <option>Pecho incluido</option>
-                          <option>Pecho + espalda</option>
-                          <option>Pecho + brazo</option>
-                          <option>2 brazos</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    <div className="mt-6">
-                      <label className="mb-3 block text-xs font-black uppercase tracking-[0.28em] text-slate-500">
-                        Cantidades por talla
-                      </label>
-                      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
-                        {sizes.map((size) => {
-                          const isAvail = productSizes.includes(size);
-                          return (
-                            <div key={size}>
-                              <label className="mb-1.5 block text-center text-xs font-bold text-slate-500">{size}</label>
-                              <input
-                                type="number"
-                                min={0}
-                                placeholder="0"
-                                disabled={!isAvail}
-                                onChange={(e) => updateSize(product.id, size, e.target.value)}
-                                className={`h-10 w-full rounded-xl border px-2 text-center text-sm outline-none transition-all focus:border-cyan-400 focus:shadow-lg focus:shadow-cyan-500/10 ${
-                                  isAvail ? "border-slate-200 bg-white text-slate-700" : "border-slate-100 bg-slate-50 text-slate-300"
-                                }`}
-                              />
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    <div className="mt-6 flex flex-wrap gap-3">
-                      <button
-                        onClick={() => addToCart(product)}
-                        className="rounded-full bg-slate-950 px-7 py-3.5 text-sm font-bold text-white shadow-sm transition-all hover:bg-cyan-700 hover:shadow-lg hover:shadow-cyan-700/25 active:scale-95"
-                      >
-                        Agregar al pedido
-                      </button>
-                      <button
-                        onClick={() => setSelectedProduct(product)}
-                        className="rounded-full border border-slate-300 bg-white px-7 py-3.5 text-sm font-bold text-slate-700 transition-all hover:border-cyan-400 hover:text-cyan-700 hover:shadow-md"
-                      >
-                        Ver ficha técnica
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
+                product={product}
+                animationDelay={i * 80}
+                selectedColor={selectedColor}
+                galleryIndex={galleryIndex}
+                formLogo={formLogo}
+                onColorSelect={handleColorSelect}
+                onGalleryNav={handleGalleryNav}
+                onFormUpdate={handleFormUpdate}
+                onSizeUpdate={handleSizeUpdate}
+                onAddToCart={handleAddToCart}
+                onViewDetails={setSelectedProduct}
+              />
             );
           })}
         </div>
@@ -735,68 +629,33 @@ export default function QuoteBuilder({ initialProducts }: Props) {
               <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
                   <div>
-                    <h4 className="text-sm font-black text-slate-900">Ubicación de Logotipos e Imagen de Marca</h4>
-                    <p className="text-xs font-medium text-slate-400 mt-0.5">Sube tu logo para previsualizar el montaje digital sobre la prenda.</p>
+                    <h4 className="text-sm font-black text-slate-900">Posiciona tu Logo en la Prenda</h4>
+                    <p className="text-xs font-medium text-slate-400 mt-0.5">Sube tu logo y arrastra sobre la prenda para ubicarlo. Puedes redimensionarlo con las esquinas.</p>
                   </div>
                 </div>
 
-                <div className="mt-6 grid gap-6 md:grid-cols-[1fr_260px]">
-                  {/* Canvas de Prenda */}
-                  <div className="relative flex h-[340px] items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-6 shadow-inner">
-                    <Image
-                      unoptimized
-                      src={
-                        getProductImages(selectedProduct)[
-                          galleryIndexes[selectedProduct.id] || 0
-                        ] || ""
-                      }
-                      alt={selectedProduct.name}
-                      width={280}
-                      height={280}
-                      className="h-auto max-h-[300px] w-auto object-contain drop-shadow-md"
-                    />
+                <div className="mt-6 grid gap-6 md:grid-cols-[1fr_220px]">
+                  <LogoEditor
+                    productImageUrl={
+                      (() => {
+                        const pid = selectedProduct.id;
+                        const selectedColor = forms[pid]?.color || selectedProduct.colors?.[0] || "";
+                        const colorImgs = selectedProduct.color_images?.[selectedColor];
+                        const imgs = colorImgs && colorImgs.length > 0 ? colorImgs : getProductImages(selectedProduct);
+                        return imgs[galleryIndexes[pid] || 0] || "";
+                      })()
+                    }
+                    logoSrc={logoPreview}
+                    onLogoUpload={(file) => {
+                      if (logoPreview) URL.revokeObjectURL(logoPreview);
+                      setLogoPreview(URL.createObjectURL(file));
+                    }}
+                    onPositionChange={(pos) => setLogoCustomPos(pos)}
+                    activePosition={forms[selectedProduct.id]?.logoPosition || "Pecho izquierdo"}
+                    onActivePositionChange={(label) => updateForm(selectedProduct.id, "logoPosition", label)}
+                  />
 
-                    {logoPreview && (
-                      <div
-                        className={`absolute ${
-                          logoPositions[
-                            (forms[selectedProduct.id]?.logoPosition || "Pecho izquierdo") as LogoPosition
-                          ]
-                        } rounded bg-white/90 p-1 shadow-md backdrop-blur-sm border border-slate-200/50`}
-                      >
-                        <img src={logoPreview} alt="Logo cargado" className="h-auto w-full object-contain" />
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Controles de Configuración Express */}
                   <div className="flex flex-col justify-center space-y-4">
-                    <div>
-                      <label className="text-[11px] font-black uppercase tracking-wider text-slate-400 block mb-1.5">Adjuntar Archivo (PNG/JPG)</label>
-                      <input
-                        type="file"
-                        accept="image/png,image/jpeg,image/webp"
-                        onChange={(e) => handleLogoUpload(e.target.files?.[0])}
-                        className="w-full text-xs text-slate-500 file:mr-2 file:rounded-xl file:border-0 file:bg-cyan-50 file:px-3 file:py-2 file:text-xs file:font-bold file:text-cyan-700 hover:file:bg-cyan-100"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="text-[11px] font-black uppercase tracking-wider text-slate-400 block mb-1.5">Área de Estampado / Bordado</label>
-                      <select
-                        value={forms[selectedProduct.id]?.logoPosition || "Pecho izquierdo"}
-                        onChange={(e) => updateForm(selectedProduct.id, "logoPosition", e.target.value)}
-                        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs font-bold text-slate-700 outline-none focus:border-cyan-400"
-                      >
-                        <option>Pecho izquierdo</option>
-                        <option>Pecho derecho</option>
-                        <option>Pecho centro</option>
-                        <option>Espalda alta</option>
-                        <option>Manga izquierda</option>
-                        <option>Manga derecha</option>
-                      </select>
-                    </div>
-
                     <div>
                       <label className="text-[11px] font-black uppercase tracking-wider text-slate-400 block mb-1.5">Técnica Recomendada</label>
                       <select
@@ -1221,3 +1080,180 @@ export default function QuoteBuilder({ initialProducts }: Props) {
     </>
   );
 }
+
+const ProductCard = memo(function ProductCard({
+  product,
+  animationDelay,
+  selectedColor,
+  galleryIndex,
+  formLogo,
+  onColorSelect,
+  onGalleryNav,
+  onFormUpdate,
+  onSizeUpdate,
+  onAddToCart,
+  onViewDetails,
+}: {
+  product: Product;
+  animationDelay: number;
+  selectedColor: string;
+  galleryIndex: number;
+  formLogo: string | undefined;
+  onColorSelect: (productId: string, color: string, colorIndex: number, totalImages: number) => void;
+  onGalleryNav: (productId: string, nextIndex: number, totalImages: number) => void;
+  onFormUpdate: (productId: string, field: string, value: string) => void;
+  onSizeUpdate: (productId: string, size: string, value: string) => void;
+  onAddToCart: (productId: string) => void;
+  onViewDetails: (product: Product) => void;
+}) {
+  const allProductImages = getProductImages(product);
+  const colorImages = product.color_images?.[selectedColor];
+  const productImages = colorImages && colorImages.length > 0 ? colorImages : allProductImages;
+  const productSizes = product.sizes?.length ? product.sizes : sizes;
+  const description = product.extract || [product.composition, product.weight].filter(Boolean).join(", ") || product.description;
+  const activeImageIndex = Math.min(galleryIndex, productImages.length - 1);
+  const activeImage = productImages[activeImageIndex] || "";
+  const pid = product.id;
+
+  return (
+    <div
+      className="animate-fade-in-up rounded-[1.6rem] border border-slate-200 bg-white p-5 shadow-[0_10px_30px_rgba(15,23,42,0.08)] transition-all hover:border-cyan-200 hover:shadow-[0_16px_42px_rgba(8,145,178,0.12)]"
+      style={{ animationDelay: `${animationDelay}ms` }}
+    >
+      <div className="grid gap-5 md:grid-cols-[150px_1fr]">
+        <div className="group relative flex h-44 items-center justify-center overflow-hidden rounded-[1.25rem] border border-slate-100 bg-slate-50 p-4 shadow-inner">
+          <Image unoptimized src={activeImage} alt={product.name} width={170} height={170} className="h-auto max-h-full w-auto object-contain drop-shadow-sm" />
+          {productImages.length > 1 && (
+            <>
+              <button
+                type="button"
+                onClick={() => onGalleryNav(pid, activeImageIndex - 1, productImages.length)}
+                className="absolute left-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-white/80 bg-white/90 text-slate-700 opacity-0 shadow-sm transition-all hover:border-cyan-200 hover:text-cyan-700 group-hover:opacity-100"
+                aria-label="Imagen anterior"
+              >
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 18l-6-6 6-6" />
+                </svg>
+              </button>
+              <button
+                type="button"
+                onClick={() => onGalleryNav(pid, activeImageIndex + 1, productImages.length)}
+                className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-white/80 bg-white/90 text-slate-700 opacity-0 shadow-sm transition-all hover:border-cyan-200 hover:text-cyan-700 group-hover:opacity-100"
+                aria-label="Imagen siguiente"
+              >
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 18l6-6-6-6" />
+                </svg>
+              </button>
+              <div className="absolute bottom-2 left-1/2 flex -translate-x-1/2 gap-1.5 rounded-full bg-white/85 px-2 py-1 shadow-sm">
+                {productImages.map((image, index) => (
+                  <button
+                    key={`${image}-${index}`}
+                    type="button"
+                    onClick={() => onGalleryNav(pid, index, productImages.length)}
+                    className={`h-1.5 rounded-full transition-all ${index === activeImageIndex ? "w-5 bg-cyan-500" : "w-1.5 bg-slate-300 hover:bg-slate-400"}`}
+                    aria-label={`Ver imagen ${index + 1}`}
+                  />
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+
+        <div>
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="min-w-0 flex-1">
+              <p className="text-[11px] font-black uppercase tracking-[0.35em] text-cyan-700">{product.short_name}</p>
+              <h2 className="mt-2 max-w-xl text-2xl font-black leading-tight text-slate-950 sm:text-3xl">{product.name}</h2>
+              {description && <p className="mt-2 text-sm font-medium leading-6 text-slate-500">{description}</p>}
+            </div>
+            <div className="shrink-0 text-right">
+              <p className="text-[11px] font-black uppercase tracking-[0.28em] text-slate-400">Desde</p>
+              <p className="text-2xl font-black leading-none text-cyan-700">${product.price.toLocaleString("es-CL")}</p>
+              <p className="mt-1 text-[11px] font-semibold text-slate-400">IVA incluido</p>
+            </div>
+          </div>
+
+          <div className="mt-5 flex flex-wrap gap-2">
+            {(product.technologies || []).slice(0, 4).map((tech) => (
+              <span key={tech} className="rounded-full bg-cyan-50 px-3 py-1 text-[11px] font-black text-cyan-700">{tech}</span>
+            ))}
+          </div>
+
+          <div className="mt-6 grid gap-5 md:grid-cols-[1fr_200px]">
+            <div>
+              <label className="mb-2 block text-xs font-black uppercase tracking-[0.28em] text-slate-500">
+                Color: <span className="text-cyan-700">{selectedColor}</span>
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {(product.colors || []).map((color, colorIndex) => {
+                  const selected = selectedColor === color;
+                  const hex = colorMap[color.toLowerCase()] || "#ccc";
+                  return (
+                    <button
+                      key={color}
+                      onClick={() => onColorSelect(pid, color, colorIndex, productImages.length)}
+                      title={color}
+                      className={`h-8 w-8 rounded-full border shadow-sm transition-all hover:scale-105 ${selected ? "border-white ring-2 ring-cyan-400 ring-offset-2" : "border-slate-300"}`}
+                      style={{ backgroundColor: hex }}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+            <div>
+              <label className="mb-2 block text-xs font-black uppercase tracking-[0.22em] text-slate-500">Logo incluido</label>
+              <select
+                value={formLogo || "Pecho incluido"}
+                onChange={(e) => onFormUpdate(pid, "logo", e.target.value)}
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition-all focus:border-cyan-400 focus:shadow-lg focus:shadow-cyan-500/10"
+              >
+                <option>Pecho incluido</option>
+                <option>Pecho + espalda</option>
+                <option>Pecho + brazo</option>
+                <option>2 brazos</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="mt-6">
+            <label className="mb-3 block text-xs font-black uppercase tracking-[0.28em] text-slate-500">Cantidades por talla</label>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
+              {sizes.map((size) => {
+                const isAvail = productSizes.includes(size);
+                return (
+                  <div key={size}>
+                    <label className="mb-1.5 block text-center text-xs font-bold text-slate-500">{size}</label>
+                    <input
+                      type="number"
+                      min={0}
+                      placeholder="0"
+                      disabled={!isAvail}
+                      onChange={(e) => onSizeUpdate(pid, size, e.target.value)}
+                      className={`h-10 w-full rounded-xl border px-2 text-center text-sm outline-none transition-all focus:border-cyan-400 focus:shadow-lg focus:shadow-cyan-500/10 ${isAvail ? "border-slate-200 bg-white text-slate-700" : "border-slate-100 bg-slate-50 text-slate-300"}`}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="mt-6 flex flex-wrap gap-3">
+            <button
+              onClick={() => onAddToCart(pid)}
+              className="rounded-full bg-slate-950 px-7 py-3.5 text-sm font-bold text-white shadow-sm transition-all hover:bg-cyan-700 hover:shadow-lg hover:shadow-cyan-700/25 active:scale-95"
+            >
+              Agregar al pedido
+            </button>
+            <button
+              onClick={() => onViewDetails(product)}
+              className="rounded-full border border-slate-300 bg-white px-7 py-3.5 text-sm font-bold text-slate-700 transition-all hover:border-cyan-400 hover:text-cyan-700 hover:shadow-md"
+            >
+              Ver ficha técnica
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+});

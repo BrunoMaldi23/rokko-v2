@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import type { Product } from "@/types/product";
 import {
@@ -34,6 +34,7 @@ const initialProductState: Partial<Product> = {
   image: "",
   sizes: [],
   colors: [],
+  color_images: {},
   composition: "",
   weight: "",
   technologies: [],
@@ -132,6 +133,8 @@ export default function AdminProducts() {
   // Estados para el CRUD (Creación, Edición y Eliminación)
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Partial<Product> | null>(null);
+  const editingRef = useRef(editingProduct);
+  editingRef.current = editingProduct;
   const isNewProduct = !editingProduct?.id;
 
   useEffect(() => {
@@ -184,14 +187,15 @@ export default function AdminProducts() {
     }
   }
 
-  function updateField(field: keyof Product, value: string) {
-    if (!editingProduct) return;
+  const updateField = useCallback((field: keyof Product, value: string) => {
+    const product = editingRef.current;
+    if (!product) return;
     const numeric = ["price", "wholesale_price", "wholesale_from"];
     setEditingProduct({
-      ...editingProduct,
+      ...product,
       [field]: numeric.includes(field) ? (value === "" ? null : Number(value)) : value,
     });
-  }
+  }, []);
 
   function updateListField(field: ArrayField, value: string) {
     if (!editingProduct) return;
@@ -209,12 +213,13 @@ export default function AdminProducts() {
   }
 
   function getArrayValue(field: ArrayField) {
-    const value = editingProduct?.[field];
+    const value = editingRef.current?.[field];
     return Array.isArray(value) ? value : [];
   }
 
-  function toggleArrayValue(field: ArrayField, value: string) {
-    if (!editingProduct) return;
+  const toggleArrayValue = useCallback((field: ArrayField, value: string) => {
+    const product = editingRef.current;
+    if (!product) return;
 
     const current = getArrayValue(field);
     const next = current.includes(value)
@@ -222,34 +227,43 @@ export default function AdminProducts() {
       : [...current, value];
 
     setEditingProduct({
-      ...editingProduct,
+      ...product,
       [field]: next,
     });
-  }
+  }, []);
 
-  function setNumberValue(field: "price" | "wholesale_price" | "wholesale_from", value: number) {
-    if (!editingProduct) return;
+  const setNumberValue = useCallback((field: "price" | "wholesale_price" | "wholesale_from", value: number) => {
+    const product = editingRef.current;
+    if (!product) return;
     setEditingProduct({
-      ...editingProduct,
+      ...product,
       [field]: Math.max(0, value),
     });
-  }
+  }, []);
 
-  function stepNumberValue(field: "price" | "wholesale_price" | "wholesale_from", step: number) {
-    const current = Number(editingProduct?.[field] || 0);
+  const stepNumberValue = useCallback((field: "price" | "wholesale_price" | "wholesale_from", step: number) => {
+    const current = Number(editingRef.current?.[field] || 0);
     setNumberValue(field, current + step);
-  }
+  }, []);
 
-  function updateImageGallery(images: string[]) {
-    if (!editingProduct) return;
+  const updateImageGallery = useCallback((images: string[]) => {
+    const product = editingRef.current;
+    if (!product) return;
     const cleanImages = Array.from(new Set(images.map((image) => image.trim()).filter(Boolean)));
+    const imageSet = new Set(cleanImages);
+    const colorImages = { ...(product.color_images || {}) };
+    Object.keys(colorImages).forEach((c) => {
+      colorImages[c] = colorImages[c].filter((u) => imageSet.has(u));
+      if (colorImages[c].length === 0) delete colorImages[c];
+    });
 
     setEditingProduct({
-      ...editingProduct,
+      ...product,
       image: serializeImages(cleanImages),
       images: cleanImages,
+      color_images: colorImages,
     });
-  }
+  }, []);
 
   function updateImageGalleryFromText(value: string) {
     updateImageGallery(
@@ -676,43 +690,67 @@ export default function AdminProducts() {
                     </div>
                     {getProductImages(editingProduct).length > 0 && (
                       <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
-                        {getProductImages(editingProduct).map((image, index) => (
-                          <div
-                            key={`${image}-${index}`}
-                            className="group relative overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-2"
-                          >
-                            <div className="flex h-24 items-center justify-center">
-                              <Image
-                                unoptimized
-                                src={image}
-                                alt={`Imagen ${index + 1}`}
-                                width={96}
-                                height={96}
-                                className="h-auto max-h-full w-auto object-contain"
-                              />
-                            </div>
-                            <div className="mt-2 flex items-center gap-1">
-                              <button
-                                type="button"
-                                onClick={() => setPrimaryGalleryImage(image)}
-                                className={`flex-1 rounded-lg px-2 py-1.5 text-[10px] font-bold transition-colors ${
-                                  index === 0
-                                    ? "bg-accent text-white"
-                                    : "bg-white text-slate-500 hover:text-accent"
-                                }`}
+                        {getProductImages(editingProduct).map((image, index) => {
+                          const assignedColor = Object.entries(editingProduct?.color_images || {}).find(([, urls]) => urls.includes(image))?.[0];
+                          return (
+                            <div
+                              key={`${image}-${index}`}
+                              className="group relative overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-2"
+                            >
+                              <div className="flex h-24 items-center justify-center">
+                                <Image
+                                  unoptimized
+                                  src={image}
+                                  alt={`Imagen ${index + 1}`}
+                                  width={96}
+                                  height={96}
+                                  className="h-auto max-h-full w-auto object-contain"
+                                />
+                              </div>
+                              <select
+                                value={assignedColor || ""}
+                                onChange={(e) => {
+                                  const color = e.target.value;
+                                  const current = { ...(editingProduct?.color_images || {}) };
+                                  Object.keys(current).forEach((c) => {
+                                    current[c] = current[c].filter((u) => u !== image);
+                                    if (current[c].length === 0) delete current[c];
+                                  });
+                                  if (color) {
+                                    current[color] = [...(current[color] || []), image];
+                                  }
+                                  setEditingProduct({ ...editingProduct!, color_images: current });
+                                }}
+                                className="mt-1 w-full rounded-md border border-slate-200 bg-white px-1 py-1 text-[10px] outline-none"
                               >
-                                {index === 0 ? "Principal" : "Principal"}
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => removeGalleryImage(image)}
-                                className="rounded-lg bg-white px-2 py-1.5 text-[10px] font-bold text-red-500 transition-colors hover:bg-red-50"
-                              >
-                                X
-                              </button>
+                                <option value="">Sin color</option>
+                                {(editingProduct?.colors || []).map((c) => (
+                                  <option key={c} value={c}>{c}</option>
+                                ))}
+                              </select>
+                              <div className="mt-1 flex items-center gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => setPrimaryGalleryImage(image)}
+                                  className={`flex-1 rounded-lg px-2 py-1.5 text-[10px] font-bold transition-colors ${
+                                    index === 0
+                                      ? "bg-accent text-white"
+                                      : "bg-white text-slate-500 hover:text-accent"
+                                  }`}
+                                >
+                                  {index === 0 ? "Principal" : "Principal"}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => removeGalleryImage(image)}
+                                  className="rounded-lg bg-white px-2 py-1.5 text-[10px] font-bold text-red-500 transition-colors hover:bg-red-50"
+                                >
+                                  X
+                                </button>
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     )}
                     <p className="text-[11px] leading-5 text-slate-400">
