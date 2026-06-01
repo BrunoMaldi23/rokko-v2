@@ -126,8 +126,8 @@ export default function AdminLayout({ onLogout }: Props) {
                   onClick={() => setActiveTab(item.id)}
                   className={`group relative flex w-full items-center gap-3.5 rounded-xl px-4 py-3 text-left transition-all duration-200 border ${
                     active
-                      ? "border-accent/30 bg-accent/10 text-accent font-medium shadow-sm"
-                      : "border-transparent text-slate-500 hover:border-accent-soft/50 hover:bg-accent-soft/30 hover:text-slate-900"
+                      ? "border-accent/40 bg-accent/10 text-accent font-medium shadow-sm"
+                      : "border-[#e5ddd4] text-slate-500 hover:border-accent-soft/60 hover:bg-accent-soft/30 hover:text-slate-900"
                   }`}
                 >
                   {/* Indicador de pestaña activa en el borde izquierdo */}
@@ -172,7 +172,7 @@ export default function AdminLayout({ onLogout }: Props) {
           <div className="border-t border-accent-soft/50 p-4 bg-[#ece5dc]/50">
             <button
               onClick={onLogout}
-              className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-300 bg-red-100 px-4 py-2.5 text-sm font-medium text-slate-700 transition-all duration-200 hover:bg-red-500 hover:text-white hover:shadow-md hover:shadow-red-500/10 active:scale-[0.98]"
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-400 bg-red-200 px-4 py-2.5 text-sm font-medium text-slate-800 transition-all duration-200 hover:bg-red-500 hover:text-white hover:shadow-md hover:shadow-red-500/10 active:scale-[0.98]"
             >
               <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
@@ -203,12 +203,24 @@ export default function AdminLayout({ onLogout }: Props) {
                   </p>
                 </div>
                 
-                {/* Status Badge */}
-                <div className="flex items-center gap-2 rounded-full bg-accent-soft px-3.5 py-1.5 border border-accent-soft">
-                  <div className="h-2 w-2 rounded-full bg-accent animate-pulse" />
-                  <span className="text-xs font-medium tracking-wide text-accent">
-                    Admin activo
-                  </span>
+                <div className="flex items-center gap-2">
+                  {/* Status Badge */}
+                  <div className="flex items-center gap-2 rounded-full bg-accent-soft px-3.5 py-1.5 border border-accent-soft">
+                    <div className="h-2 w-2 rounded-full bg-accent animate-pulse" />
+                    <span className="text-xs font-medium tracking-wide text-accent">
+                      Admin activo
+                    </span>
+                  </div>
+                  <a
+                    href="/"
+                    className="flex items-center gap-1.5 rounded-full border border-[#e5ddd4] bg-white px-3.5 py-1.5 text-xs font-medium text-slate-600 transition-all hover:border-accent-soft hover:text-accent hover:shadow-sm"
+                  >
+                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                      <polyline points="9 22 9 12 15 12 15 22" />
+                    </svg>
+                    <span>Ir a inicio</span>
+                  </a>
                 </div>
               </div>
 
