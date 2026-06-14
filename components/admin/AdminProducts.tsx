@@ -378,7 +378,7 @@ export default function AdminProducts() {
 
             <div className="flex flex-wrap items-center gap-4 self-end md:self-auto">
               {/* Bloque de Métricas (Inspirado en image_d77835.png) */}
-              <div className="grid grid-cols-3 overflow-hidden rounded-xl border border-accent-soft/30 bg-[#ece5dc]/50">
+              <div className="grid grid-cols-3 overflow-hidden rounded-xl border border-accent-soft/30 bg-surface-2/50">
                 <Metric label="Total" value={products.length} />
                 <Metric label="Activos" value={activeProducts} />
                 <Metric label="Vista" value={filteredProducts.length} />
@@ -462,7 +462,7 @@ export default function AdminProducts() {
 
               {!loading &&
                 filteredProducts.map((product) => (
-                  <tr key={product.id} className="transition-colors duration-150 hover:bg-[#ece5dc]/30">
+                  <tr key={product.id} className="transition-colors duration-150 hover:bg-surface-2/30">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-4">
                         <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-slate-100 bg-white p-1 shadow-sm shadow-slate-100">
@@ -551,7 +551,7 @@ export default function AdminProducts() {
 
           <aside className="absolute inset-y-0 right-0 flex w-full max-w-xl flex-col bg-white shadow-2xl animate-slide-over">
             {/* Cabecera del Panel */}
-            <div className="border-b border-slate-100 bg-[#ece5dc]/40 px-6 py-5">
+            <div className="border-b border-slate-100 bg-surface-2/40 px-6 py-5">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-accent">
@@ -760,7 +760,7 @@ export default function AdminProducts() {
                 </InputBlock>
 
                 {/* Sección de Precios */}
-                <div className="rounded-2xl border border-accent-soft/30 bg-[#ece5dc]/40 p-5">
+                <div className="rounded-2xl border border-accent-soft/30 bg-surface-2/40 p-5">
                   <p className="mb-4 text-xs font-bold uppercase tracking-[0.14em] text-accent">
                     Estructura de precios (CLP)
                   </p>
@@ -970,7 +970,7 @@ export default function AdminProducts() {
                   />
                 </div>
 
-                <label className="flex items-center justify-between rounded-2xl border border-accent-soft/40 bg-[#ece5dc]/40 px-4 py-3">
+                <label className="flex items-center justify-between rounded-2xl border border-accent-soft/40 bg-surface-2/40 px-4 py-3">
                   <span>
                     <span className="block text-sm font-semibold text-slate-800">Producto activo</span>
                     <span className="block text-xs text-slate-500">Visible para cotizar en el catalogo.</span>

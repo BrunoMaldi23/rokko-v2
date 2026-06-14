@@ -101,7 +101,7 @@ export default function AdminOverview() {
             {loading && (
               <div className="space-y-4">
                 {[1, 2, 3].map((n) => (
-                  <div key={n} className="rounded-xl border border-accent-soft/20 bg-[#ece5dc]/50 p-4 animate-pulse">
+                  <div key={n} className="rounded-xl border border-accent-soft/20 bg-surface-2/50 p-4 animate-pulse">
                     <div className="flex justify-between">
                       <div className="h-4 w-24 rounded bg-slate-200" />
                       <div className="h-4 w-16 rounded bg-slate-200" />
@@ -119,7 +119,7 @@ export default function AdminOverview() {
                 return (
                   <div 
                     key={category} 
-                    className="rounded-xl border border-accent-soft/30 bg-[#ece5dc]/40 p-4 transition-colors hover:bg-[#ece5dc]/70"
+                    className="rounded-xl border border-accent-soft/30 bg-surface-2/40 p-4 transition-colors hover:bg-surface-2/70"
                   >
                     <div className="flex items-center justify-between gap-4">
                       <p className="text-sm font-bold capitalize text-slate-800">{category}</p>
@@ -174,7 +174,7 @@ export default function AdminOverview() {
             ].map((task) => (
               <div 
                 key={task} 
-                className="flex items-start gap-3 rounded-xl border border-accent-soft/20 bg-[#ece5dc]/30 px-4 py-3 transition-colors hover:border-accent-soft/40"
+                className="flex items-start gap-3 rounded-xl border border-accent-soft/20 bg-surface-2/30 px-4 py-3 transition-colors hover:border-accent-soft/40"
               >
                 <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-accent shadow-sm shadow-accent/50" />
                 <p className="text-sm font-medium leading-relaxed text-slate-600">

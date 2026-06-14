@@ -9,6 +9,10 @@ export type Product = {
   image: string | null;
   images?: string[] | null;
   color_images?: Record<string, string[]> | null;
+  model_3d_url?: string | null;
+  model_3d_scale?: number | null;
+  model_3d_position_y?: number | null;
+  model_3d_rotation_y?: number | null;
   price: number;
   wholesale_price: number | null;
   wholesale_from: number | null;

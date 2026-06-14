@@ -1,4 +1,3 @@
-import Header from "@/components/Header";
 import QuoteBuilder from "@/components/QuoteBuilder";
 import { getProductsByCategory } from "@/lib/products";
 
@@ -15,27 +14,39 @@ export default async function CotizarCategoria({
   const products = await getProductsByCategory(categoria);
 
   return (
-    <main className="min-h-screen overflow-hidden">
-      <Header />
+    <main className="relative min-h-screen">
+      {/* ─── Organic background shapes ─── */}
+      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+        <div className="absolute -left-20 -top-20 h-[500px] w-[500px] rounded-full bg-accent/5 blur-[120px]" />
+        <div className="absolute -bottom-32 -right-32 h-[400px] w-[400px] rounded-full bg-accent/3 blur-[100px]" />
+        <div className="absolute left-1/3 top-1/3 h-[200px] w-[200px] rounded-full bg-accent/4 blur-[80px]" />
+      </div>
 
-      <div className="mx-auto max-w-7xl px-6 py-10">
-        <div className="mb-10 animate-fade-in-up">
-          <div className="inline-flex items-center gap-3 rounded-full border border-[#e5ddd4] bg-white/90 px-5 py-2 shadow-sm backdrop-blur-sm">
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-75" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-accent" />
-            </span>
-            <p className="text-xs font-bold uppercase tracking-[0.35em] text-accent">
+      <div className="mx-auto max-w-7xl px-6 py-12">
+        {/* ─── Header ─── */}
+        <div className="animate-fade-in-up">
+          <div className="inline-flex items-center gap-2.5 rounded-full border border-accent/10 bg-white/70 px-4 py-1.5 shadow-xs backdrop-blur-md">
+            <span className="h-2 w-2 rounded-full bg-accent animate-pulse" />
+            <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-accent">
               Cotizador ROKKO
             </p>
           </div>
 
-          <h1 className="mt-4 text-4xl font-black text-[#1e1e1e] capitalize md:text-5xl">
+          <h1 className="mt-5 text-4xl font-bold tracking-tight text-neutral-900 capitalize md:text-5xl lg:text-6xl">
             {categoria}
           </h1>
+
+          <div className="mt-3 flex items-center gap-3 text-sm text-neutral-400">
+            <span>{products.length} producto{products.length !== 1 ? "s" : ""}</span>
+            <span className="h-1 w-1 rounded-full bg-neutral-300" />
+            <span>Personaliza colores, tallas y logo</span>
+          </div>
         </div>
 
-        <QuoteBuilder initialProducts={products} />
+        {/* ─── Products ─── */}
+        <div className="mt-10">
+          <QuoteBuilder initialProducts={products} />
+        </div>
       </div>
     </main>
   );

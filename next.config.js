@@ -7,6 +7,11 @@ const nextConfig = {
         hostname: "pbkpurgnzxvjzpfdotbk.supabase.co",
         pathname: "/storage/v1/object/public/product-images/**",
       },
+      {
+        protocol: "https",
+        hostname: "pbkpurgnzxvjzpfdotbk.supabase.co",
+        pathname: "/storage/v1/object/public/product-models/**",
+      },
     ],
   },
 };

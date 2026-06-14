@@ -150,7 +150,78 @@ export default function AdminBranding() {
         </button>
       </section>
 
-      <aside className="sticky top-28 rounded-2xl border border-accent-soft/50 bg-[#ece5dc]/50 p-6 shadow-sm shadow-slate-100/50">
+      <aside className="sticky top-28 rounded-2xl border border-accent-soft/50 bg-surface-2/50 p-6 shadow-sm shadow-slate-100/50">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-accent">
+              Formato PDF
+            </p>
+            <h3 className="mt-1.5 text-lg font-bold tracking-tight text-slate-900">
+              Vista tipo cotizacion
+            </h3>
+          </div>
+          <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600">
+            Documento
+          </span>
+        </div>
+
+        <div className="mt-6 bg-white p-5 text-[10px] text-slate-900 shadow-xl shadow-slate-200/60">
+          <div className="grid grid-cols-[1fr_auto] gap-4">
+            <div>
+              <p className="text-lg font-black text-accent">{brand.name || "ROKKO"}</p>
+              <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-slate-500">Vestuario Corporativo</p>
+            </div>
+            <div className="text-right">
+              <p className="text-sm font-black uppercase">Cotizacion N°</p>
+              <p className="font-bold text-slate-500">B24042026</p>
+            </div>
+          </div>
+
+          <div className="mt-4 grid grid-cols-3 gap-3 border-y border-slate-900 py-3">
+            <PreviewCell label="Empresa" value="Cliente ejemplo" />
+            <PreviewCell label="Contacto" value="Rodrigo Bizama" />
+            <PreviewCell label="Ciudad" value={brand.city} />
+            <PreviewCell label="Telefono" value={brand.phone} />
+            <PreviewCell label="Mail" value={brand.email} />
+            <PreviewCell label="Pedido" value="Uniforme con logo" />
+          </div>
+
+          <table className="mt-4 w-full border-collapse">
+            <thead>
+              <tr className="border-y-2 border-slate-900 text-left uppercase">
+                <th className="py-1.5 pr-2">Color</th>
+                <th className="py-1.5 pr-2">Descripcion</th>
+                <th className="py-1.5 text-right">Total neto</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr className="border-b border-slate-200">
+                <td className="py-2 pr-2 font-black">NEGRO</td>
+                <td className="py-2 pr-2">
+                  <p className="font-black">CHAQUETA SOFTSHELL</p>
+                  <p className="text-slate-500">* Incluye logo pecho estampado</p>
+                </td>
+                <td className="py-2 text-right font-black">$119.700</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div className="mt-4 grid grid-cols-[1fr_120px] gap-4">
+            <p className="text-[9px] leading-4 text-slate-500">
+              {brand.footer || "Presupuesto valido por 5 dias corridos."}
+            </p>
+            <div className="space-y-1">
+              <PreviewTotal label="Valor neto" value="$503.600" />
+              <PreviewTotal label="19%" value="$95.684" />
+              <div className="border-y-2 border-slate-900 py-1">
+                <PreviewTotal label="Total" value="$599.284" strong />
+              </div>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <aside className="hidden sticky top-28 rounded-2xl border border-accent-soft/50 bg-surface-2/50 p-6 shadow-sm shadow-slate-100/50">
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-slate-400">
@@ -202,7 +273,7 @@ export default function AdminBranding() {
               ))}
             </div>
 
-            <div className="rounded-xl bg-[#ece5dc]/50 p-4 border border-accent-soft/20">
+            <div className="rounded-xl bg-surface-2/50 p-4 border border-accent-soft/20">
               <p className="text-xs font-medium leading-relaxed text-slate-500 italic">
                 &quot;{brand.footer || "..."}&quot;
               </p>
@@ -231,5 +302,23 @@ function Field({
       </span>
       {children}
     </label>
+  );
+}
+
+function PreviewCell({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="text-[8px] font-black uppercase tracking-[0.08em] text-slate-500">{label}</p>
+      <p className="mt-0.5 truncate font-bold text-slate-900">{value || "-"}</p>
+    </div>
+  );
+}
+
+function PreviewTotal({ label, value, strong = false }: { label: string; value: string; strong?: boolean }) {
+  return (
+    <div className="flex items-center justify-between gap-2">
+      <span className={strong ? "font-black uppercase" : "font-bold uppercase text-slate-600"}>{label}</span>
+      <span className={strong ? "font-black text-slate-900" : "font-black text-slate-900"}>{value}</span>
+    </div>
   );
 }

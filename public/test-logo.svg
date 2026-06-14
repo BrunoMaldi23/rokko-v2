@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 80" width="200" height="80">
+  <rect width="200" height="80" rx="8" fill="#2d3436"/>
+  <text x="100" y="38" text-anchor="middle" font-family="Arial, sans-serif" font-weight="900" font-size="28" fill="#0090a0" letter-spacing="4">ROKKO</text>
+  <text x="100" y="60" text-anchor="middle" font-family="Arial, sans-serif" font-weight="600" font-size="11" fill="#f5f0eb" letter-spacing="6">VESTUARIO</text>
+</svg>

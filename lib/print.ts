@@ -47,9 +47,13 @@ export function printElement(elementId: string) {
     @media print {
       body { background: #fff !important; }
       .shadow-2xl { box-shadow: none !important; }
-      .my-8 { margin-top: 0 !important; margin-bottom: 0 !important; }
-      .min-h-\\[1000px\\] { min-height: 100vh !important; }
-      .p-12 { padding-left: 0 !important; padding-right: 0 !important; }
+
+      /* tabla: repetir encabezado y no cortar filas entre páginas */
+      table { border-collapse: collapse; width: 100%; }
+      thead { display: table-header-group; }
+      tr { break-inside: avoid; page-break-inside: avoid; }
+      td, th { overflow-wrap: anywhere; word-break: normal; }
+      .break-inside-avoid { break-inside: avoid; page-break-inside: avoid; }
     }
   </style>
 </head>

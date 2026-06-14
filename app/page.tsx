@@ -1,68 +1,62 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useDeferredValue, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useRouter } from "next/navigation";
-import Header from "@/components/Header";
 import { getAllProducts } from "@/lib/products";
 import type { Product } from "@/types/product";
 
 const categories = [
   {
     name: "Poleras",
-    emoji: "\uD83D\uDE55",
     slug: "poleras",
-    desc: "Algodón premium y dry-fit de alto rendimiento.",
+    code: "PL",
+    desc: "Prendas livianas para equipos comerciales y uso diario.",
+    tint: "bg-accent-soft text-accent",
   },
   {
     name: "Polerones",
-    emoji: "\uD83E\uDDE5",
     slug: "polerones",
-    desc: "Abrigo corporativo con costuras reforzadas.",
+    code: "PR",
+    desc: "Abrigo corporativo comodo, resistente y personalizable.",
+    tint: "bg-surface-2 text-brand-dark",
   },
   {
     name: "Parkas",
-    emoji: "\uD83E\uDD7C",
     slug: "parkas",
-    desc: "Modelos impermeables, térmicos y técnicos.",
+    code: "PK",
+    desc: "Modelos termicos, impermeables y tecnicos para exterior.",
+    tint: "bg-accent-soft text-accent-deep",
   },
   {
     name: "Pantalones",
-    emoji: "\uD83D\uDC56",
     slug: "pantalones",
-    desc: "Líneas de carga funcionales y cortes formales.",
+    code: "PT",
+    desc: "Lineas funcionales para operacion, oficina y terreno.",
+    tint: "bg-surface-2 text-muted",
   },
 ];
 
 const colorMap: Record<string, string> = {
   blanco: "#ffffff",
-  negro: "#1a1a1a",
+  negro: "#111111",
   "azul marino": "#1e3a5f",
   azul: "#2563eb",
-  "azul francia": "#1e40af",
+  "azul rey": "#1d4ed8",
   rojo: "#dc2626",
   verde: "#16a34a",
-  "verde oliva": "#4d7c0f",
   gris: "#6b7280",
-  "gris oscuro": "#374151",
-  "gris claro": "#d1d5db",
-  amarillo: "#eab308",
   naranja: "#ea580c",
-  coral: "#f43f5e",
-  rosado: "#f9a8d4",
-  celeste: "#93c5fd",
   beige: "#d8c3a5",
-  café: "#78350f",
-  mostaza: "#c9a84c",
   burdeo: "#7f1d1d",
-  plomo: "#475569",
-  platinum: "#94a3b8",
 };
-
-function colorHex(name: string): string {
-  const key = name.toLowerCase().trim();
-  return colorMap[key] || "#94a3b8";
-}
 
 function normalize(value: string) {
   return value
@@ -72,12 +66,18 @@ function normalize(value: string) {
     .trim();
 }
 
+function colorHex(name: string): string {
+  return colorMap[normalize(name)] || "#94a3b8";
+}
+
 export default function Home() {
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [searchError, setSearchError] = useState("");
   const [products, setProducts] = useState<Product[]>([]);
   const [showResults, setShowResults] = useState(false);
+  const [activeRow, setActiveRow] = useState(-1);
+
   const inputRef = useRef<HTMLInputElement>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
 
@@ -85,28 +85,17 @@ export default function Home() {
     getAllProducts().then(setProducts);
   }, []);
 
-  const normalizedProducts = useMemo(
-    () =>
-      products.map((p) => ({
-        product: p,
-        haystack: normalize(
-          `${p.name} ${p.description || ""} ${p.extract || ""} ${p.colors.map(normalize).join(" ")} ${p.technologies.map(normalize).join(" ")} ${normalize(p.category)}`
-        ),
-      })),
-    [products]
-  );
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        inputRef.current?.focus();
+      }
+    };
 
-  const deferredSearch = useDeferredValue(search);
-
-  const results = useMemo(() => {
-    const q = normalize(deferredSearch);
-    if (!q || q.length < 2) return [];
-
-    return normalizedProducts
-      .filter(({ haystack }) => haystack.includes(q))
-      .slice(0, 8)
-      .map(({ product }) => product);
-  }, [deferredSearch, normalizedProducts]);
+    window.addEventListener("keydown", handleGlobalKeyDown);
+    return () => window.removeEventListener("keydown", handleGlobalKeyDown);
+  }, []);
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -119,202 +108,234 @@ export default function Home() {
         setShowResults(false);
       }
     }
+
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
-  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearch(e.target.value);
-    setSearchError("");
-    setShowResults(true);
-  }, []);
+  const normalizedProducts = useMemo(
+    () =>
+      products.map((p) => ({
+        product: p,
+        haystack: normalize(
+          `${p.name} ${p.short_name} ${p.description || ""} ${p.extract || ""} ${p.colors
+            .map(normalize)
+            .join(" ")} ${p.technologies
+            .map(normalize)
+            .join(" ")} ${p.category}`
+        ),
+      })),
+    [products]
+  );
 
-  const handleSearchFocus = useCallback(() => {
-    if (search.length >= 2) setShowResults(true);
-  }, [search]);
+  const deferredSearch = useDeferredValue(search);
+  const isSearching = search !== deferredSearch;
 
-  const handleResultClick = useCallback(() => setShowResults(false), []);
+  const results = useMemo(() => {
+    const q = normalize(deferredSearch);
+    if (!q || q.length < 2) return [];
+
+    return normalizedProducts
+      .filter(({ haystack }) => haystack.includes(q))
+      .slice(0, 6)
+      .map(({ product }) => product);
+  }, [deferredSearch, normalizedProducts]);
+
+  const handleSearchChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setSearch(e.target.value);
+      setSearchError("");
+      setShowResults(true);
+      setActiveRow(-1);
+    },
+    []
+  );
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (!showResults || results.length === 0) return;
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setActiveRow((prev) => (prev < results.length - 1 ? prev + 1 : prev));
+    }
+
+    if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setActiveRow((prev) => (prev > 0 ? prev - 1 : -1));
+    }
+
+    if (e.key === "Enter" && activeRow >= 0) {
+      e.preventDefault();
+      router.push(`/cotizar/${results[activeRow].category}`);
+      setShowResults(false);
+    }
+
+    if (e.key === "Escape") {
+      setShowResults(false);
+      inputRef.current?.blur();
+    }
+  };
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const q = normalize(search);
-    if (!q) {
+
+    if (!q || q.length < 2) {
       setSearchError("Escribe al menos 2 caracteres.");
       return;
     }
+
     if (results.length > 0) {
       router.push(`/cotizar/${results[0].category}`);
     } else {
-      setSearchError("No encontramos productos con ese término.");
+      setSearchError("No encontramos productos con ese termino.");
     }
   }
 
   return (
-    <main className="flex min-h-screen flex-col overflow-hidden">
-      <Header />
+    <main className="min-h-[calc(100vh-80px)] bg-bg text-text">
+      <section className="relative mx-auto flex min-h-[calc(100vh-80px)] max-w-7xl items-center px-5 py-14 sm:px-6 lg:px-8">
+        <div className="absolute inset-x-0 top-0 h-px bg-border" />
+        <div className="pointer-events-none absolute left-4 top-10 h-80 w-80 rounded-full bg-accent/8 blur-[90px]" />
+        <div className="pointer-events-none absolute right-16 bottom-10 h-72 w-72 rounded-full bg-accent-soft/50 blur-[100px]" />
 
-      <div className="pointer-events-none absolute -top-40 right-0 h-[500px] w-[500px] -translate-y-1/4 translate-x-1/4 rounded-full bg-gradient-to-br from-accent/10 to-accent-soft/50 blur-[120px]" />
+        <div className="relative grid w-full items-center gap-12 rounded-[2rem] border border-white/80 bg-white/70 px-5 py-10 shadow-[0_24px_80px_rgba(45,52,54,0.08)] backdrop-blur-xl sm:px-8 lg:grid-cols-[0.9fr_1.1fr] lg:px-12 lg:py-14">
+        <div className="max-w-xl">
+          <div className="inline-flex items-center gap-3 rounded-full border border-border bg-white/90 px-4 py-2 shadow-sm">
+            <span className="h-2 w-2 rounded-full bg-accent" />
+            <span className="text-[10px] font-black uppercase tracking-[0.32em] text-accent">
+              Catalogo corporativo 2026
+            </span>
+          </div>
 
-      <section className="relative flex flex-1 items-center justify-center px-6 py-4 lg:py-0">
-        <div className="mx-auto w-full max-w-7xl">
-          <div className="grid gap-8 lg:grid-cols-[1.1fr_1.9fr] lg:items-center xl:gap-14">
-            <div className="space-y-5 animate-fade-in lg:max-w-md">
-              <div className="inline-flex items-center gap-3 rounded-full border border-[#e5ddd4] bg-white/90 px-5 py-2 shadow-sm backdrop-blur-sm">
-                <span className="relative flex h-2 w-2">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-75" />
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-accent" />
-                </span>
-                <p className="text-xs font-bold uppercase tracking-[0.35em] text-accent">
-                  Catálogo Corporativo 2026
-                </p>
+          <h1 className="mt-6 text-5xl font-black leading-[0.98] text-text sm:text-6xl">
+            Eleva la identidad de tu{" "}
+            <span className="text-accent">empresa</span>.
+          </h1>
+
+          <p className="mt-6 max-w-md text-sm font-medium leading-7 text-muted">
+            Selecciona una linea de vestuario corporativo y arma una cotizacion clara, visual y lista para tu equipo.
+          </p>
+
+          <div className="relative z-30 mt-7 max-w-lg">
+            <form
+              onSubmit={handleSubmit}
+              className="rounded-2xl border border-border bg-white p-1.5 shadow-[0_16px_40px_rgba(45,52,54,0.08)]"
+            >
+              <div className="flex items-center gap-2">
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={search}
+                  onChange={handleSearchChange}
+                  onFocus={() => search.length >= 2 && setShowResults(true)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Busca por nombre, color o tecnologia..."
+                  className="h-11 min-w-0 flex-1 bg-transparent px-3 text-sm font-semibold text-text outline-none placeholder:text-muted/60"
+                />
+
+                <button
+                  type="submit"
+                  aria-label="Buscar"
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-dark text-white transition hover:bg-accent active:scale-[0.96]"
+                >
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.2-5.2M10.8 18a7.2 7.2 0 1 1 0-14.4 7.2 7.2 0 0 1 0 14.4Z" />
+                  </svg>
+                </button>
               </div>
+            </form>
 
-              <h1 className="text-4xl font-extrabold tracking-tight text-[#1e1e1e] sm:text-5xl lg:leading-[1.15]">
-                Eleva la identidad de tu{" "}
-                <span className="text-accent">
-                  empresa
-                </span>
-              </h1>
+            {searchError && (
+              <p className="mt-2 text-xs font-bold text-red-600">{searchError}</p>
+            )}
 
-              <p className="text-sm leading-relaxed text-muted">
-                Explora nuestra línea de vestuario corporativo profesional. Selecciona una categoría para configurar tu cotización con precios mayoristas automatizados e impresión de logos incluidos.
-              </p>
-
-              <div className="pt-1 relative z-10">
-                <form onSubmit={handleSubmit} className="relative">
-                  <input
-                    ref={inputRef}
-                    type="text"
-                    value={search}
-                    onChange={handleSearchChange}
-                    onFocus={handleSearchFocus}
-                    placeholder="Busca por nombre, color, tecnología..."
-                    className="w-full rounded-2xl border border-[#e5ddd4] bg-white/90 px-5 py-3.5 pr-12 text-sm text-[#1e1e1e] outline-none backdrop-blur-sm transition-all duration-300 placeholder:text-muted focus:border-accent focus:bg-white focus:ring-4 focus:ring-accent/10"
-                  />
-                  <button
-                    type="submit"
-                    aria-label="Buscar"
-                    className="absolute right-2.5 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-xl bg-brand-dark text-white transition-all hover:bg-accent active:scale-95"
-                  >
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5-5M10 18a8 8 0 100-16 8 8 0 000 16z" />
-                    </svg>
-                  </button>
-                </form>
-
-                {searchError && (
-                  <p className="absolute left-1 top-full mt-1 text-[11px] font-semibold text-red-500">{searchError}</p>
-                )}
-
-                {showResults && results.length > 0 && (
-                  <div
-                    ref={resultsRef}
-                    className="absolute left-0 right-0 top-full mt-2 overflow-hidden rounded-2xl border border-[#e5ddd4] bg-white shadow-xl animate-fade-in"
-                  >
-                    {results.map((p) => (
+            {showResults && search.length >= 2 && (
+              <div
+                ref={resultsRef}
+                className="absolute left-0 right-0 top-full z-50 mt-3 overflow-hidden rounded-2xl border border-border bg-white shadow-[0_24px_70px_rgba(45,52,54,0.16)]"
+              >
+                {isSearching ? (
+                  <div className="space-y-3 p-4">
+                    <div className="h-4 w-3/4 animate-pulse rounded-md bg-surface-2" />
+                    <div className="h-3 w-1/2 animate-pulse rounded-md bg-surface-2" />
+                  </div>
+                ) : results.length > 0 ? (
+                  <div className="max-h-[300px] divide-y divide-border overflow-y-auto">
+                    {results.map((p, index) => (
                       <Link
                         key={p.id}
                         href={`/cotizar/${p.category}`}
-                        className="flex items-center gap-4 px-5 py-4 transition-colors hover:bg-accent-soft/50 border-b border-[#e5ddd4]/50 last:border-0"
-                        onClick={handleResultClick}
+                        onClick={() => setShowResults(false)}
+                        className={`block px-4 py-3 transition ${
+                          index === activeRow ? "bg-surface-2" : "hover:bg-surface-2"
+                        }`}
                       >
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-bold text-[#1e1e1e] truncate">
-                              {p.name}
-                            </span>
-                            <span className="shrink-0 rounded-full bg-accent-soft px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-accent">
-                              {p.category}
-                            </span>
-                          </div>
-                          <div className="mt-1 flex items-center gap-2">
-                            <div className="flex items-center gap-1">
-                              {p.colors.slice(0, 5).map((c) => (
+                        <div className="flex items-center justify-between gap-4">
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-black">{p.name}</p>
+                            <div className="mt-1 flex items-center gap-1.5">
+                              {p.colors.slice(0, 6).map((c) => (
                                 <span
                                   key={c}
-                                  className="inline-block h-3.5 w-3.5 rounded-full border border-[#e5ddd4]"
+                                  className="h-3 w-3 rounded-full border border-black/10"
                                   style={{ backgroundColor: colorHex(c) }}
                                   title={c}
                                 />
                               ))}
-                              {p.colors.length > 5 && (
-                                <span className="text-[10px] text-muted">+{p.colors.length - 5}</span>
-                              )}
                             </div>
-                            <span className="text-xs font-bold text-accent">
-                              Desde ${p.price.toLocaleString("es-CL")}
-                            </span>
                           </div>
+                          <span className="shrink-0 text-xs font-black text-accent">
+                            ${p.price.toLocaleString("es-CL")}
+                          </span>
                         </div>
-                        <svg className="h-4 w-4 shrink-0 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                        </svg>
                       </Link>
                     ))}
                   </div>
-                )}
-
-                {showResults && search.length >= 2 && results.length === 0 && !searchError && (
-                  <div className="absolute left-0 right-0 top-full mt-2 rounded-2xl border border-[#e5ddd4] bg-white px-5 py-4 text-sm text-muted shadow-xl animate-fade-in">
-                    No encontramos productos con &ldquo;{search}&rdquo;
+                ) : (
+                  <div className="px-4 py-5 text-sm font-bold text-muted">
+                    No hay resultados para "{search}".
                   </div>
                 )}
               </div>
-
-              <div className="grid grid-cols-3 gap-4 border-t border-[#e5ddd4] pt-5">
-                <div>
-                  <p className="text-base font-bold text-[#1e1e1e]">Descuentos</p>
-                  <p className="text-[11px] font-medium text-muted mt-0.5">Por volumen</p>
-                </div>
-                <div>
-                  <p className="text-base font-bold text-[#1e1e1e]">Estampado</p>
-                  <p className="text-[11px] font-medium text-muted mt-0.5">Logo incluido</p>
-                </div>
-                <div>
-                  <p className="text-base font-bold text-[#1e1e1e]">Despacho</p>
-                  <p className="text-[11px] font-medium text-muted mt-0.5">A todo el país</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid gap-5 sm:grid-cols-2 lg:max-h-[80vh]">
-              {categories.map((category, i) => (
-                <Link
-                  key={category.slug}
-                  href={`/cotizar/${category.slug}`}
-                  className="group relative flex flex-col justify-between rounded-3xl border border-[#e5ddd4] bg-white/80 p-6 shadow-sm backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-accent hover:shadow-xl hover:shadow-accent/10"
-                  style={{ animationDelay: `${(i + 1) * 80}ms` }}
-                >
-                  <div>
-                    <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-[#e5ddd4] bg-gradient-to-br from-accent-soft to-[#ecd5cc] text-xl transition-all duration-300 group-hover:scale-105 group-hover:from-[#ecd5cc] group-hover:to-[#e0c0b5]">
-                      {category.emoji}
-                    </div>
-
-                    <h3 className="mt-4 text-lg font-bold text-[#1e1e1e] transition-colors group-hover:text-accent">
-                      {category.name}
-                    </h3>
-
-                    <p className="mt-1.5 text-xs leading-relaxed text-muted">
-                      {category.desc}
-                    </p>
-                  </div>
-
-                  <div className="mt-5 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-accent transition-colors">
-                    <span>Explorar</span>
-                    <svg
-                      className="h-3 w-3 transition-transform duration-300 group-hover:translate-x-1"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth={3}
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                    </svg>
-                  </div>
-                </Link>
-              ))}
-            </div>
+            )}
           </div>
+
+          <div className="mt-8 grid max-w-lg grid-cols-3 gap-4">
+            {[
+              ["Descuentos", "Por volumen"],
+              ["Estampado", "Logo incluido"],
+              ["Despacho", "A todo el pais"],
+            ].map(([title, caption]) => (
+              <div key={title}>
+                <p className="text-sm font-black text-text">{title}</p>
+                <p className="mt-1 text-[11px] font-medium text-muted">{caption}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          {categories.map((category) => (
+            <Link
+              key={category.slug}
+              href={`/cotizar/${category.slug}`}
+              className="group min-h-[132px] rounded-[20px] border border-border bg-white p-5 shadow-[0_12px_32px_rgba(45,52,54,0.06)] transition hover:-translate-y-0.5 hover:border-accent/45 hover:shadow-[0_18px_45px_rgba(45,52,54,0.11)]"
+            >
+              <div className={`flex h-9 w-9 items-center justify-center rounded-xl text-xs font-black ${category.tint}`}>
+                {category.code}
+              </div>
+
+              <h2 className="mt-4 text-base font-black text-text">{category.name}</h2>
+              <p className="mt-2 max-w-[260px] text-[11px] font-medium leading-5 text-muted">{category.desc}</p>
+
+              <div className="mt-4 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.12em] text-accent">
+                Explorar
+                <span className="transition group-hover:translate-x-1">-&gt;</span>
+              </div>
+            </Link>
+          ))}
+        </div>
         </div>
       </section>
     </main>

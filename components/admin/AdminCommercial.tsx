@@ -166,7 +166,7 @@ export default function AdminCommercial() {
           </p>
           <div className="mt-5 grid grid-cols-2 gap-3">
             {summary.map((item) => (
-              <div key={item.id} className="rounded-xl border border-accent-soft/30 bg-[#ece5dc]/40 p-4">
+              <div key={item.id} className="rounded-xl border border-accent-soft/30 bg-surface-2/40 p-4">
                 <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">
                   {item.label}
                 </p>
@@ -178,7 +178,7 @@ export default function AdminCommercial() {
           </div>
         </section>
 
-        <section className="rounded-2xl border border-accent-soft/40 bg-[#ece5dc]/50 p-6 shadow-sm shadow-slate-100/50">
+        <section className="rounded-2xl border border-accent-soft/40 bg-surface-2/50 p-6 shadow-sm shadow-slate-100/50">
           <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-accent">
             Texto de cotizacion
           </p>

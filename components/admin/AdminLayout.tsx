@@ -9,6 +9,7 @@ import AdminProducts from "./AdminProducts";
 import AdminCommercial from "./AdminCommercial";
 import AdminQuotes from "./AdminQuotes";
 import AdminBranding from "./AdminBranding";
+import AdminModels3D from "./AdminModels3D";
 
 type Props = {
   onLogout: () => void;
@@ -17,6 +18,7 @@ type Props = {
 const navigation = [
   { id: "resumen", label: "Resumen", description: "Indicadores del negocio" },
   { id: "productos", label: "Productos", description: "Catálogo y stock" },
+  { id: "modelos3d", label: "Modelos 3D", description: "Prendas GLB/GLTF" },
   { id: "comercial", label: "Comercial", description: "Precios y reglas" },
   { id: "cotizaciones", label: "Cotizaciones", description: "Seguimiento comercial" },
   { id: "branding", label: "Marca", description: "Datos de empresa" },
@@ -32,6 +34,10 @@ const pageCopy: Record<AdminTab, { title: string; description: string }> = {
   productos: {
     title: "Catálogo de productos",
     description: "Gestiona disponibilidad, categorías y precios desde la tabla principal.",
+  },
+  modelos3d: {
+    title: "Modelos 3D",
+    description: "Sube prendas GLB/GLTF, calibralas y asocialas a productos.",
   },
   comercial: {
     title: "Configuración comercial",
@@ -60,6 +66,14 @@ const iconMap: Record<AdminTab, ReactNode> = {
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
       <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+    </svg>
+  ),
+  modelos3d: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 2l8 4.5v9L12 20l-8-4.5v-9L12 2z" />
+      <path d="M12 11l8-4.5" />
+      <path d="M12 11L4 6.5" />
+      <path d="M12 11v9" />
     </svg>
   ),
   comercial: (
@@ -94,73 +108,62 @@ export default function AdminLayout({ onLogout }: Props) {
   const activeCopy = pageCopy[activeTab];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-accent-soft/20 to-indigo-50/30 text-slate-900 font-sans antialiased selection:bg-accent/20">
+    <div className="min-h-screen bg-bg text-text font-sans antialiased selection:bg-accent/20">
       <div className="flex min-h-screen">
-        <div
-          aria-hidden="true"
-          className="fixed inset-y-0 left-0 z-40 hidden w-0.5 bg-[#ece5dc] lg:block"
-        />
-        
-        {/* SIDEBAR - COLOR CIAN PÁLIDO PREMIUM (image_d78a23.png) */}
-        <aside className="fixed inset-y-0 left-0 z-30 hidden w-72 shrink-0 flex-col border-r border-accent-soft/50 bg-[#ece5dc] backface-hidden lg:flex">
+        {/* SIDEBAR */}
+        <aside className="fixed inset-y-0 left-0 z-30 hidden w-72 shrink-0 flex-col border-r border-border bg-bg shadow-sm lg:flex">
           
-          {/* Contenedor del Logo */}
-          <div className="flex items-center justify-start px-7 py-8">
-            <div className="relative h-10 w-32">
+          {/* Decorative blur */}
+          <div className="pointer-events-none absolute -left-20 -top-20 h-60 w-60 rounded-full bg-accent/5 blur-[80px]" />
+          
+          {/* Logo */}
+          <div className="relative px-6 py-7">
+            <div className="relative h-12 w-[200px]">
               <Image
-                src="/rokko.png"
+                src="/brand/rokko-navbar.png"
                 alt="Rokko Logo"
                 fill
                 priority
                 className="object-contain object-left"
               />
             </div>
+            <div className="mt-4 rounded-xl border border-accent-soft/70 bg-accent-soft/40 px-4 py-3">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-accent">Panel interno</p>
+              <p className="mt-0.5 text-sm font-semibold text-text">Administración ROKKO</p>
+            </div>
           </div>
 
-          {/* Menú de Navegación */}
-          <nav className="flex-1 space-y-1 overflow-y-auto px-4 py-2">
+          {/* Menú */}
+          <nav className="relative flex-1 space-y-1 overflow-y-auto px-3 py-2">
             {navigation.map((item) => {
               const active = activeTab === item.id;
               return (
                 <button
                   key={item.id}
                   onClick={() => setActiveTab(item.id)}
-                  className={`group relative flex w-full items-center gap-3.5 rounded-xl px-4 py-3 text-left transition-all duration-200 border ${
+                  className={`group relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-all ${
                     active
-                      ? "border-accent/40 bg-accent/10 text-accent font-medium shadow-sm"
-                      : "border-[#e5ddd4] text-slate-500 hover:border-accent-soft/60 hover:bg-accent-soft/30 hover:text-slate-900"
+                      ? "bg-accent-soft/60 text-accent"
+                      : "text-muted hover:bg-white/60 hover:text-text"
                   }`}
                 >
-                  {/* Indicador de pestaña activa en el borde izquierdo */}
                   {active && (
-                    <div className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-accent shadow-md shadow-accent/50" />
+                    <div className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-r-full bg-accent shadow-[0_0_8px_rgba(0,144,160,0.35)]" />
                   )}
-                  
-                  {/* Icono de la pestaña */}
                   <div
-                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-all duration-200 ${
+                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-all ${
                       active
-                        ? "bg-accent text-white shadow-sm"
-                        : "bg-slate-200/60 text-slate-500 group-hover:bg-slate-200 group-hover:text-slate-700"
+                        ? "bg-accent text-white shadow-[0_2px_10px_rgba(0,144,160,0.25)]"
+                        : "bg-border/60 text-muted group-hover:bg-border"
                     }`}
                   >
                     <Icon type={item.id} />
                   </div>
-                  
-                  {/* Textos Informativos */}
                   <div className="min-w-0 flex-1">
-                    <span
-                      className={`block text-sm transition-colors ${
-                        active ? "text-slate-900 font-semibold" : "group-hover:text-slate-900"
-                      }`}
-                    >
+                    <span className={`block text-sm ${active ? "font-semibold text-accent" : "font-medium"}`}>
                       {item.label}
                     </span>
-                    <span
-                      className={`block truncate text-xs transition-colors ${
-                        active ? "text-accent" : "text-slate-400 group-hover:text-slate-500"
-                      }`}
-                    >
+                    <span className={`block truncate text-[11px] ${active ? "text-accent/60" : "text-muted/50"}`}>
                       {item.description}
                     </span>
                   </div>
@@ -169,11 +172,11 @@ export default function AdminLayout({ onLogout }: Props) {
             })}
           </nav>
 
-          {/* Botón de Cerrar Sesión inferior */}
-          <div className="border-t border-accent-soft/50 p-4 bg-[#ece5dc]/50">
+          {/* Cerrar sesión */}
+          <div className="relative border-t border-border px-4 py-4">
             <button
               onClick={onLogout}
-              className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-500 bg-red-300 px-4 py-2.5 text-sm font-medium text-slate-800 transition-all duration-200 hover:bg-red-500 hover:text-white hover:shadow-md hover:shadow-red-500/10 active:scale-[0.98]"
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-600 bg-red-600 px-4 py-2.5 text-sm font-medium text-white transition-all hover:border-red-500 hover:bg-red-500 hover:text-white active:scale-[0.98]"
             >
               <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
@@ -189,24 +192,23 @@ export default function AdminLayout({ onLogout }: Props) {
         <main className="flex min-w-0 flex-1 flex-col lg:ml-72">
           
           {/* HEADER DE LA PÁGINA */}
-          <header className="sticky top-0 z-20 border-b border-slate-200/60 bg-white/70 backdrop-blur-md">
+          <header className="sticky top-0 z-20 border-b border-border bg-bg/82 backdrop-blur-xl">
             <div className="mx-auto flex max-w-7xl flex-col gap-4 px-6 py-6 md:px-8 lg:px-10">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-wider text-accent">
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent">
                     {navigation.find((item) => item.id === activeTab)?.label}
                   </p>
-                  <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 md:text-3xl">
+                  <h1 className="mt-1 text-2xl font-bold tracking-tight text-text md:text-3xl">
                     {activeCopy.title}
                   </h1>
-                  <p className="mt-1 max-w-2xl text-sm text-slate-500">
+                  <p className="mt-1 max-w-2xl text-sm text-muted">
                     {activeCopy.description}
                   </p>
                 </div>
                 
                 <div className="flex items-center gap-2">
-                  {/* Status Badge */}
-                  <div className="flex items-center gap-2 rounded-full bg-accent-soft px-3.5 py-1.5 border border-accent-soft">
+                  <div className="flex items-center gap-2 rounded-full border border-accent/20 bg-accent-soft/60 px-3.5 py-1.5">
                     <div className="h-2 w-2 rounded-full bg-accent animate-pulse" />
                     <span className="text-xs font-medium tracking-wide text-accent">
                       Admin activo
@@ -214,7 +216,7 @@ export default function AdminLayout({ onLogout }: Props) {
                   </div>
                   <a
                     href="/"
-                    className="flex items-center gap-1.5 rounded-full border border-[#e5ddd4] bg-white px-3.5 py-1.5 text-xs font-medium text-slate-600 transition-all hover:border-accent-soft hover:text-accent hover:shadow-sm"
+                    className="flex items-center gap-1.5 rounded-full border border-border bg-white/70 px-3.5 py-1.5 text-xs font-medium text-muted transition-all hover:border-accent/30 hover:text-accent hover:shadow-sm"
                   >
                     <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
                       <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
@@ -233,10 +235,10 @@ export default function AdminLayout({ onLogout }: Props) {
                     <button
                       key={item.id}
                       onClick={() => setActiveTab(item.id)}
-                      className={`rounded-xl px-3 py-2 text-center text-sm font-medium transition-all ${
-                        active
-                          ? "bg-accent text-white font-semibold shadow-md shadow-accent/20"
-                          : "bg-white text-slate-600 hover:bg-slate-50 border border-slate-200"
+                       className={`rounded-xl px-3 py-2 text-center text-sm font-medium transition-all ${
+                         active
+                           ? "bg-accent text-white font-semibold shadow-md shadow-accent/20"
+                           : "border border-border bg-white/70 text-muted hover:border-accent/30 hover:bg-accent-soft/40 hover:text-accent"
                       }`}
                     >
                       {item.label}
@@ -248,9 +250,10 @@ export default function AdminLayout({ onLogout }: Props) {
           </header>
 
           {/* VISTAS ACTIVAS */}
-          <div className="mx-auto w-full max-w-7xl flex-1 px-6 py-8 md:px-8 lg:px-10">
+          <div className="mx-auto w-full max-w-7xl flex-1 px-6 py-8 md:px-8 lg:px-10 bg-bg">
             {activeTab === "resumen" && <AdminOverview />}
             {activeTab === "productos" && <AdminProducts />}
+            {activeTab === "modelos3d" && <AdminModels3D />}
             {activeTab === "comercial" && <AdminCommercial />}
             {activeTab === "cotizaciones" && <AdminQuotes />}
             {activeTab === "branding" && <AdminBranding />}
