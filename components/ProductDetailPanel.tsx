@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import type { Product } from "@/types/product";
 import { certificationLogos } from "@/data/catalog";
 import Visualizador3D from "@/components/Visualizador3D";
@@ -72,13 +72,19 @@ type ProductDetailPanelProps = {
   productImages: string[];
   galleryIndex: number;
   logoPreview: string | null;
-  formLogo?: string;
+  logoPosition?: string;
   logoSize: number;
   fabricCanvas: FabricCanvas | null;
   modelUrl?: string;
   modelScale?: number;
   modelPositionY?: number;
   modelRotationY?: number;
+  onColorSelect: (
+    productId: string,
+    color: string,
+    colorIndex: number,
+    totalImages: number,
+  ) => void;
   onGalleryNav: (productId: string, nextIndex: number, totalImages: number) => void;
   onLogoUpload: (file: File) => void;
   onPositionChange: (label: string) => void;
@@ -153,13 +159,14 @@ export default function ProductDetailPanel({
   productImages,
   galleryIndex,
   logoPreview,
-  formLogo,
+  logoPosition,
   logoSize,
   fabricCanvas,
   modelUrl,
   modelScale,
   modelPositionY,
   modelRotationY,
+  onColorSelect,
   onGalleryNav,
   onLogoUpload,
   onPositionChange,
@@ -175,12 +182,35 @@ export default function ProductDetailPanel({
     product.description ||
     product.extract ||
     "Prenda corporativa pensada para vestir equipos con presencia, comodidad y una terminacion consistente.";
-  const inferredGalleryColor =
-    product.colors.length === productImagesLength && product.colors[galleryIndex]
-      ? product.colors[galleryIndex]
-      : selectedColor;
-  const [modelColorOverride, setModelColorOverride] = useState<string | null>(null);
-  const modelColor = modelColorOverride || inferredGalleryColor;
+  const imageEntries = useMemo(() => {
+    const colorImages =
+      product.color_images && typeof product.color_images === "object"
+        ? product.color_images
+        : {};
+
+    return productImages.map((url, index) => {
+      const assignedColor = Object.entries(colorImages).find(([, urls]) =>
+        Array.isArray(urls) && urls.includes(url),
+      )?.[0];
+      const normalizedColor =
+        assignedColor &&
+        (product.colors.find(
+          (color) => normalizeColorName(color) === normalizeColorName(assignedColor),
+        ) ||
+          assignedColor);
+
+      return {
+        url,
+        color:
+          normalizedColor ||
+          (product.colors.length === productImagesLength ? product.colors[index] : "") ||
+          "",
+      };
+    });
+  }, [product.color_images, product.colors, productImages, productImagesLength]);
+
+  const inferredGalleryColor = imageEntries[galleryIndex]?.color || selectedColor;
+  const modelColor = inferredGalleryColor;
   const availableSizes = product.sizes && product.sizes.length > 0 ? product.sizes : DEFAULT_SIZES;
 
   const priceInfo = useMemo(() => {
@@ -209,6 +239,25 @@ export default function ProductDetailPanel({
     if (!productImagesLength) return;
     const normalizedIndex = (nextIndex + productImagesLength) % productImagesLength;
     onGalleryNav(product.id, normalizedIndex, productImagesLength);
+    const nextColor = imageEntries[normalizedIndex]?.color;
+    if (nextColor && normalizeColorName(nextColor) !== normalizeColorName(selectedColor)) {
+      const colorIndex = product.colors.findIndex(
+        (color) => normalizeColorName(color) === normalizeColorName(nextColor),
+      );
+      onColorSelect(product.id, nextColor, Math.max(colorIndex, 0), productImagesLength);
+    }
+  }
+
+  function selectColor(color: string, colorIndex: number) {
+    onColorSelect(product.id, color, colorIndex, productImagesLength);
+    const mappedIndex = imageEntries.findIndex(
+      (entry) => normalizeColorName(entry.color) === normalizeColorName(color),
+    );
+    if (mappedIndex >= 0) {
+      onGalleryNav(product.id, mappedIndex, productImagesLength);
+    } else if (colorIndex < productImagesLength) {
+      onGalleryNav(product.id, colorIndex, productImagesLength);
+    }
   }
 
   return (
@@ -231,16 +280,16 @@ export default function ProductDetailPanel({
           </div>
         </header>
 
-        <main className="mx-auto grid max-w-7xl gap-5 px-4 py-5 sm:px-6 lg:grid-cols-2 lg:px-8">
+        <main className="mx-auto grid max-w-7xl items-start gap-4 px-4 py-4 sm:px-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:px-8">
           <section className="space-y-5">
-            <div className="overflow-hidden rounded-lg border border-black/10 bg-white shadow-sm lg:h-[560px]">
-              <div className="relative h-[460px] bg-[#211c17] sm:h-[520px] lg:h-full">
+            <div className="overflow-hidden rounded-lg border border-black/10 bg-white shadow-sm lg:h-[520px]">
+              <div className="relative h-[420px] bg-white sm:h-[500px] lg:h-full">
                 {currentImage ? (
                   <Image
                     src={currentImage}
                     alt={product.name}
                     fill
-                    className="object-cover object-center"
+                    className="object-contain object-center"
                     sizes="(max-width: 1024px) 100vw, 42vw"
                     priority
                   />
@@ -287,7 +336,7 @@ export default function ProductDetailPanel({
               </div>
             </div>
 
-            <div className="rounded-lg border border-black/10 bg-white p-5 shadow-sm">
+            <div className="rounded-lg border border-black/10 bg-white p-4 shadow-sm">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="rounded-md bg-[#181512] px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-white">
                   Cod. {productCode}
@@ -296,14 +345,14 @@ export default function ProductDetailPanel({
                   {product.category}
                 </span>
               </div>
-              <h1 className="mt-4 text-3xl font-black leading-none tracking-normal sm:text-5xl">{product.name}</h1>
-              <p className="mt-4 max-w-2xl text-sm leading-7 text-[#655b50]">{productDescription}</p>
-              <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                <div className="rounded-lg border border-black/10 bg-[#181512] p-4 text-white">
+              <h1 className="mt-3 text-3xl font-black leading-none tracking-normal sm:text-4xl">{product.name}</h1>
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-[#655b50]">{productDescription}</p>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <div className="min-h-24 rounded-lg border border-black/10 bg-[#181512] p-4 text-white">
                   <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/50">Precio base</p>
                   <p className="mt-1 text-3xl font-black">${priceInfo.base.toLocaleString("es-CL")}</p>
                 </div>
-                <div className="rounded-lg border border-black/10 bg-[#f6f1ea] p-4">
+                <div className="min-h-24 rounded-lg border border-black/10 bg-[#f6f1ea] p-4">
                   <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#8b5e3c]">Mayorista</p>
                   {priceInfo.wholesale ? (
                     <p className="mt-1 text-2xl font-black">
@@ -319,7 +368,7 @@ export default function ProductDetailPanel({
 
             <div className="grid gap-3 sm:grid-cols-2">
               {technicalStats.map((stat) => (
-                <div key={stat.label} className="rounded-lg border border-black/10 bg-white p-4 shadow-sm">
+                <div key={stat.label} className="min-h-20 rounded-lg border border-black/10 bg-white p-4 shadow-sm">
                   <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#8b5e3c]">{stat.label}</p>
                   <p className="mt-2 text-sm font-black text-[#181512]">{stat.value}</p>
                 </div>
@@ -328,7 +377,7 @@ export default function ProductDetailPanel({
           </section>
 
           <section className="space-y-5">
-            <div className="rounded-lg border border-black/10 bg-white p-3 text-[#181512] shadow-sm lg:min-h-[560px]">
+            <div className="rounded-lg border border-black/10 bg-white p-3 text-[#181512] shadow-sm lg:min-h-[520px]">
               <div className="mb-3 flex flex-wrap items-start justify-between gap-3 px-2 pt-1">
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#8b5e3c]">Laboratorio visual</p>
@@ -349,13 +398,13 @@ export default function ProductDetailPanel({
                     <p className="truncate text-xs font-black text-[#181512]">{modelColor}</p>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {product.colors.map((color) => {
+                    {product.colors.map((color, index) => {
                       const selected = normalizeColorName(color) === normalizeColorName(modelColor);
                       return (
                         <button
                           key={color}
                           type="button"
-                          onClick={() => setModelColorOverride(color)}
+                          onClick={() => selectColor(color, index)}
                           title={color}
                           className={`flex h-9 min-w-9 items-center gap-2 rounded-lg border bg-white px-2.5 text-xs font-black transition ${
                             selected
@@ -384,7 +433,7 @@ export default function ProductDetailPanel({
                   garmentColor={getColorHex(modelColor)}
                   logoSrc={logoPreview}
                   onLogoUpload={onLogoUpload}
-                  activePosition={formLogo || "Pecho centro"}
+                  activePosition={logoPosition || "Pecho centro"}
                   onPositionChange={onPositionChange}
                   logoSize={logoSize}
                   onSizeChange={onSizeChange}

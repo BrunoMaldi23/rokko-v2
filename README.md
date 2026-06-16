@@ -1,36 +1,52 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ROKKO Cotizador
+
+Cotizador web para vestuario corporativo ROKKO. La app corre en Next.js sobre Vercel y usa Supabase para datos, autenticacion y archivos.
 
 ## Getting Started
 
-First, run the development server:
+Configura las variables:
+
+```bash
+cp .env.example .env.local
+```
+
+Completa:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+RESEND_API_KEY=
+```
+
+Luego inicia desarrollo:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Backend
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Todo el backend de negocio vive en Supabase:
 
-## Learn More
+- Supabase Auth para el panel admin.
+- Tablas para productos, cotizaciones, settings y modelos 3D.
+- Supabase Storage para imagenes y modelos subidos desde el admin.
 
-To learn more about Next.js, take a look at the following resources:
+El envio de emails usa el Route Handler `app/api/send-quote` en Vercel con `RESEND_API_KEY`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Deploy
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+En Vercel, configura las mismas variables de `.env.example`. No se necesita VM, Docker, MinIO, Postgres local ni `NEXT_PUBLIC_API_URL`.
 
-## Deploy on Vercel
+## Scripts
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+npm run dev
+npm run build
+npm run lint
+```
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.

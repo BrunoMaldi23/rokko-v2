@@ -9,8 +9,6 @@ import { formatRut } from "@/lib/rut";
 import { formatPhone } from "@/lib/phone";
 import { fetchBrandSettings, fetchCommercialSettings } from "@/lib/settings";
 import { printElement } from "@/lib/print";
-import { findColorImages } from "@/lib/colorLookup";
-import { findRealGLB } from "@/lib/realGLBMap";
 import {
   detectBaseGarmentType,
   getDetectedBaseModelUrl,
@@ -194,25 +192,18 @@ export default function QuoteBuilder({ initialProducts }: Props) {
   formsRef.current = forms;
   const productsRef = useRef(initialProducts);
   productsRef.current = initialProducts;
-  const glbFallbacksRef = useRef<Record<string, string | null>>({});
 
   const handleColorSelect = useCallback(
     (
       productId: string,
       color: string,
       _colorIndex: number,
-      totalImages: number,
+      _totalImages: number,
     ) => {
       setForms((prev) => ({
         ...prev,
         [productId]: { ...(prev[productId] || {}), color },
       }));
-      if (totalImages > 1) {
-        setGalleryIndexes((prev) => ({
-          ...prev,
-          [productId]: 0,
-        }));
-      }
     },
     [],
   );
@@ -567,47 +558,60 @@ export default function QuoteBuilder({ initialProducts }: Props) {
           })}
         </div>
 
-        <aside className="sticky top-28 h-fit overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-b from-[#1a1a1e] to-[#121214] text-white shadow-2xl">
-          <div className="relative overflow-hidden p-6">
-            <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/[0.03] blur-3xl" />
+        <aside className="sticky top-28 h-fit overflow-hidden rounded-2xl border border-[#0b3137]/15 bg-[#15181b] text-white shadow-lg shadow-slate-900/10">
+          <div className="relative overflow-hidden border-b border-white/[0.08] p-6">
+            <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-accent via-accent-light to-[#7dd3fc]" />
             <div className="relative">
               <div className="flex items-center justify-between gap-4">
-                <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-white/40">
+                <div className="min-w-0">
+                  <p className="text-[10px] font-black uppercase tracking-[0.24em] text-accent-light">
                     Carrito
                   </p>
-                  <h2 className="mt-1 text-lg font-semibold tracking-tight">
+                  <h2 className="mt-1 text-lg font-black tracking-tight">
                     Resumen del pedido
                   </h2>
                 </div>
-                {cart.length > 0 && (
-                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-[11px] font-semibold text-white/80">
+                <div className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/[0.07] ring-1 ring-white/10">
+                  <svg
+                    className="h-5 w-5 text-white/80"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={1.8}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M2.25 3h1.5l1.8 12.1a2 2 0 001.98 1.7h8.94a2 2 0 001.96-1.6l1.07-5.35H6.25M8.25 21a.75.75 0 100-1.5.75.75 0 000 1.5zm8 0a.75.75 0 100-1.5.75.75 0 000 1.5z"
+                    />
+                  </svg>
+                  <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-1 text-[10px] font-black text-white shadow-lg shadow-accent/25">
                     {cart.length}
                   </span>
-                )}
+                </div>
               </div>
               <div className="mt-5 grid grid-cols-3 gap-2">
-                <div className="rounded-xl bg-white/[0.06] p-3 ring-1 ring-white/[0.06]">
-                  <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-white/35">
+                <div className="rounded-xl bg-white/[0.07] p-3 ring-1 ring-white/[0.08]">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-white/45">
                     Items
                   </p>
-                  <p className="mt-0.5 text-lg font-semibold tracking-tight">
+                  <p className="mt-1 text-xl font-black tracking-tight">
                     {cart.length}
                   </p>
                 </div>
-                <div className="rounded-xl bg-white/[0.06] p-3 ring-1 ring-white/[0.06]">
-                  <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-white/35">
+                <div className="rounded-xl bg-white/[0.07] p-3 ring-1 ring-white/[0.08]">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-white/45">
                     Unid.
                   </p>
-                  <p className="mt-0.5 text-lg font-semibold tracking-tight">
+                  <p className="mt-1 text-xl font-black tracking-tight">
                     {cartUnits}
                   </p>
                 </div>
-                <div className="rounded-xl bg-white/[0.06] p-3 ring-1 ring-white/[0.06]">
-                  <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-white/35">
+                <div className="rounded-xl bg-white/[0.07] p-3 ring-1 ring-white/[0.08]">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-white/45">
                     Colores
                   </p>
-                  <p className="mt-0.5 text-lg font-semibold tracking-tight">
+                  <p className="mt-1 text-xl font-black tracking-tight">
                     {cartColors}
                   </p>
                 </div>
@@ -617,10 +621,10 @@ export default function QuoteBuilder({ initialProducts }: Props) {
 
           <div className="px-6 pb-2">
             {cart.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-white/[0.08] bg-white/[0.03] p-5 text-center">
-                <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-white/[0.06]">
+              <div className="rounded-xl border border-dashed border-accent/25 bg-accent/[0.05] p-5 text-center">
+                <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-white/[0.08]">
                   <svg
-                    className="h-5 w-5 text-white/30"
+                    className="h-5 w-5 text-accent-light"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -633,10 +637,10 @@ export default function QuoteBuilder({ initialProducts }: Props) {
                     />
                   </svg>
                 </div>
-                <h3 className="text-sm font-semibold text-white/70">
+                <h3 className="text-sm font-black text-white/85">
                   Tu carrito está vacío
                 </h3>
-                <p className="mt-1 text-xs leading-relaxed text-white/35">
+                <p className="mt-1 text-xs leading-relaxed text-white/45">
                   Selecciona colores, tallas y agrega prendas para armar tu
                   cotización.
                 </p>
@@ -646,11 +650,11 @@ export default function QuoteBuilder({ initialProducts }: Props) {
                 {cart.map((item) => (
                   <div
                     key={item.id}
-                    className="group rounded-xl bg-white/[0.04] p-3.5 ring-1 ring-white/[0.06] transition-all hover:bg-white/[0.07]"
+                    className="group rounded-xl bg-white/[0.06] p-3.5 ring-1 ring-white/[0.08] transition-all hover:bg-white/[0.09]"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0 flex-1">
-                        <h3 className="truncate text-sm font-semibold text-white/90">
+                        <h3 className="truncate text-sm font-black text-white/95">
                           {item.product}
                         </h3>
                         <p className="mt-0.5 text-xs font-medium text-white/40">
@@ -664,7 +668,7 @@ export default function QuoteBuilder({ initialProducts }: Props) {
                         </p>
                       </div>
                       <div className="shrink-0 text-right">
-                        <p className="text-sm font-semibold text-white/90">
+                        <p className="text-sm font-black text-white">
                           ${item.subtotal.toLocaleString("es-CL")}
                         </p>
                         <p className="text-[11px] text-white/30">
@@ -684,17 +688,17 @@ export default function QuoteBuilder({ initialProducts }: Props) {
             )}
           </div>
 
-          <div className="border-t border-white/[0.06] px-6 py-5">
+          <div className="border-t border-white/[0.08] px-6 py-5">
             <div className="flex items-end justify-between gap-4">
-              <span className="text-sm text-white/40">Total estimado</span>
-              <strong className="text-2xl font-semibold tracking-tight text-white">
+              <span className="text-sm font-semibold text-white/50">Total estimado</span>
+              <strong className="text-2xl font-black tracking-tight text-white">
                 ${total.toLocaleString("es-CL")}
               </strong>
             </div>
             <button
               onClick={openQuoteModal}
               disabled={cart.length === 0}
-              className="mt-4 w-full rounded-xl bg-white px-5 py-3.5 text-sm font-semibold text-[#121214] transition-all hover:bg-white/90 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-30"
+              className="mt-4 w-full rounded-xl bg-accent px-5 py-3.5 text-sm font-black text-white shadow-lg shadow-accent/20 transition-all hover:bg-accent-deep active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-white/15 disabled:text-white/35 disabled:shadow-none"
             >
               Generar cotización
             </button>
@@ -715,60 +719,31 @@ export default function QuoteBuilder({ initialProducts }: Props) {
             "Sin color"
           }
           productImages={(() => {
-            const selectedColor =
-              forms[selectedProduct.id]?.color ||
-              selectedProduct.colors?.[0] ||
-              "";
-            const colorImgs = findColorImages(
-              selectedProduct.color_images,
-              selectedColor,
-            );
-            const imgs =
-              colorImgs && colorImgs.length > 0
-                ? colorImgs
-                : getProductImages(selectedProduct);
+            const imgs = getProductImages(selectedProduct);
             return imgs.length > 0 ? imgs : [""];
           })()}
           galleryIndex={galleryIndexes[selectedProduct.id] || 0}
           logoPreview={logoPreview}
-          formLogo={forms[selectedProduct.id]?.logo}
+          logoPosition={forms[selectedProduct.id]?.logoPosition}
           logoSize={logoSize}
           fabricCanvas={fabricCanvas}
           modelUrl={(() => {
             const dbUrl = selectedProduct.model_3d_url;
             if (dbUrl) return dbUrl;
-            const fbKey = `${selectedProduct.id}|${selectedProduct.category}|${selectedProduct.short_name}|${selectedProduct.name}`;
-            const fb = glbFallbacksRef.current[fbKey];
-            if (fb === undefined) {
-              glbFallbacksRef.current[fbKey] =
-                findRealGLB(
-                  selectedProduct.category,
-                  selectedProduct.short_name,
-                  selectedProduct.name,
-                  selectedProduct.colors,
-                ) ?? null;
-            }
-            return glbFallbacksRef.current[fbKey] || undefined;
+            return undefined;
           })()}
           modelScale={(() => {
             if (selectedProduct.model_3d_scale != null)
               return selectedProduct.model_3d_scale;
-            const dbUrl = selectedProduct.model_3d_url;
-            if (dbUrl) return undefined;
-            const fbKey = `${selectedProduct.id}|${selectedProduct.category}|${selectedProduct.short_name}|${selectedProduct.name}`;
-            const fb = glbFallbacksRef.current[fbKey];
-            return fb ? 1.8 : undefined;
+            return undefined;
           })()}
           modelPositionY={(() => {
             if (selectedProduct.model_3d_position_y != null)
               return selectedProduct.model_3d_position_y;
-            const dbUrl = selectedProduct.model_3d_url;
-            if (dbUrl) return undefined;
-            const fbKey = `${selectedProduct.id}|${selectedProduct.category}|${selectedProduct.short_name}|${selectedProduct.name}`;
-            const fb = glbFallbacksRef.current[fbKey];
-            return fb ? 0.85 : undefined;
+            return undefined;
           })()}
           modelRotationY={selectedProduct.model_3d_rotation_y ?? undefined}
+          onColorSelect={handleColorSelect}
           onGalleryNav={handleGalleryNav}
           onLogoUpload={(file) => {
             if (logoPreview) URL.revokeObjectURL(logoPreview);
@@ -1690,9 +1665,6 @@ const ProductCard = memo(function ProductCard({
   onViewDetails: (product: Product) => void;
 }) {
   const allProductImages = getProductImages(product);
-  const colorImages = findColorImages(product.color_images, selectedColor);
-  const productImages =
-    colorImages && colorImages.length > 0 ? colorImages : allProductImages;
   const productSizes = product.sizes?.length ? product.sizes : sizes;
   const description =
     product.extract ||
@@ -1718,33 +1690,37 @@ const ProductCard = memo(function ProductCard({
     ]),
   );
 
-  // Build flat image list across all colors for gallery sync
   const imageEntries = useMemo(() => {
+    const colors = product.colors || [];
     const ci = product.color_images;
-    if (ci && typeof ci === "object") {
-      const keys = Object.keys(ci).filter(
-        (k) => Array.isArray(ci[k]) && ci[k].length > 0,
-      );
-      if (keys.length > 0) {
-        const entries: { url: string; color: string }[] = [];
-        for (const color of keys) {
-          for (const url of ci[color]) {
-            entries.push({ url, color });
-          }
-        }
-        return entries;
-      }
-    }
-    return allProductImages.map((url) => ({ url, color: "" }));
-  }, [product.color_images, allProductImages]);
+    const colorImages = ci && typeof ci === "object" ? ci : {};
 
-  const hasColorMapping =
-    imageEntries.length > 0 && imageEntries[0].color !== "";
-  const displayImages = hasColorMapping
-    ? imageEntries.map((e) => e.url)
-    : productImages;
-  const activeImageIndex = Math.min(galleryIndex, displayImages.length - 1);
+    return allProductImages.map((url) => {
+      const assignedColor = Object.entries(colorImages).find(([, urls]) =>
+        Array.isArray(urls) && urls.includes(url),
+      )?.[0];
+      const normalizedColor =
+        assignedColor &&
+        (colors.find(
+          (color) => normalizeColorName(color) === normalizeColorName(assignedColor),
+        ) ||
+          assignedColor);
+
+      return { url, color: normalizedColor || "" };
+    });
+  }, [product.color_images, product.colors, allProductImages]);
+
+  const hasColorMapping = imageEntries.some((entry) => entry.color !== "");
+  const displayImages = imageEntries.map((e) => e.url);
+  const activeImageIndex =
+    displayImages.length > 0 ? Math.min(galleryIndex, displayImages.length - 1) : 0;
   const activeImage = displayImages[activeImageIndex] || "";
+  const activeGalleryColor =
+    hasColorMapping && imageEntries[activeImageIndex]?.color
+      ? imageEntries[activeImageIndex].color
+      : selectedColor;
+  const activeColorHex = getColorHex(activeGalleryColor);
+  const selectedColorHex = getColorHex(selectedColor);
 
   const handleGallery = useCallback(
     (nextIndex: number) => {
@@ -1753,8 +1729,13 @@ const ProductCard = memo(function ProductCard({
       onGalleryNav(pid, clamped, total);
       if (hasColorMapping) {
         const entryColor = imageEntries[clamped]?.color;
-        if (entryColor && entryColor !== selectedColor) {
-          const ci = (product.colors || []).indexOf(entryColor);
+        if (
+          entryColor &&
+          normalizeColorName(entryColor) !== normalizeColorName(selectedColor)
+        ) {
+          const ci = (product.colors || []).findIndex(
+            (color) => normalizeColorName(color) === normalizeColorName(entryColor),
+          );
           if (ci >= 0) onColorSelect(pid, entryColor, ci, total);
         }
       }
@@ -1774,9 +1755,15 @@ const ProductCard = memo(function ProductCard({
   const handleColorPick = useCallback(
     (color: string, colorIndex: number) => {
       onColorSelect(pid, color, colorIndex, displayImages.length);
-      if (hasColorMapping) {
-        const idx = imageEntries.findIndex((e) => e.color === color);
-        if (idx >= 0) onGalleryNav(pid, idx, displayImages.length);
+      const mappedIndex = imageEntries.findIndex(
+        (entry) => normalizeColorName(entry.color) === normalizeColorName(color),
+      );
+      if (mappedIndex >= 0) {
+        onGalleryNav(pid, mappedIndex, displayImages.length);
+        return;
+      }
+      if (!hasColorMapping && colorIndex < displayImages.length) {
+        onGalleryNav(pid, colorIndex, displayImages.length);
       }
     },
     [
@@ -1809,19 +1796,19 @@ const ProductCard = memo(function ProductCard({
 
   return (
     <div
-      className="animate-fade-in-up group/card overflow-hidden rounded-2xl border border-neutral-200/60 bg-gradient-to-br from-white via-white to-accent-soft/10 shadow-xs transition-all duration-300 hover:shadow-md hover:border-accent/20"
+      className="animate-fade-in-up group/card overflow-hidden rounded-2xl border border-[#dfe4e2] bg-gradient-to-br from-[#fbfaf7] via-[#f7f7f2] to-[#eef7f6] shadow-sm shadow-slate-900/5 transition-colors duration-200 hover:border-accent/30"
       style={{ animationDelay: `${animationDelay}ms` }}
     >
       <div className="grid gap-0 lg:grid-cols-[300px_1fr]">
         {/* ─── IMAGE ─── */}
-        <div className="relative flex aspect-[4/5] items-center justify-center overflow-hidden bg-gradient-to-b from-[#faf8f6] to-[#f4f2ef] lg:aspect-auto lg:min-h-[340px]">
+        <div className="relative flex aspect-[4/5] items-center justify-center overflow-hidden border-r border-neutral-100 bg-white lg:aspect-auto lg:min-h-[340px]">
           <Image
             unoptimized
             src={activeImage || "/rokko.png"}
             alt={product.name}
             width={260}
             height={300}
-            className="relative h-auto max-h-[85%] w-auto max-w-[85%] object-contain transition-all duration-500 group-hover/card:scale-105"
+            className="relative h-auto max-h-[84%] w-auto max-w-[84%] object-contain"
           />
           {logoPreview && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -1843,7 +1830,7 @@ const ProductCard = memo(function ProductCard({
               <button
                 type="button"
                 onClick={() => handleGallery(activeImageIndex - 1)}
-                className="absolute left-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-white/70 text-neutral-500 opacity-0 shadow-xs transition-all duration-200 hover:bg-accent hover:text-white group-hover/card:opacity-100 backdrop-blur-sm"
+                className="absolute left-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white text-neutral-700 opacity-0 shadow-sm ring-1 ring-black/5 transition-colors duration-200 hover:bg-accent hover:text-white group-hover/card:opacity-100"
                 aria-label="Imagen anterior"
               >
                 <svg
@@ -1863,7 +1850,7 @@ const ProductCard = memo(function ProductCard({
               <button
                 type="button"
                 onClick={() => handleGallery(activeImageIndex + 1)}
-                className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-white/70 text-neutral-500 opacity-0 shadow-xs transition-all duration-200 hover:bg-accent hover:text-white group-hover/card:opacity-100 backdrop-blur-sm"
+                className="absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white text-neutral-700 opacity-0 shadow-sm ring-1 ring-black/5 transition-colors duration-200 hover:bg-accent hover:text-white group-hover/card:opacity-100"
                 aria-label="Imagen siguiente"
               >
                 <svg
@@ -1880,13 +1867,14 @@ const ProductCard = memo(function ProductCard({
                   />
                 </svg>
               </button>
-              <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1.5 rounded-full bg-white/70 px-2 py-1 shadow-xs backdrop-blur-sm">
+              <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1.5 rounded-full bg-white px-2.5 py-1.5 shadow-sm ring-1 ring-black/5">
                 {displayImages.map((image, index) => (
                   <button
                     key={`${image}-${index}`}
                     type="button"
                     onClick={() => handleGallery(index)}
-                    className={`h-1.5 rounded-full transition-all duration-300 ${index === activeImageIndex ? "w-5 bg-accent" : "w-1.5 bg-neutral-300 hover:bg-neutral-400"}`}
+                    className={`h-1.5 rounded-full transition-all duration-300 ${index === activeImageIndex ? "w-6" : "w-1.5 bg-neutral-300 hover:bg-neutral-400"}`}
+                    style={index === activeImageIndex ? { backgroundColor: activeColorHex } : undefined}
                     aria-label={`Ver imagen ${index + 1}`}
                   />
                 ))}
@@ -1896,21 +1884,21 @@ const ProductCard = memo(function ProductCard({
 
           {/* Badge */}
           {hasBaseModel && (
-            <span className="absolute left-3 top-3 rounded-md bg-accent-soft px-2 py-0.5 text-[10px] font-medium text-accent backdrop-blur-sm">
+            <span className="absolute left-3 top-3 rounded-md bg-white px-2 py-0.5 text-[10px] font-black text-accent shadow-sm ring-1 ring-accent/10">
               3D
             </span>
           )}
         </div>
 
         {/* ─── CONTENT ─── */}
-        <div className="flex flex-col p-5 sm:p-6">
+        <div className="flex flex-col bg-white/45 p-5 sm:p-6">
           {/* Header */}
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0 flex-1">
-              <p className="text-[10px] font-medium uppercase tracking-[0.15em] text-accent">
+              <p className="text-[10px] font-black uppercase tracking-[0.15em] text-accent">
                 {product.short_name}
               </p>
-              <h2 className="mt-1 text-lg font-semibold leading-snug text-neutral-900 sm:text-xl">
+              <h2 className="mt-1 text-lg font-black leading-snug text-neutral-950 sm:text-xl">
                 {product.name}
               </h2>
               {description && (
@@ -1920,8 +1908,8 @@ const ProductCard = memo(function ProductCard({
               )}
             </div>
             <div className="shrink-0 text-right">
-              <p className="text-[10px] font-medium text-neutral-400">Desde</p>
-              <p className="text-lg font-semibold text-accent">
+              <p className="text-[10px] font-bold text-neutral-500">Desde</p>
+              <p className="text-lg font-black text-accent">
                 ${product.price.toLocaleString("es-CL")}
               </p>
               <p className="text-[9px] text-neutral-400">IVA incl.</p>
@@ -1930,13 +1918,13 @@ const ProductCard = memo(function ProductCard({
 
           {/* Tags */}
           <div className="mt-3 flex flex-wrap gap-1">
-            <span className="rounded-md bg-neutral-100 px-2 py-0.5 text-[10px] font-medium text-neutral-500">
+            <span className="rounded-md border border-neutral-200 bg-white/70 px-2 py-0.5 text-[10px] font-bold text-neutral-600">
               {baseGarmentType}
             </span>
             {(product.technologies || []).slice(0, 3).map((tech) => (
               <span
                 key={tech}
-                className="rounded-md bg-neutral-100 px-2 py-0.5 text-[10px] font-medium text-neutral-500"
+                className="rounded-md border border-neutral-200 bg-white/70 px-2 py-0.5 text-[10px] font-bold text-neutral-600"
               >
                 {tech}
               </span>
@@ -1944,17 +1932,22 @@ const ProductCard = memo(function ProductCard({
           </div>
 
           {/* Color + Logo */}
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            <div>
-              <label className="mb-2 flex items-center gap-1.5 text-[11px] font-medium text-neutral-500">
+          <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_180px]">
+            <div className="rounded-xl border border-[#e3ded6] bg-white/70 p-3 shadow-sm shadow-slate-900/[0.03]">
+              <label className="mb-2 flex items-center justify-between gap-2 text-[11px] font-black text-neutral-700">
                 Color
-                <span className="rounded bg-neutral-100 px-1.5 py-0.5 text-[10px] text-neutral-600 capitalize">
-                  {selectedColor}
+                <span className="inline-flex min-w-0 items-center gap-1.5 rounded-full border border-neutral-200 bg-[#f7f4ef] px-2 py-1 text-[10px] font-black text-neutral-700 capitalize">
+                  <span
+                    className="h-2.5 w-2.5 shrink-0 rounded-full ring-1 ring-black/10"
+                    style={{ backgroundColor: selectedColorHex }}
+                  />
+                  <span className="truncate">{selectedColor}</span>
                 </span>
               </label>
-              <div className="flex flex-wrap gap-1.5">
+              <div className="flex flex-wrap gap-2">
                 {(product.colors || []).map((color, colorIndex) => {
-                  const selected = selectedColor === color;
+                  const selected =
+                    normalizeColorName(selectedColor) === normalizeColorName(color);
                   const hex = getColorHex(color);
                   const rc = ringColor(hex);
                   return (
@@ -1962,48 +1955,54 @@ const ProductCard = memo(function ProductCard({
                       key={color}
                       onClick={() => handleColorPick(color, colorIndex)}
                       title={color}
-                      className={`h-6 w-6 rounded-full transition-all duration-200 hover:scale-110 ${selected ? "" : "ring-1 ring-black/8"}`}
+                      aria-label={`Seleccionar color ${color}`}
+                      aria-pressed={selected}
+                      className={`relative h-7 w-7 rounded-full transition-colors duration-200 ${selected ? "shadow-md" : "ring-1 ring-black/10"}`}
                       style={{
                         backgroundColor: hex,
                         ...(selected
                           ? {
                               outline: `2.5px solid ${rc}`,
-                              outlineOffset: "2px",
+                              outlineOffset: "3px",
                             }
                           : {}),
                       }}
-                    />
+                    >
+                      {selected && (
+                        <span className="absolute inset-1 rounded-full border border-white/80" />
+                      )}
+                    </button>
                   );
                 })}
               </div>
             </div>
-            <div className="rounded-lg border border-accent-soft/60 bg-accent-soft/30 p-3">
-              <p className="text-[10px] font-medium text-accent">
+            <div className="rounded-xl border border-accent/15 bg-accent-soft/45 p-3 shadow-sm shadow-accent/5">
+              <p className="text-[10px] font-black uppercase tracking-[0.08em] text-accent">
                 Logo incluido
               </p>
-              <p className="mt-0.5 text-xs text-accent-deep/70">
+              <p className="mt-1 text-xs font-semibold text-accent-deep/75">
                 Pecho · Manga · Espalda
               </p>
             </div>
           </div>
 
           {/* Sizes */}
-          <div className="mt-4">
+          <div className="mt-4 rounded-xl border border-[#ddd8d0] bg-[#fbfaf7]/80 p-3 shadow-sm shadow-slate-900/[0.03]">
             <div className="mb-2 flex items-center justify-between gap-3">
-              <label className="text-[11px] font-medium text-neutral-500">
+              <label className="text-[11px] font-black uppercase tracking-[0.08em] text-neutral-700">
                 Tallas
               </label>
-              <span className="rounded-md bg-accent-soft px-2 py-0.5 text-[10px] font-medium text-accent">
+              <span className="rounded-full bg-accent px-2.5 py-1 text-[10px] font-black text-white shadow-sm shadow-accent/20">
                 {selectedUnits} und.
               </span>
             </div>
-            <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-7">
+            <div className="grid grid-cols-4 gap-2 sm:grid-cols-7">
               {sizes.map((size) => {
                 const isAvail = productSizes.includes(size);
                 const val = formSizes[size];
                 return (
                   <div key={size}>
-                    <label className="mb-0.5 block text-center text-[10px] font-medium text-neutral-400">
+                    <label className={`mb-1 block text-center text-[10px] font-black ${isAvail ? "text-neutral-600" : "text-neutral-300"}`}>
                       {size}
                     </label>
                     <input
@@ -2013,7 +2012,7 @@ const ProductCard = memo(function ProductCard({
                       disabled={!isAvail}
                       value={val ?? ""}
                       onChange={(e) => onSizeUpdate(pid, size, e.target.value)}
-                      className={`h-8 w-full rounded-md border text-center text-xs outline-none transition-all focus:border-accent focus:ring-1 focus:ring-accent/20 ${isAvail ? "border-neutral-200 bg-white text-neutral-700" : "border-neutral-100 bg-neutral-50 text-neutral-300"}`}
+                      className={`h-9 w-full rounded-lg border text-center text-sm font-black outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent/15 ${isAvail ? "border-[#d3d7d8] bg-white text-neutral-900 shadow-inner shadow-slate-900/[0.02]" : "border-neutral-100 bg-neutral-100/70 text-neutral-300"}`}
                     />
                   </div>
                 );
@@ -2022,16 +2021,29 @@ const ProductCard = memo(function ProductCard({
           </div>
 
           {/* Actions */}
-          <div className="mt-auto flex items-center gap-2 pt-4">
+          <div className="mt-auto grid grid-cols-[minmax(0,1fr)_112px] items-center gap-2.5 pt-4">
             <button
               onClick={() => onAddToCart(pid)}
-              className="flex-1 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white transition-all hover:bg-accent-deep active:scale-[0.97]"
+              className="flex h-11 items-center justify-center gap-2 rounded-xl bg-accent px-4 text-sm font-black text-white shadow-md shadow-accent/10 transition-colors hover:bg-accent-deep"
             >
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 5v14m7-7H5"
+                />
+              </svg>
               Agregar al pedido
             </button>
             <button
               onClick={() => onViewDetails(product)}
-              className="flex items-center gap-1.5 rounded-lg border border-neutral-200 bg-white px-4 py-2 text-sm font-medium text-neutral-600 transition-all hover:border-accent/40 hover:text-accent"
+              className="flex h-11 items-center justify-center gap-1.5 rounded-xl border border-[#cfd8d9] bg-white/85 px-4 text-sm font-black text-neutral-700 shadow-sm shadow-slate-900/[0.03] transition-colors hover:border-accent/45 hover:bg-white hover:text-accent"
             >
               <svg
                 className="h-3.5 w-3.5"

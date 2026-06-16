@@ -1,6 +1,7 @@
 import { supabase, hasSupabaseConfig } from "@/lib/supabaseClient";
 import { deleteProductImages } from "@/lib/storage";
 import type { Product } from "@/types/product";
+import { normalizeProductModelUrl } from "@/lib/baseModels";
 
 type AdminProductInput = Partial<Omit<Product, "id">>;
 
@@ -25,6 +26,10 @@ function normalizeProductInput(product: AdminProductInput) {
     extract: product.extract ?? null,
     image: product.image ?? null,
     color_images: product.color_images ?? {},
+    model_3d_url: product.model_3d_url ?? null,
+    model_3d_scale: product.model_3d_scale ?? 1,
+    model_3d_position_y: product.model_3d_position_y ?? 0,
+    model_3d_rotation_y: product.model_3d_rotation_y ?? 0,
     price: Number(product.price || 0),
     wholesale_price: product.wholesale_price ?? null,
     wholesale_from: product.wholesale_from ?? null,
@@ -35,6 +40,18 @@ function normalizeProductInput(product: AdminProductInput) {
     technologies: product.technologies || [],
     certifications: product.certifications || [],
     active: product.active ?? true,
+  };
+}
+
+function normalizeLoadedProductModel(product: Product): Product {
+  return {
+    ...product,
+    model_3d_url: normalizeProductModelUrl(product.model_3d_url, [
+      product.category,
+      product.slug,
+      product.short_name,
+      product.name,
+    ]),
   };
 }
 
@@ -55,7 +72,7 @@ export async function getAdminProducts() {
     return [];
   }
 
-  return (data || []) as Product[];
+  return ((data || []) as Product[]).map(normalizeLoadedProductModel);
 }
 
 export async function createAdminProduct(product: AdminProductInput) {

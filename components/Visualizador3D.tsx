@@ -7,9 +7,10 @@ import {
   useMemo,
   useState,
   useEffect,
+  useCallback,
   Suspense,
 } from "react";
-import { Canvas } from "@react-three/fiber";
+import { Canvas, useFrame } from "@react-three/fiber";
 import {
   OrbitControls,
   Decal,
@@ -17,7 +18,7 @@ import {
 } from "@react-three/drei";
 import type { Canvas as FabricCanvas } from "fabric";
 import { getDecalCoords, getDecalPositionLabels } from "@/lib/garmentMap";
-import { detectBaseGarmentType, getBaseModelUrl } from "@/lib/baseModels";
+import { detectBaseGarmentType, getBaseModelUrl, isLegacyProductModelUrl } from "@/lib/baseModels";
 import { useFabricToThreeSync } from "@/hooks/useFabricToThreeSync";
 import { useDebugFlags } from "@/lib/useDebugFlags";
 import { SceneErrorBoundary } from "@/components/SceneErrorBoundary";
@@ -268,8 +269,6 @@ function FittedGarment({
       );
     }
 
-    console.log(`[FittedGarment] extracted ${newPos.length/3} verts, ${newIdx.length/3} tris, Y:[${minY.toFixed(3)}-${maxY.toFixed(3)}], X:[${minX.toFixed(3)}-${maxX.toFixed(3)}], srcVerts:${vCount}, yMin:${yMin}, yMax:${yMax}`);
-
     const result = new THREE.BufferGeometry();
     result.setAttribute("position", new THREE.Float32BufferAttribute(newPos, 3));
     if (newNorm.length) {
@@ -339,6 +338,8 @@ function ProductGLB({
   url,
   color,
   fabricTexture,
+  tintTextureWithColor = false,
+  textureAllMeshes = false,
   scale = 1,
   positionY = 0,
   rotationY = 0,
@@ -347,15 +348,108 @@ function ProductGLB({
   url: string;
   color?: string;
   fabricTexture?: THREE.Texture | null;
+  tintTextureWithColor?: boolean;
+  textureAllMeshes?: boolean;
   scale?: number;
   positionY?: number;
   rotationY?: number;
   onMeshReady?: (m: THREE.Mesh) => void;
 }) {
   const gltf = useGLTF(url);
+
+  const pickPrimaryMesh = useCallback((root: THREE.Object3D) => {
+    let bestMesh: THREE.Mesh | null = null;
+    let bestScore = -Infinity;
+
+    root.traverse((child) => {
+      if (!(child instanceof THREE.Mesh)) return;
+      const geometry = child.geometry as THREE.BufferGeometry | undefined;
+      const position = geometry?.attributes.position;
+      if (!geometry || !position) return;
+
+      geometry.computeBoundingBox();
+      const box = geometry.boundingBox;
+      const size = box ? box.getSize(new THREE.Vector3()) : new THREE.Vector3();
+      const vertexCount = position.count || 0;
+      const score = vertexCount * Math.max(size.x, 0.01) * Math.max(size.y, 0.01);
+
+      if (score > bestScore) {
+        bestScore = score;
+        bestMesh = child;
+      }
+    });
+
+    return bestMesh;
+  }, []);
+
+  const pickTextureMeshes = useCallback((root: THREE.Object3D) => {
+    const scored: Array<{ mesh: THREE.Mesh; score: number; size: THREE.Vector3 }> = [];
+    let bestScore = -Infinity;
+
+    root.traverse((child) => {
+      if (!(child instanceof THREE.Mesh)) return;
+      const geometry = child.geometry as THREE.BufferGeometry | undefined;
+      const position = geometry?.attributes.position;
+      if (!geometry || !position) return;
+
+      geometry.computeBoundingBox();
+      const box = geometry.boundingBox;
+      const size = box ? box.getSize(new THREE.Vector3()) : new THREE.Vector3();
+      const vertexCount = position.count || 0;
+      const score = vertexCount * Math.max(size.x, 0.01) * Math.max(size.y, 0.01);
+
+      scored.push({ mesh: child, score, size });
+      bestScore = Math.max(bestScore, score);
+    });
+
+    const targets = new Set<THREE.Mesh>();
+    for (const item of scored) {
+      const isMainPanel = item.score >= bestScore * 0.18;
+      const isSleeveLike =
+        item.score >= bestScore * 0.045 &&
+        item.size.x >= 0.08 &&
+        item.size.y >= 0.12;
+      const isTrimLike =
+        item.score >= bestScore * 0.012 &&
+        item.size.x >= 0.05 &&
+        item.size.y >= 0.025;
+
+      if (isMainPanel || isSleeveLike || isTrimLike) {
+        targets.add(item.mesh);
+      }
+    }
+
+    return targets;
+  }, []);
+
+  const applyPlanarGarmentUv = useCallback((geometry: THREE.BufferGeometry) => {
+    const position = geometry.attributes.position;
+    if (!position) return;
+
+    geometry.computeBoundingBox();
+    const box = geometry.boundingBox;
+    if (!box) return;
+
+    const width = box.max.x - box.min.x || 1;
+    const height = box.max.y - box.min.y || 1;
+    const uv: number[] = [];
+
+    for (let i = 0; i < position.count; i += 1) {
+      const x = position.getX(i);
+      const y = position.getY(i);
+      uv.push(
+        THREE.MathUtils.clamp((x - box.min.x) / width, 0, 1),
+        THREE.MathUtils.clamp((y - box.min.y) / height, 0, 1),
+      );
+    }
+
+    geometry.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2));
+  }, []);
+
   const scene = useMemo(() => {
     const cloned = gltf.scene.clone(true);
     const colorObj = color ? new THREE.Color(color) : null;
+    const textureTargets = fabricTexture && !textureAllMeshes ? pickTextureMeshes(cloned) : new Set<THREE.Mesh>();
 
     cloned.traverse((child) => {
       if (child instanceof THREE.Mesh) {
@@ -364,26 +458,49 @@ function ProductGLB({
           | undefined;
         const geometry = child.geometry.clone();
         geometry.deleteAttribute("color");
+        const shouldTextureMesh = Boolean(
+          fabricTexture &&
+            (textureAllMeshes ||
+              textureTargets.has(child))
+        );
+        if (shouldTextureMesh) {
+          applyPlanarGarmentUv(geometry);
+        }
         child.geometry = geometry;
         const mat = new THREE.MeshStandardMaterial({
-          color: colorObj || "#ffffff",
+          color: colorObj || sourceMaterial?.color || "#ffffff",
           roughness: 0.54,
           metalness: 0,
           envMapIntensity: 1.35,
           side: THREE.DoubleSide,
+          map: sourceMaterial?.map || null,
           normalMap: sourceMaterial?.normalMap || null,
+          roughnessMap: sourceMaterial?.roughnessMap || null,
+          metalnessMap: sourceMaterial?.metalnessMap || null,
+          aoMap: sourceMaterial?.aoMap || null,
+          alphaMap: sourceMaterial?.alphaMap || null,
           normalScale: new THREE.Vector2(0.65, 0.65),
+          transparent: sourceMaterial?.transparent || false,
+          opacity: sourceMaterial?.opacity ?? 1,
+          alphaTest: sourceMaterial?.alphaTest ?? 0,
         });
         mat.toneMapped = true;
         child.renderOrder = 1;
 
-        if (fabricTexture) {
-          mat.map = fabricTexture;
-          mat.color.set(0xffffff);
+        if (shouldTextureMesh) {
+          mat.map = fabricTexture ?? null;
+          if (tintTextureWithColor && colorObj) {
+            mat.color.copy(colorObj);
+          } else {
+            mat.color.set(0xffffff);
+          }
           mat.needsUpdate = true;
         } else if (colorObj) {
           mat.color.copy(colorObj);
           mat.emissive.set(colorObj).multiplyScalar(0.035);
+          mat.needsUpdate = true;
+        } else if (sourceMaterial?.map) {
+          mat.color.set(0xffffff);
           mat.needsUpdate = true;
         }
 
@@ -391,15 +508,12 @@ function ProductGLB({
       }
     });
     return cloned;
-  }, [gltf, color, fabricTexture]);
+  }, [gltf, color, fabricTexture, tintTextureWithColor, textureAllMeshes, pickTextureMeshes, applyPlanarGarmentUv]);
 
   useEffect(() => {
-    let firstMesh: THREE.Mesh | null = null;
-    scene.traverse((child) => {
-      if (child instanceof THREE.Mesh && !firstMesh) firstMesh = child;
-    });
-    if (firstMesh && onMeshReady) onMeshReady(firstMesh);
-  }, [scene, onMeshReady]);
+    const primaryMesh = pickPrimaryMesh(scene);
+    if (primaryMesh && onMeshReady) onMeshReady(primaryMesh);
+  }, [scene, onMeshReady, pickPrimaryMesh]);
 
   return (
     <primitive
@@ -482,58 +596,281 @@ function LogoDecal({
 
 // ─── 3D Scene ─────────────────────────────────────────────────────────────────
 
+function LogoSticker({
+  logoSrc,
+  position,
+  rotation,
+  scale,
+}: {
+  logoSrc: string;
+  position: [number, number, number];
+  rotation: [number, number, number];
+  scale: [number, number, number];
+}) {
+  const [tex, setTex] = useState<{
+    src: string;
+    t: THREE.Texture | null;
+    err: boolean;
+  }>({ src: "", t: null, err: false });
+
+  useEffect(() => {
+    if (!logoSrc) return;
+    let cancelled = false;
+    const loader = new THREE.TextureLoader();
+    loader.load(
+      logoSrc,
+      (texture) => {
+        if (cancelled) return;
+        texture.colorSpace = THREE.SRGBColorSpace;
+        texture.anisotropy = 4;
+        texture.needsUpdate = true;
+        setTex({ src: logoSrc, t: texture, err: false });
+      },
+      undefined,
+      () => {
+        if (!cancelled) setTex({ src: logoSrc, t: null, err: true });
+      },
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [logoSrc]);
+
+  if (tex.src !== logoSrc || tex.err || !tex.t) return null;
+
+  return (
+    <mesh position={position} rotation={rotation} renderOrder={20}>
+      <planeGeometry args={[scale[0], scale[1]]} />
+      <meshBasicMaterial
+        map={tex.t}
+        transparent
+        alphaTest={0.02}
+        depthTest={false}
+        depthWrite={false}
+        side={THREE.DoubleSide}
+        toneMapped={false}
+      />
+    </mesh>
+  );
+}
+
+function fitDecalCoordsToMesh(coords: NonNullable<ReturnType<typeof getDecalCoords>>, mesh: THREE.Mesh) {
+  const geometry = mesh.geometry as THREE.BufferGeometry | undefined;
+  if (!geometry?.attributes.position) return coords;
+
+  geometry.computeBoundingBox();
+  const box = geometry.boundingBox;
+  if (!box) return coords;
+
+  const size = box.getSize(new THREE.Vector3());
+  const mannequinWidth = 1.52;
+  const mannequinGarmentHeight = 0.64;
+  const normalizedX = THREE.MathUtils.clamp((coords.position[0] + 0.76) / mannequinWidth, 0.08, 0.92);
+  const normalizedY = THREE.MathUtils.clamp((coords.position[1] - 0.53) / mannequinGarmentHeight, 0.08, 0.92);
+  const zPadding = Math.max(size.z * 0.08, 0.01);
+  const isFrontPlacement = coords.rotation[1] > Math.PI * 0.5;
+  const scaleRatio = Math.min(
+    Math.max(size.x / mannequinWidth, 0.35),
+    Math.max(size.y / mannequinGarmentHeight, 0.35),
+  );
+
+  return {
+    ...coords,
+    rotation: (isFrontPlacement ? [0, 0, 0] : [0, Math.PI, 0]) as [number, number, number],
+    position: [
+      box.min.x + normalizedX * size.x,
+      box.min.y + normalizedY * size.y,
+      isFrontPlacement ? box.max.z + zPadding : box.min.z - zPadding,
+    ] as [number, number, number],
+    scale: [
+      coords.scale[0] * scaleRatio,
+      coords.scale[1] * scaleRatio,
+      coords.scale[2],
+    ] as [number, number, number],
+  };
+}
+
 function useValidatedModelUrl(
   modelUrl: string | null | undefined,
   fallbackUrl: string | null | undefined
 ) {
-  const [status, setStatus] = useState<"checking" | "valid" | "invalid">("checking");
+  return useMemo(() => {
+    if (!modelUrl) return fallbackUrl || null;
+    if (isLegacyProductModelUrl(modelUrl)) return fallbackUrl || null;
+    return modelUrl || fallbackUrl || null;
+  }, [modelUrl, fallbackUrl]);
+}
 
-  const safeModelUrl = useMemo(() => {
-    if (!modelUrl) return null;
-    if (/^\/models\/productos\//i.test(modelUrl)) return null;
-    return modelUrl;
-  }, [modelUrl]);
+function getDefaultModelRotationY(garmentType?: string, modelUrl?: string | null) {
+  void garmentType;
+  void modelUrl;
+  return 0;
+}
+
+function isTextureableLocalModelUrl(modelUrl: string | null | undefined) {
+  if (!modelUrl) return false;
+  try {
+    const pathname = /^https?:\/\//i.test(modelUrl) ? new URL(modelUrl).pathname : modelUrl;
+    return /(?:^|\/)models\/(base\/)?[^/]+\.glb$/i.test(pathname) && !/mannequin\.glb$/i.test(pathname);
+  } catch {
+    return /(?:^|\/)models\/(base\/)?[^/]+\.glb$/i.test(modelUrl) && !/mannequin\.glb$/i.test(modelUrl);
+  }
+}
+
+function usePhotoFabricTexture(src?: string) {
+  const [texture, setTexture] = useState<THREE.Texture | null>(null);
 
   useEffect(() => {
-    if (!safeModelUrl) {
-      setStatus("invalid");
+    if (!src) {
+      setTexture(null);
       return;
     }
 
     let cancelled = false;
-    const absoluteUrl = safeModelUrl.startsWith("http") || safeModelUrl.startsWith("//")
-      ? safeModelUrl
-      : new URL(safeModelUrl, window.location.origin).toString();
+    const img = new Image();
+    img.crossOrigin = "anonymous";
 
-    setStatus("checking");
+    img.onload = () => {
+      if (cancelled || !img.naturalWidth || !img.naturalHeight) return;
 
-    const controller = new AbortController();
-    const timeout = window.setTimeout(() => controller.abort(), 3000);
+      const source = document.createElement("canvas");
+      source.width = img.naturalWidth;
+      source.height = img.naturalHeight;
+      const sourceCtx = source.getContext("2d", { willReadFrequently: true });
+      if (!sourceCtx) return;
+      sourceCtx.drawImage(img, 0, 0);
 
-    fetch(absoluteUrl, {
-      method: "HEAD",
-      cache: "no-store",
-      signal: controller.signal,
-    })
-      .then((res) => {
-        if (!cancelled) setStatus(res.ok ? "valid" : "invalid");
-      })
-      .catch(() => {
-        if (!cancelled) setStatus("invalid");
-      })
-      .finally(() => {
-        window.clearTimeout(timeout);
-      });
+      const sourceData = sourceCtx.getImageData(0, 0, source.width, source.height);
+      const data = sourceData.data;
+      let minX = source.width;
+      let minY = source.height;
+      let maxX = 0;
+      let maxY = 0;
+      let avgR = 0;
+      let avgG = 0;
+      let avgB = 0;
+      let samples = 0;
+
+      const isBackgroundPixel = (r: number, g: number, b: number, a: number) => {
+        if (a < 18) return true;
+        const max = Math.max(r, g, b);
+        const min = Math.min(r, g, b);
+        return max > 238 && max - min < 22;
+      };
+
+      for (let y = 0; y < source.height; y += 1) {
+        for (let x = 0; x < source.width; x += 1) {
+          const i = (y * source.width + x) * 4;
+          const r = data[i];
+          const g = data[i + 1];
+          const b = data[i + 2];
+          const a = data[i + 3];
+          if (isBackgroundPixel(r, g, b, a)) continue;
+
+          minX = Math.min(minX, x);
+          minY = Math.min(minY, y);
+          maxX = Math.max(maxX, x);
+          maxY = Math.max(maxY, y);
+          avgR += r;
+          avgG += g;
+          avgB += b;
+          samples += 1;
+        }
+      }
+
+      if (!samples) {
+        minX = 0;
+        minY = 0;
+        maxX = source.width;
+        maxY = source.height;
+        avgR = 210;
+        avgG = 210;
+        avgB = 210;
+        samples = 1;
+      }
+
+      const fillR = Math.round(avgR / samples);
+      const fillG = Math.round(avgG / samples);
+      const fillB = Math.round(avgB / samples);
+      const cropW = Math.max(1, maxX - minX + 1);
+      const cropH = Math.max(1, maxY - minY + 1);
+      const patchSize = Math.max(96, Math.min(360, Math.floor(Math.min(cropW, cropH) * 0.34)));
+      const patchX = Math.round(THREE.MathUtils.clamp(minX + cropW * 0.5 - patchSize / 2, minX, maxX - patchSize));
+      const patchY = Math.round(THREE.MathUtils.clamp(minY + cropH * 0.45 - patchSize / 2, minY, maxY - patchSize));
+
+      const patch = document.createElement("canvas");
+      patch.width = patchSize;
+      patch.height = patchSize;
+      const patchCtx = patch.getContext("2d", { willReadFrequently: true });
+      if (!patchCtx) return;
+
+      patchCtx.fillStyle = `rgb(${fillR}, ${fillG}, ${fillB})`;
+      patchCtx.fillRect(0, 0, patchSize, patchSize);
+      patchCtx.drawImage(source, patchX, patchY, patchSize, patchSize, 0, 0, patchSize, patchSize);
+
+      const patchImage = patchCtx.getImageData(0, 0, patch.width, patch.height);
+      const pixels = patchImage.data;
+      for (let i = 0; i < pixels.length; i += 4) {
+        const r = pixels[i];
+        const g = pixels[i + 1];
+        const b = pixels[i + 2];
+        const a = pixels[i + 3];
+        if (!isBackgroundPixel(r, g, b, a)) {
+          pixels[i + 3] = 255;
+          continue;
+        }
+
+        const noise = ((i / 4) % 13) - 6;
+        pixels[i] = THREE.MathUtils.clamp(fillR + noise, 0, 255);
+        pixels[i + 1] = THREE.MathUtils.clamp(fillG + noise, 0, 255);
+        pixels[i + 2] = THREE.MathUtils.clamp(fillB + noise, 0, 255);
+        pixels[i + 3] = 255;
+      }
+      patchCtx.putImageData(patchImage, 0, 0);
+
+      const canvas = document.createElement("canvas");
+      canvas.width = 1024;
+      canvas.height = 1024;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+
+      ctx.fillStyle = `rgb(${fillR}, ${fillG}, ${fillB})`;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      const pattern = ctx.createPattern(patch, "repeat");
+      if (pattern) {
+        ctx.fillStyle = pattern;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
+
+      const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+      gradient.addColorStop(0, "rgba(255,255,255,0.10)");
+      gradient.addColorStop(0.5, "rgba(255,255,255,0)");
+      gradient.addColorStop(1, "rgba(0,0,0,0.08)");
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      const t = new THREE.CanvasTexture(canvas);
+      t.colorSpace = THREE.SRGBColorSpace;
+      t.wrapS = THREE.RepeatWrapping;
+      t.wrapT = THREE.RepeatWrapping;
+      t.repeat.set(1, 1);
+      t.minFilter = THREE.LinearMipmapLinearFilter;
+      t.magFilter = THREE.LinearFilter;
+      t.needsUpdate = true;
+      setTexture(t);
+    };
+
+    img.onerror = () => {
+      if (!cancelled) setTexture(null);
+    };
+    img.src = /^https?:\/\//i.test(src) ? `/api/image-proxy?url=${encodeURIComponent(src)}` : src;
 
     return () => {
       cancelled = true;
-      window.clearTimeout(timeout);
-      controller.abort();
     };
-  }, [safeModelUrl]);
+  }, [src]);
 
-  if (status === "valid") return safeModelUrl;
-  return fallbackUrl || null;
+  return texture;
 }
 
 function Scene3D({
@@ -543,6 +880,8 @@ function Scene3D({
   fabricCanvas,
   productImageUrl,
   solidColorOnly = false,
+  activePosition,
+  autoRotate = false,
   garmentType,
   modelUrl,
   modelScale,
@@ -559,14 +898,18 @@ function Scene3D({
   fabricCanvas: FabricCanvas | null;
   productImageUrl?: string;
   solidColorOnly?: boolean;
+  activePosition: string;
+  autoRotate?: boolean;
   garmentType?: string;
   modelUrl?: string;
   modelScale?: number;
   modelPositionY?: number;
   modelRotationY?: number;
 }) {
+  const modelGroupRef = useRef<THREE.Group | null>(null);
   const garmentRef = useRef<THREE.Mesh | null>(null);
   const [meshReady, setMeshReady] = useState(false);
+  const [meshDecalCoords, setMeshDecalCoords] = useState<typeof decalCoords>(null);
   const debug = useDebugFlags();
 
   // Determinar URL del modelo base: usar modelUrl explícito o inferir del tipo
@@ -576,7 +919,18 @@ function Scene3D({
   }, [garmentType]);
 
   const validatedModelUrl = useValidatedModelUrl(modelUrl || null, fallbackModelUrl);
-  const baseModelUrl = solidColorOnly ? fallbackModelUrl : validatedModelUrl;
+  const baseModelUrl = solidColorOnly
+    ? validatedModelUrl || fallbackModelUrl
+    : validatedModelUrl;
+  const effectiveModelScale = modelScale ?? 1;
+  const effectiveModelPositionY = modelPositionY ?? 0;
+  const effectiveModelRotationY =
+    modelRotationY && Math.abs(modelRotationY) > 0.0001
+      ? modelRotationY
+      : getDefaultModelRotationY(garmentType, baseModelUrl);
+  const positionViewRotation = /espalda/i.test(activePosition) ? Math.PI : 0;
+  const canUsePhotoFabricTexture = Boolean(baseModelUrl && isTextureableLocalModelUrl(baseModelUrl) && productImageUrl);
+  const photoFabricTexture = usePhotoFabricTexture(canUsePhotoFabricTexture ? productImageUrl : undefined);
 
   // Fabric → Three sync: genera un canvas oculto con el contenido del editor 2D
   const { canvasElement, ready: fabricSyncReady, version } = useFabricToThreeSync({
@@ -592,18 +946,40 @@ function Scene3D({
     return t;
   }, [canvasElement, fabricSyncReady, version]);
 
-  const hasFabricTexture = !solidColorOnly && debug.fabricSync && fabricTexture !== null;
-
-  useEffect(() => {
-    console.log("[Scene3D] productImageUrl?", !!productImageUrl, "hasFabricTex:", hasFabricTexture, "baseModelUrl:", baseModelUrl);
-  }, [productImageUrl, hasFabricTexture, baseModelUrl]);
+  const hasFabricTexture =
+    !baseModelUrl && !solidColorOnly && debug.fabricSync && fabricTexture !== null;
+  const modelTexture = hasFabricTexture ? fabricTexture : photoFabricTexture;
+  const tintModelTexture = false;
 
   useEffect(() => {
     setMeshReady(false);
+    setMeshDecalCoords(null);
     garmentRef.current = null;
   }, [baseModelUrl]);
 
-  const [garmentTexReady, setGarmentTexReady] = useState(false);
+  const handleProductMeshReady = useCallback((mesh: THREE.Mesh) => {
+    garmentRef.current = mesh;
+    setMeshDecalCoords(decalCoords ? fitDecalCoordsToMesh(decalCoords, mesh) : null);
+    setMeshReady(true);
+  }, [decalCoords]);
+
+  useEffect(() => {
+    if (!meshReady || !garmentRef.current) return;
+    setMeshDecalCoords(decalCoords ? fitDecalCoordsToMesh(decalCoords, garmentRef.current) : null);
+  }, [decalCoords, meshReady]);
+
+  const effectiveDecalCoords = baseModelUrl ? meshDecalCoords : decalCoords;
+
+  useFrame((_, delta) => {
+    const group = modelGroupRef.current;
+    if (!group) return;
+    const target = effectiveModelRotationY + positionViewRotation;
+    if (autoRotate) {
+      group.rotation.y += delta * 0.75;
+      return;
+    }
+    group.rotation.y = THREE.MathUtils.damp(group.rotation.y, target, 8, delta);
+  });
 
   return (
     <>
@@ -614,38 +990,52 @@ function Scene3D({
       <hemisphereLight args={["#fff8ee", "#b7afa7", 1.1]} />
 
       {baseModelUrl ? (
-        <ProductGLB
-          key={`${baseModelUrl}-${colorHex}-${solidColorOnly ? "solid" : "mixed"}`}
-          url={baseModelUrl}
-          color={hasFabricTexture ? undefined : colorHex}
-          fabricTexture={hasFabricTexture ? fabricTexture : undefined}
-          scale={solidColorOnly ? 1 : modelScale ?? 1}
-          positionY={solidColorOnly ? 0 : modelPositionY ?? 0}
-          rotationY={solidColorOnly ? 0 : modelRotationY ?? 0}
-          onMeshReady={(m) => {
-            garmentRef.current = m;
-            setTimeout(() => setMeshReady(true), 0);
-          }}
-        />
+        <group
+          ref={modelGroupRef}
+          position={[0, effectiveModelPositionY, 0]}
+          rotation={[0, effectiveModelRotationY + positionViewRotation, 0]}
+          scale={effectiveModelScale}
+        >
+          <ProductGLB
+            key={`${baseModelUrl}-${colorHex}-${solidColorOnly ? "solid" : "mixed"}`}
+            url={baseModelUrl}
+            color={modelTexture ? undefined : colorHex}
+            fabricTexture={modelTexture}
+            tintTextureWithColor={tintModelTexture}
+            textureAllMeshes={Boolean(photoFabricTexture && !hasFabricTexture)}
+            scale={1}
+            positionY={0}
+            rotationY={0}
+            onMeshReady={handleProductMeshReady}
+          />
+          {!hasFabricTexture && effectiveDecalCoords && logoSrc && meshReady && (
+            <LogoSticker
+              logoSrc={logoSrc}
+              position={effectiveDecalCoords.position}
+              rotation={effectiveDecalCoords.rotation}
+              scale={effectiveDecalCoords.scale}
+            />
+          )}
+        </group>
       ) : (
         debug.mannequin && (solidColorOnly || productImageUrl || hasFabricTexture) && (
           <FittedGarment
             productImageUrl={solidColorOnly ? undefined : productImageUrl}
             yMin={0.40}
             yMax={1.28}
-            onReady={(ready) => setGarmentTexReady(ready)}
+            onReady={() => {}}
             fabricTexture={fabricTexture}
             fallbackColor={colorHex}
           />
         )
       )}
 
-      {!hasFabricTexture && debug.decal && decalCoords && logoSrc && meshReady && garmentRef.current && (
+      {!baseModelUrl && !hasFabricTexture && debug.decal && effectiveDecalCoords && logoSrc && meshReady && garmentRef.current && (
         <LogoDecal
           logoSrc={logoSrc}
-          position={decalCoords.position}
-          rotation={decalCoords.rotation}
-          scale={decalCoords.scale}
+          position={effectiveDecalCoords.position}
+          rotation={effectiveDecalCoords.rotation}
+          scale={effectiveDecalCoords.scale}
           meshRef={garmentRef}
         />
       )}
@@ -780,6 +1170,7 @@ export default function Visualizador3D({
 
   const is3DOnly = displayMode === "3d-only";
   const [viewMode, setViewMode] = useState<"2d" | "3d">(is3DOnly ? "3d" : "2d");
+  const [autoRotate, setAutoRotate] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -821,7 +1212,7 @@ export default function Visualizador3D({
         <div
           className={`relative min-w-0 flex-1 overflow-hidden rounded-lg border shadow-lg ${
             is3DOnly
-              ? "h-full min-h-[430px] border-black/10 bg-gradient-to-b from-white via-[#fbf7f0] to-[#e4d9ce]"
+              ? "h-full min-h-[360px] border-black/10 bg-gradient-to-b from-white via-[#fbf7f0] to-[#e4d9ce] sm:min-h-[390px]"
               : "min-h-[400px] rounded-2xl border-slate-200 bg-gradient-to-b from-slate-100 via-white to-slate-200"
           }`}
         >
@@ -870,6 +1261,8 @@ export default function Visualizador3D({
                       fabricCanvas={is3DOnly ? null : fabricCanvas}
                       productImageUrl={productImageUrl}
                       solidColorOnly={is3DOnly}
+                      activePosition={activePosition}
+                      autoRotate={autoRotate}
                       garmentType={garmentType}
                       modelUrl={modelUrl}
                       modelScale={modelScale}
@@ -881,6 +1274,31 @@ export default function Visualizador3D({
               </SceneErrorBoundary>
             </div>
         </div>
+
+        {logoSrc && is3DOnly && (
+          <div className="absolute bottom-3 left-3 z-10 max-w-[calc(100%-7.5rem)] rounded-lg border border-black/10 bg-white/92 p-2 shadow-sm backdrop-blur-md">
+            <p className="mb-1 text-[9px] font-black uppercase tracking-[0.14em] text-[#8b5e3c]">Posicion</p>
+            <div className="flex flex-wrap gap-1">
+              {positionLabels.map((label) => (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={() => {
+                    setAutoRotate(false);
+                    onPositionChange(label);
+                  }}
+                  className={`rounded-md border px-2 py-1 text-[9px] font-black transition ${
+                    activePosition === label
+                      ? "border-[#c3654d] bg-[#c3654d] text-white"
+                      : "border-black/10 bg-white text-[#655b50] hover:border-[#c3654d]/50"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Sidebar */}
         <div className={`flex shrink-0 flex-col gap-3 ${is3DOnly ? "absolute bottom-3 right-3 z-10 w-auto" : "sm:w-52"}`}>
@@ -895,7 +1313,10 @@ export default function Visualizador3D({
                     <button
                       key={label}
                       type="button"
-                      onClick={() => onPositionChange(label)}
+                      onClick={() => {
+                        setAutoRotate(false);
+                        onPositionChange(label);
+                      }}
                       className={`rounded-lg border px-2.5 py-1.5 text-[10px] font-bold transition-all ${
                         activePosition === label
                           ? "border-accent bg-accent text-white shadow-sm"
@@ -943,16 +1364,30 @@ export default function Visualizador3D({
                 if (f) onLogoUpload(f);
               }}
             />
-            <button
-              type="button"
-              onClick={() => inputRef.current?.click()}
-              className="flex items-center justify-center gap-2 rounded-lg bg-[#c3654d] px-3 py-2 text-[11px] font-black text-white shadow-sm transition-all hover:bg-[#ae563f] active:scale-95"
-            >
-              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 16V4m0 0 4 4m-4-4-4 4M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
-              </svg>
-              {logoSrc ? "Logo" : "Logo"}
-            </button>
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => inputRef.current?.click()}
+                className="flex items-center justify-center gap-2 rounded-lg bg-[#c3654d] px-3 py-2 text-[11px] font-black text-white shadow-sm transition-all hover:bg-[#ae563f] active:scale-95"
+              >
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 16V4m0 0 4 4m-4-4-4 4M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
+                </svg>
+                Logo
+              </button>
+              <button
+                type="button"
+                onClick={() => setAutoRotate((prev) => !prev)}
+                className={`flex h-8 min-w-11 items-center justify-center rounded-lg border px-2 text-[10px] font-black transition ${
+                  autoRotate
+                    ? "border-[#c3654d] bg-[#c3654d] text-white"
+                    : "border-black/10 bg-white text-[#655b50] hover:border-[#c3654d]/50"
+                }`}
+                title="Giro automatico 360 grados"
+              >
+                360°
+              </button>
+            </div>
             {logoSrc && (
               <button
                 type="button"

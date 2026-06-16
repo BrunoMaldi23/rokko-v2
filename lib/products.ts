@@ -1,5 +1,18 @@
 import { serverSupabase as supabase, hasSupabaseConfig } from "@/lib/serverSupabase";
 import type { Product } from "@/types/product";
+import { normalizeProductModelUrl } from "@/lib/baseModels";
+
+function normalizeProductModel(product: Product): Product {
+  return {
+    ...product,
+    model_3d_url: normalizeProductModelUrl(product.model_3d_url, [
+      product.category,
+      product.slug,
+      product.short_name,
+      product.name,
+    ]),
+  };
+}
 
 export async function getAllProducts() {
   if (!hasSupabaseConfig || !supabase) {
@@ -18,7 +31,7 @@ export async function getAllProducts() {
     return [];
   }
 
-  return (data || []) as Product[];
+  return ((data || []) as Product[]).map(normalizeProductModel);
 }
 
 export async function getProductsByCategory(category: string) {
@@ -39,5 +52,5 @@ export async function getProductsByCategory(category: string) {
     return [];
   }
 
-  return (data || []) as Product[];
+  return ((data || []) as Product[]).map(normalizeProductModel);
 }

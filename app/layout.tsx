@@ -76,6 +76,15 @@ export default function RootLayout({
                     if(m.indexOf('texImage2D') >= 0 || m.indexOf('image.png') >= 0 || m.indexOf('does not support image input') >= 0) {
                       e.preventDefault();
                     }
+                    if(m.indexOf('Invalid Refresh Token') >= 0 || m.indexOf('Refresh Token Not Found') >= 0) {
+                      try {
+                        for(var i = localStorage.length - 1; i >= 0; i--) {
+                          var k = localStorage.key(i);
+                          if(k && k.indexOf('sb-') === 0 && k.indexOf('auth-token') >= 0) localStorage.removeItem(k);
+                        }
+                      } catch(_) {}
+                      e.preventDefault();
+                    }
                   });
                 })();
               `,

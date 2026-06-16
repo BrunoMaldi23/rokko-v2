@@ -28,6 +28,29 @@ export function getBaseModelUrl(garmentType: string): string | null {
   return BASE_MODEL_MAP[garmentType] || null;
 }
 
+export function isLegacyProductModelUrl(modelUrl: string | null | undefined): boolean {
+  if (!modelUrl) return false;
+
+  try {
+    const pathname = /^https?:\/\//i.test(modelUrl)
+      ? new URL(modelUrl).pathname
+      : modelUrl;
+
+    return /(?:^|\/)models\/productos\//i.test(pathname);
+  } catch {
+    return /(?:^|\/)models\/productos\//i.test(modelUrl);
+  }
+}
+
+export function normalizeProductModelUrl(
+  modelUrl: string | null | undefined,
+  parts: Array<string | null | undefined>,
+): string | null {
+  const fallbackUrl = getDetectedBaseModelUrl(parts);
+  if (!modelUrl || isLegacyProductModelUrl(modelUrl)) return fallbackUrl;
+  return modelUrl;
+}
+
 function normalizeModelText(value: string): string {
   return value
     .toLowerCase()
@@ -46,13 +69,16 @@ export function detectBaseGarmentType(parts: Array<string | null | undefined>): 
   if (/camisa|shirt/.test(normalized)) return "camisa";
   if (/micropolar/.test(normalized) && /mujer/.test(normalized)) return "micropolar-mujer";
   if (/micropolar/.test(normalized)) return "micropolar-hombre";
-  if (/parka/.test(normalized) && /sin gorro/.test(normalized)) return "parka-desmontable-sin-gorro";
-  if (/parka/.test(normalized) && /desmontable|puno/.test(normalized)) return "parka-desmontable";
-  if (/parka/.test(normalized)) return "parka-hombre";
+
+  // Softshell lives under "parkas" in the catalog, so detect it before generic parka.
   if (/softshell/.test(normalized) && /termic|termico|premium/.test(normalized) && /mujer/.test(normalized)) return "softshell-termico-mujer";
   if (/softshell/.test(normalized) && /termic|termico|premium/.test(normalized)) return "softshell-termico-hombre";
   if (/softshell/.test(normalized) && /mujer/.test(normalized)) return "softshell-basico-mujer";
   if (/softshell/.test(normalized)) return "softshell-basico-hombre";
+
+  if (/parka/.test(normalized) && /sin gorro/.test(normalized)) return "parka-desmontable-sin-gorro";
+  if (/parka/.test(normalized) && /desmontable|puno|gorro/.test(normalized)) return "parka-desmontable";
+  if (/parka/.test(normalized)) return "parka-hombre";
   if (/poleron/.test(normalized) && /polo|unisex/.test(normalized)) return "poleron-polo-unisex";
   if (/poleron|hoodie|sudader/.test(normalized)) return "poleron-cuello-redondo";
   if (/polo/.test(normalized)) return "polo";

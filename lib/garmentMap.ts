@@ -279,10 +279,21 @@ for (const type of [
 }
 export function getDecalCoords(garmentType: string, positionLabel: string): DecalCoords | null {
   const typeMap = GARMENT_3D_MAP[garmentType] || GARMENT_3D_MAP["t-shirt"];
-  return typeMap[positionLabel] || null;
+  const aliases: Record<string, string> = {
+    "Espalda arriba": "Espalda alta",
+  };
+  return typeMap[positionLabel] || typeMap[aliases[positionLabel]] || null;
 }
 
 export function getDecalPositionLabels(garmentType: string): string[] {
   const typeMap = GARMENT_3D_MAP[garmentType] || GARMENT_3D_MAP["t-shirt"];
-  return Object.keys(typeMap);
+  const preferred = [
+    "Pecho centro",
+    "Pecho izquierdo",
+    "Pecho derecho",
+    "Espalda arriba",
+    "Manga izquierda",
+    "Manga derecha",
+  ];
+  return preferred.filter((label) => getDecalCoords(garmentType, label) || typeMap[label]);
 }

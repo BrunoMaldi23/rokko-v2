@@ -8,5 +8,6 @@
   scale: number;
   position_y: number;
   rotation_y: number;
+  base_model?: boolean;
   created_at?: string | null;
 };

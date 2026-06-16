@@ -15,6 +15,8 @@ import {
 const categories = [
   { value: "poleras", label: "Poleras" },
   { value: "polerones", label: "Polerones" },
+  { value: "micropolar", label: "Micropolar" },
+  { value: "camisas", label: "Camisas / Blusas" },
   { value: "parkas", label: "Parkas" },
   { value: "pantalones", label: "Pantalones" },
 ];

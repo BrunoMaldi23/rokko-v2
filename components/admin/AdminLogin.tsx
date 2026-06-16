@@ -24,7 +24,7 @@ export default function AdminLogin({ onLogin }: Props) {
 
     if (!hasSupabaseConfig || !supabase) {
       setError(true);
-      setErrorMsg("Supabase no esta configurado. Revisa .env.local");
+      setErrorMsg("Supabase no configurado. Revisa NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY.");
       return;
     }
 

@@ -1,12 +1,65 @@
 import { supabase, hasSupabaseConfig } from "@/lib/supabaseClient";
 import type { ProductModel } from "@/types/productModel";
+import { BASE_MODEL_MAP } from "@/lib/baseModels";
 
 const MODEL_BUCKET = "product-models";
 
 export type ProductModelInput = Omit<ProductModel, "id" | "created_at">;
 
+const BASE_MODEL_LABELS: Record<string, string> = {
+  "t-shirt": "Polera manga corta base",
+  "t-shirt manga larga": "Polera manga larga base",
+  polo: "Polera polo base",
+  "poleron-cuello-redondo": "Poleron cuello redondo base",
+  "poleron-polo-unisex": "Poleron polo unisex base",
+  hoodie: "Hoodie base",
+  "parka-hombre": "Parka hombre base",
+  "parka-desmontable": "Parka desmontable con puno base",
+  "parka-desmontable-sin-gorro": "Parka desmontable sin gorro base",
+  "softshell-basico-hombre": "Softshell basico hombre base",
+  "softshell-basico-mujer": "Softshell basico mujer base",
+  "softshell-termico-hombre": "Softshell termico hombre base",
+  "softshell-termico-mujer": "Softshell termico mujer base",
+  "micropolar-hombre": "Micropolar hombre base",
+  "micropolar-mujer": "Micropolar mujer base",
+  micropolar: "Micropolar base",
+  shirt: "Camisa base",
+  camisa: "Camisa base",
+  blusa: "Blusa base",
+  "pantalon-cargo": "Pantalon cargo base",
+  pantalon: "Pantalon base",
+};
+
+function categoryForGarmentType(type: string) {
+  if (/poleron|hoodie/.test(type)) return "polerones";
+  if (/parka|softshell/.test(type)) return "parkas";
+  if (/pantalon/.test(type)) return "pantalones";
+  if (/micropolar/.test(type)) return "micropolar";
+  if (/camisa|shirt|blusa/.test(type)) return "camisas";
+  return "poleras";
+}
+
+function defaultRotationForGarmentType(type: string) {
+  void type;
+  return 0;
+}
+
+const LOCAL_BASE_MODELS: ProductModel[] = Object.entries(BASE_MODEL_MAP).map(([type, url]) => ({
+  id: `local-base-${type}`,
+  name: BASE_MODEL_LABELS[type] || `${type} base`,
+  category: categoryForGarmentType(type),
+  product_id: null,
+  model_url: url,
+  file_path: url.replace(/^\/+/, ""),
+  scale: 1,
+  position_y: 0,
+  rotation_y: defaultRotationForGarmentType(type),
+  base_model: true,
+  created_at: null,
+}));
+
 export async function getProductModels() {
-  if (!hasSupabaseConfig || !supabase) return [];
+  if (!hasSupabaseConfig || !supabase) return LOCAL_BASE_MODELS;
 
   const { data, error } = await supabase
     .from("product_models")
@@ -15,10 +68,10 @@ export async function getProductModels() {
 
   if (error) {
     console.error("Error cargando modelos 3D:", error.message);
-    return [];
+    return LOCAL_BASE_MODELS;
   }
 
-  return (data || []) as ProductModel[];
+  return [...LOCAL_BASE_MODELS, ...((data || []) as ProductModel[])];
 }
 
 export async function uploadProductModelFile(file: File) {

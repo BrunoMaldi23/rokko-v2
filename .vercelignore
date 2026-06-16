@@ -1,0 +1,13 @@
+.env
+.env.local
+.env.*.local
+.git
+.next
+.vercel
+node_modules
+Log
+tmp
+*.log
+dev*.log
+*.tsbuildinfo
+quoter.txt

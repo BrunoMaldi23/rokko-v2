@@ -17,6 +17,8 @@ const categories = [
   { value: "todas", label: "Todas las categorías" },
   { value: "poleras", label: "Poleras" },
   { value: "polerones", label: "Polerones" },
+  { value: "micropolar", label: "Micropolar" },
+  { value: "camisas", label: "Camisas / Blusas" },
   { value: "parkas", label: "Parkas" },
   { value: "pantalones", label: "Pantalones" },
 ];
