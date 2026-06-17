@@ -74,6 +74,7 @@ type ProductDetailPanelProps = {
   logoPreview: string | null;
   logoPosition?: string;
   logoSize: number;
+  resetVersion: number;
   fabricCanvas: FabricCanvas | null;
   modelUrl?: string;
   modelScale?: number;
@@ -89,6 +90,7 @@ type ProductDetailPanelProps = {
   onLogoUpload: (file: File) => void;
   onPositionChange: (label: string) => void;
   onSizeChange: (size: number) => void;
+  onResetVisual: () => void;
   onRemoveLogo: () => void;
   onFabricCanvasReady: (canvas: FabricCanvas) => void;
   onClose: () => void;
@@ -161,6 +163,7 @@ export default function ProductDetailPanel({
   logoPreview,
   logoPosition,
   logoSize,
+  resetVersion,
   fabricCanvas,
   modelUrl,
   modelScale,
@@ -171,6 +174,7 @@ export default function ProductDetailPanel({
   onLogoUpload,
   onPositionChange,
   onSizeChange,
+  onResetVisual,
   onRemoveLogo,
   onFabricCanvasReady,
   onClose,
@@ -384,7 +388,7 @@ export default function ProductDetailPanel({
                   <h3 className="text-xl font-black">Simulador 3D aplicado</h3>
                 </div>
                 <button
-                  onClick={onRemoveLogo}
+                  onClick={onResetVisual}
                   className="inline-flex h-9 items-center gap-2 rounded-lg border border-black/10 px-3 text-[10px] font-black uppercase tracking-[0.16em] text-[#655b50] transition hover:border-[#bd7b2f]/40 hover:text-[#9a5a16]"
                 >
                   <Icon type="reset" className="h-4 w-4" />
@@ -436,6 +440,7 @@ export default function ProductDetailPanel({
                   activePosition={logoPosition || "Pecho centro"}
                   onPositionChange={onPositionChange}
                   logoSize={logoSize}
+                  resetKey={resetVersion}
                   onSizeChange={onSizeChange}
                   onRemoveLogo={onRemoveLogo}
                   fabricCanvas={fabricCanvas}

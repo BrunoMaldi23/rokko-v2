@@ -6,6 +6,7 @@ type Props = {
   children: ReactNode;
   onError?: (error: Error, info: { componentStack: string }) => void;
   fallback?: ReactNode;
+  resetKey?: string | number | null;
 };
 
 type State = {
@@ -16,6 +17,12 @@ type State = {
 
 export class SceneErrorBoundary extends Component<Props, State> {
   state: State = { hasError: false, error: null, componentStack: null };
+
+  componentDidUpdate(prevProps: Props) {
+    if (prevProps.resetKey !== this.props.resetKey && this.state.hasError) {
+      this.setState({ hasError: false, error: null, componentStack: null });
+    }
+  }
 
   static getDerivedStateFromError(error: Error): State {
     return { hasError: true, error, componentStack: null };

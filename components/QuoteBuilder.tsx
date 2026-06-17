@@ -162,6 +162,7 @@ export default function QuoteBuilder({ initialProducts }: Props) {
   const [quoteOpen, setQuoteOpen] = useState(false);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [logoSize, setLogoSize] = useState(0.08);
+  const [visualResetVersion, setVisualResetVersion] = useState(0);
   const [showSuccess, setShowSuccess] = useState(false);
   const [savingQuote, setSavingQuote] = useState(false);
   const [emailStatus, setEmailStatus] = useState<
@@ -284,6 +285,30 @@ export default function QuoteBuilder({ initialProducts }: Props) {
       },
     }));
   }
+
+  const resetVisualCustomization = useCallback((productId?: string) => {
+    setLogoPreview((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return null;
+    });
+    setLogoSize(0.08);
+    setFabricCanvas(null);
+    if (productId) {
+      setForms((prev) => ({
+        ...prev,
+        [productId]: {
+          ...prev[productId],
+          logoPosition: "Pecho centro",
+        },
+      }));
+    }
+    setVisualResetVersion((prev) => prev + 1);
+  }, []);
+
+  const closeProductDetail = useCallback(() => {
+    resetVisualCustomization(selectedProduct?.id);
+    setSelectedProduct(null);
+  }, [resetVisualCustomization, selectedProduct?.id]);
 
   function updateSize(productId: string, size: string, value: string) {
     const quantity = Number(value) || 0;
@@ -726,6 +751,7 @@ export default function QuoteBuilder({ initialProducts }: Props) {
           logoPreview={logoPreview}
           logoPosition={forms[selectedProduct.id]?.logoPosition}
           logoSize={logoSize}
+          resetVersion={visualResetVersion}
           fabricCanvas={fabricCanvas}
           modelUrl={(() => {
             const dbUrl = selectedProduct.model_3d_url;
@@ -753,12 +779,10 @@ export default function QuoteBuilder({ initialProducts }: Props) {
             updateForm(selectedProduct.id, "logoPosition", label)
           }
           onSizeChange={setLogoSize}
-          onRemoveLogo={() => {
-            if (logoPreview) URL.revokeObjectURL(logoPreview);
-            setLogoPreview(null);
-          }}
+          onResetVisual={() => resetVisualCustomization(selectedProduct.id)}
+          onRemoveLogo={() => resetVisualCustomization(selectedProduct.id)}
           onFabricCanvasReady={(c) => setFabricCanvas(c)}
-          onClose={() => setSelectedProduct(null)}
+          onClose={closeProductDetail}
         />
       )}
       {/* ======================================================== */}
@@ -1664,7 +1688,7 @@ const ProductCard = memo(function ProductCard({
   onAddToCart: (productId: string) => void;
   onViewDetails: (product: Product) => void;
 }) {
-  const allProductImages = getProductImages(product);
+  const allProductImages = useMemo(() => getProductImages(product), [product]);
   const productSizes = product.sizes?.length ? product.sizes : sizes;
   const description =
     product.extract ||
@@ -1725,6 +1749,7 @@ const ProductCard = memo(function ProductCard({
   const handleGallery = useCallback(
     (nextIndex: number) => {
       const total = displayImages.length;
+      if (!total) return;
       const clamped = (nextIndex + total) % total;
       onGalleryNav(pid, clamped, total);
       if (hasColorMapping) {
@@ -1755,6 +1780,7 @@ const ProductCard = memo(function ProductCard({
   const handleColorPick = useCallback(
     (color: string, colorIndex: number) => {
       onColorSelect(pid, color, colorIndex, displayImages.length);
+      if (!displayImages.length) return;
       const mappedIndex = imageEntries.findIndex(
         (entry) => normalizeColorName(entry.color) === normalizeColorName(color),
       );

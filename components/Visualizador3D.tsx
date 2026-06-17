@@ -422,25 +422,35 @@ function ProductGLB({
     return targets;
   }, []);
 
-  const applyPlanarGarmentUv = useCallback((geometry: THREE.BufferGeometry) => {
+  const mapGarmentTextureUv = useCallback((geometry: THREE.BufferGeometry) => {
     const position = geometry.attributes.position;
     if (!position) return;
 
     geometry.computeBoundingBox();
+    geometry.computeVertexNormals();
     const box = geometry.boundingBox;
     if (!box) return;
 
-    const width = box.max.x - box.min.x || 1;
-    const height = box.max.y - box.min.y || 1;
+    const normal = geometry.attributes.normal;
+    const size = box.getSize(new THREE.Vector3());
+    const rangeX = size.x || 1;
+    const rangeY = size.y || 1;
+    const rangeZ = size.z || 1;
     const uv: number[] = [];
 
     for (let i = 0; i < position.count; i += 1) {
       const x = position.getX(i);
       const y = position.getY(i);
-      uv.push(
-        THREE.MathUtils.clamp((x - box.min.x) / width, 0, 1),
-        THREE.MathUtils.clamp((y - box.min.y) / height, 0, 1),
-      );
+      const z = position.getZ(i);
+      const nx = normal ? normal.getX(i) : 0;
+      const nz = normal ? normal.getZ(i) : 1;
+      const sideSurface = Math.abs(nx) > Math.abs(nz) * 1.15;
+      const u = sideSurface
+        ? (z - box.min.z) / rangeZ
+        : (x - box.min.x) / rangeX;
+      const v = (y - box.min.y) / rangeY;
+
+      uv.push(THREE.MathUtils.clamp(u, 0, 1), THREE.MathUtils.clamp(v, 0, 1));
     }
 
     geometry.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2));
@@ -448,7 +458,6 @@ function ProductGLB({
 
   const scene = useMemo(() => {
     const cloned = gltf.scene.clone(true);
-    const colorObj = color ? new THREE.Color(color) : null;
     const textureTargets = fabricTexture && !textureAllMeshes ? pickTextureMeshes(cloned) : new Set<THREE.Mesh>();
 
     cloned.traverse((child) => {
@@ -464,11 +473,11 @@ function ProductGLB({
               textureTargets.has(child))
         );
         if (shouldTextureMesh) {
-          applyPlanarGarmentUv(geometry);
+          mapGarmentTextureUv(geometry);
         }
         child.geometry = geometry;
         const mat = new THREE.MeshStandardMaterial({
-          color: colorObj || sourceMaterial?.color || "#ffffff",
+          color: sourceMaterial?.color || "#ffffff",
           roughness: 0.54,
           metalness: 0,
           envMapIntensity: 1.35,
@@ -489,15 +498,7 @@ function ProductGLB({
 
         if (shouldTextureMesh) {
           mat.map = fabricTexture ?? null;
-          if (tintTextureWithColor && colorObj) {
-            mat.color.copy(colorObj);
-          } else {
-            mat.color.set(0xffffff);
-          }
-          mat.needsUpdate = true;
-        } else if (colorObj) {
-          mat.color.copy(colorObj);
-          mat.emissive.set(colorObj).multiplyScalar(0.035);
+          mat.color.set(0xffffff);
           mat.needsUpdate = true;
         } else if (sourceMaterial?.map) {
           mat.color.set(0xffffff);
@@ -508,7 +509,32 @@ function ProductGLB({
       }
     });
     return cloned;
-  }, [gltf, color, fabricTexture, tintTextureWithColor, textureAllMeshes, pickTextureMeshes, applyPlanarGarmentUv]);
+  }, [gltf, fabricTexture, textureAllMeshes, pickTextureMeshes, mapGarmentTextureUv]);
+
+  useEffect(() => {
+    const colorObj = color ? new THREE.Color(color) : null;
+
+    scene.traverse((child) => {
+      if (!(child instanceof THREE.Mesh)) return;
+      const materials = Array.isArray(child.material) ? child.material : [child.material];
+
+      for (const material of materials) {
+        if (!(material instanceof THREE.MeshStandardMaterial)) continue;
+
+        if (fabricTexture && material.map === fabricTexture) {
+          if (tintTextureWithColor && colorObj) {
+            material.color.copy(colorObj);
+          } else {
+            material.color.set(0xffffff);
+          }
+        } else if (colorObj) {
+          material.color.copy(colorObj);
+          material.emissive.copy(colorObj).multiplyScalar(0.035);
+        }
+        material.needsUpdate = true;
+      }
+    });
+  }, [scene, color, fabricTexture, tintTextureWithColor]);
 
   useEffect(() => {
     const primaryMesh = pickPrimaryMesh(scene);
@@ -549,24 +575,30 @@ function LogoDecal({
   useEffect(() => {
     if (!logoSrc) return;
     let cancel = false;
+    let texture: THREE.Texture | null = null;
     const img = new Image();
-    img.crossOrigin = "anonymous";
+    if (/^https?:\/\//i.test(logoSrc)) img.crossOrigin = "anonymous";
     img.onload = () => {
       if (cancel) return;
       if (!img.naturalWidth || !img.naturalHeight) {
         setTex({ src: logoSrc, t: null, err: true });
         return;
       }
-      const t = new THREE.Texture(img);
+      const t = new THREE.Texture(createLogoTextureSource(img));
       t.colorSpace = THREE.SRGBColorSpace;
       t.needsUpdate = true;
+      t.userData.logoAspect = img.naturalWidth / Math.max(img.naturalHeight, 1);
+      texture = t;
       setTex({ src: logoSrc, t, err: false });
     };
     img.onerror = () => {
       if (!cancel) setTex({ src: logoSrc, t: null, err: true });
     };
     img.src = logoSrc;
-    return () => { cancel = true; };
+    return () => {
+      cancel = true;
+      texture?.dispose();
+    };
   }, [logoSrc]);
 
   if (!meshRef.current) return null;
@@ -580,15 +612,22 @@ function LogoDecal({
       scale={scale}
       polygonOffsetFactor={-8}
       depthTest={false}
-      renderOrder={5}
+      renderOrder={14}
     >
       <meshStandardMaterial
         map={tex.t}
         transparent
+        opacity={0.96}
+        roughness={0.86}
+        metalness={0}
         polygonOffset
+        polygonOffsetFactor={-8}
         polygonOffsetUnits={-8}
         depthTest={false}
         depthWrite={false}
+        alphaTest={0.001}
+        side={THREE.DoubleSide}
+        toneMapped={false}
       />
     </Decal>
   );
@@ -596,7 +635,22 @@ function LogoDecal({
 
 // ─── 3D Scene ─────────────────────────────────────────────────────────────────
 
-function LogoSticker({
+function createLogoTextureSource(img: HTMLImageElement) {
+  const canvas = document.createElement("canvas");
+  const maxSide = 1024;
+  const scale = Math.min(1, maxSide / Math.max(img.naturalWidth, img.naturalHeight));
+  canvas.width = Math.max(1, Math.round(img.naturalWidth * scale));
+  canvas.height = Math.max(1, Math.round(img.naturalHeight * scale));
+
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return img;
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+  return canvas;
+}
+
+function LogoSurfacePatch({
   logoSrc,
   position,
   rotation,
@@ -615,36 +669,52 @@ function LogoSticker({
 
   useEffect(() => {
     if (!logoSrc) return;
-    let cancelled = false;
-    const loader = new THREE.TextureLoader();
-    loader.load(
-      logoSrc,
-      (texture) => {
-        if (cancelled) return;
-        texture.colorSpace = THREE.SRGBColorSpace;
-        texture.anisotropy = 4;
-        texture.needsUpdate = true;
-        setTex({ src: logoSrc, t: texture, err: false });
-      },
-      undefined,
-      () => {
-        if (!cancelled) setTex({ src: logoSrc, t: null, err: true });
-      },
-    );
+    let cancel = false;
+    let texture: THREE.Texture | null = null;
+    const img = new Image();
+    if (/^https?:\/\//i.test(logoSrc)) img.crossOrigin = "anonymous";
+    img.onload = () => {
+      if (cancel) return;
+      if (!img.naturalWidth || !img.naturalHeight) {
+        setTex({ src: logoSrc, t: null, err: true });
+        return;
+      }
+      const t = new THREE.Texture(createLogoTextureSource(img));
+      t.colorSpace = THREE.SRGBColorSpace;
+      t.anisotropy = 4;
+      t.needsUpdate = true;
+      t.userData.logoAspect = img.naturalWidth / Math.max(img.naturalHeight, 1);
+      texture = t;
+      setTex({ src: logoSrc, t, err: false });
+    };
+    img.onerror = () => {
+      if (!cancel) setTex({ src: logoSrc, t: null, err: true });
+    };
+    img.src = logoSrc;
     return () => {
-      cancelled = true;
+      cancel = true;
+      texture?.dispose();
     };
   }, [logoSrc]);
 
   if (tex.src !== logoSrc || tex.err || !tex.t) return null;
 
   return (
-    <mesh position={position} rotation={rotation} renderOrder={20}>
-      <planeGeometry args={[scale[0], scale[1]]} />
-      <meshBasicMaterial
+    <mesh position={position} rotation={rotation} renderOrder={12}>
+      <planeGeometry args={[scale[0], scale[1], 12, 12]} />
+      <meshStandardMaterial
         map={tex.t}
+        alphaMap={tex.t}
+        bumpMap={tex.t}
+        bumpScale={0.0025}
         transparent
-        alphaTest={0.02}
+        alphaTest={0.001}
+        opacity={0.94}
+        roughness={0.96}
+        metalness={0}
+        polygonOffset
+        polygonOffsetFactor={-8}
+        polygonOffsetUnits={-8}
         depthTest={false}
         depthWrite={false}
         side={THREE.DoubleSide}
@@ -654,39 +724,155 @@ function LogoSticker({
   );
 }
 
-function fitDecalCoordsToMesh(coords: NonNullable<ReturnType<typeof getDecalCoords>>, mesh: THREE.Mesh) {
+function getLogoPlacement(label: string) {
+  const normalized = label.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const back = normalized.includes("espalda") || normalized.includes("trasera");
+  const leftSleeve = normalized.includes("manga izquierda");
+  const rightSleeve = normalized.includes("manga derecha");
+  const center = normalized.includes("centro");
+  const rightChest = normalized.includes("pecho derecho");
+  const leftChest = normalized.includes("pecho izquierdo");
+
+  return {
+    back,
+    leftSleeve,
+    rightSleeve,
+    u: center ? 0.5 : rightChest ? 0.62 : leftChest ? 0.38 : 0.5,
+    v: normalized.includes("baja") ? 0.42 : back ? 0.7 : 0.72,
+    widthFactor: leftSleeve || rightSleeve ? 0.095 : center ? 0.15 : back ? 0.18 : 0.115,
+  };
+}
+
+function fitDecalCoordsToMesh(
+  coords: NonNullable<ReturnType<typeof getDecalCoords>>,
+  mesh: THREE.Mesh,
+  label: string,
+  logoSize: number,
+  logoAspect: number,
+  container?: THREE.Object3D | null,
+) {
   const geometry = mesh.geometry as THREE.BufferGeometry | undefined;
   if (!geometry?.attributes.position) return coords;
 
+  mesh.updateWorldMatrix(true, false);
+  container?.updateWorldMatrix(true, false);
   geometry.computeBoundingBox();
   const box = geometry.boundingBox;
   if (!box) return coords;
 
   const size = box.getSize(new THREE.Vector3());
-  const mannequinWidth = 1.52;
-  const mannequinGarmentHeight = 0.64;
-  const normalizedX = THREE.MathUtils.clamp((coords.position[0] + 0.76) / mannequinWidth, 0.08, 0.92);
-  const normalizedY = THREE.MathUtils.clamp((coords.position[1] - 0.53) / mannequinGarmentHeight, 0.08, 0.92);
-  const zPadding = Math.max(size.z * 0.08, 0.01);
-  const isFrontPlacement = coords.rotation[1] > Math.PI * 0.5;
-  const scaleRatio = Math.min(
-    Math.max(size.x / mannequinWidth, 0.35),
-    Math.max(size.y / mannequinGarmentHeight, 0.35),
+  const placement = getLogoPlacement(label);
+  const surfacePadding = THREE.MathUtils.clamp(Math.max(size.z, size.x) * 0.012, 0.006, 0.016);
+  const y = box.min.y + THREE.MathUtils.clamp(placement.v, 0.12, 0.9) * size.y;
+  const chestX = box.min.x + THREE.MathUtils.clamp(placement.u, 0.12, 0.88) * size.x;
+  const positionAttr = geometry.attributes.position;
+  const normalAttr = geometry.attributes.normal;
+  let bestScore = Infinity;
+  const surfacePoint = new THREE.Vector3(
+    chestX,
+    y,
+    placement.back ? box.min.z : box.max.z,
+  );
+  const surfaceNormal = new THREE.Vector3(0, 0, placement.back ? -1 : 1);
+
+  for (let i = 0; i < positionAttr.count; i += 1) {
+    const x = positionAttr.getX(i);
+    const vy = positionAttr.getY(i);
+    const z = positionAttr.getZ(i);
+    const nx = normalAttr ? normalAttr.getX(i) : 0;
+    const ny = normalAttr ? normalAttr.getY(i) : 0;
+    const nz = normalAttr ? normalAttr.getZ(i) : placement.back ? -1 : 1;
+    let targetScore: number;
+
+    if (placement.leftSleeve || placement.rightSleeve) {
+      const targetX = placement.leftSleeve ? box.min.x : box.max.x;
+      const sideBias = placement.leftSleeve ? x - box.min.x : box.max.x - x;
+      targetScore =
+        Math.abs(vy - y) / Math.max(size.y, 0.001) +
+        sideBias / Math.max(size.x, 0.001) +
+        Math.abs(z - (placement.back ? box.min.z : box.max.z)) / Math.max(size.z, 0.001) * 0.25 +
+        Math.abs(x - targetX) / Math.max(size.x, 0.001) * 0.35;
+    } else {
+      const surfaceBias = placement.back ? z - box.min.z : box.max.z - z;
+      targetScore =
+        Math.abs(x - chestX) / Math.max(size.x, 0.001) +
+        Math.abs(vy - y) / Math.max(size.y, 0.001) +
+        surfaceBias / Math.max(size.z, 0.001) * 0.45;
+    }
+
+    if (targetScore < bestScore) {
+      bestScore = targetScore;
+      surfacePoint.set(x, vy, z);
+      surfaceNormal.set(nx, ny, nz).normalize();
+    }
+  }
+
+  const offsetPoint = surfacePoint.clone().addScaledVector(surfaceNormal, surfacePadding);
+  if (!placement.leftSleeve && !placement.rightSleeve && bestScore > 0.32) {
+    offsetPoint.set(
+      chestX,
+      y,
+      placement.back ? box.min.z - surfacePadding : box.max.z + surfacePadding,
+    );
+  }
+  const worldPoint = mesh.localToWorld(offsetPoint.clone());
+  const localPoint = container ? container.worldToLocal(worldPoint) : offsetPoint;
+  let position: [number, number, number] = [localPoint.x, localPoint.y, localPoint.z];
+  let rotation = (placement.back ? [0, Math.PI, 0] : [0, 0, 0]) as [number, number, number];
+
+  if (placement.leftSleeve || placement.rightSleeve) {
+    rotation = [0, placement.leftSleeve ? -Math.PI / 2 : Math.PI / 2, 0];
+  }
+
+  const isHorizontal = logoAspect >= 1.45;
+  const isBackCenter = placement.back && !label.toLowerCase().includes("alta") && !label.toLowerCase().includes("nuca");
+  const isNeckBack = placement.back && (label.toLowerCase().includes("alta") || label.toLowerCase().includes("nuca"));
+  const isChestCenter = !placement.back && !placement.leftSleeve && !placement.rightSleeve && label.toLowerCase().includes("centro");
+  const requestedCm = logoSize * 100;
+  let targetWidthCm: number;
+
+  if (isBackCenter) {
+    targetWidthCm = THREE.MathUtils.clamp(requestedCm || 28, 25, 30);
+  } else if (isNeckBack) {
+    targetWidthCm = THREE.MathUtils.clamp(requestedCm || 8, 6, 9);
+  } else if (isHorizontal) {
+    targetWidthCm = THREE.MathUtils.clamp(requestedCm || 9, 8, 10);
+  } else {
+    targetWidthCm = THREE.MathUtils.clamp(requestedCm || 7, 6, 7);
+  }
+
+  const referenceTorsoCm = 46;
+  const targetRatio = targetWidthCm / referenceTorsoCm;
+  const minRatio = placement.leftSleeve || placement.rightSleeve
+    ? 0.1
+    : isBackCenter
+      ? 0.48
+      : isNeckBack
+        ? 0.13
+        : isHorizontal
+          ? (isChestCenter ? 0.2 : 0.16)
+          : (isChestCenter ? 0.18 : 0.15);
+  const maxRatio = placement.leftSleeve || placement.rightSleeve
+    ? 0.18
+    : isBackCenter
+      ? 0.66
+      : isNeckBack
+        ? 0.22
+        : isHorizontal
+          ? (isChestCenter ? 0.32 : 0.24)
+          : (isChestCenter ? 0.26 : 0.2);
+  const width = size.x * THREE.MathUtils.clamp(targetRatio, minRatio, maxRatio);
+  const height = THREE.MathUtils.clamp(
+    width / THREE.MathUtils.clamp(logoAspect, 0.45, 3.8),
+    isBackCenter ? size.y * 0.12 : size.y * (isChestCenter ? 0.07 : 0.05),
+    isBackCenter ? size.y * 0.34 : size.y * (isChestCenter ? 0.22 : 0.17),
   );
 
   return {
     ...coords,
-    rotation: (isFrontPlacement ? [0, 0, 0] : [0, Math.PI, 0]) as [number, number, number],
-    position: [
-      box.min.x + normalizedX * size.x,
-      box.min.y + normalizedY * size.y,
-      isFrontPlacement ? box.max.z + zPadding : box.min.z - zPadding,
-    ] as [number, number, number],
-    scale: [
-      coords.scale[0] * scaleRatio,
-      coords.scale[1] * scaleRatio,
-      coords.scale[2],
-    ] as [number, number, number],
+    rotation,
+    position,
+    scale: [width, height, 0.01] as [number, number, number],
   };
 }
 
@@ -717,6 +903,9 @@ function isTextureableLocalModelUrl(modelUrl: string | null | undefined) {
   }
 }
 
+const PHOTO_TEXTURE_CACHE = new Map<string, HTMLCanvasElement>();
+const PHOTO_TEXTURE_SIZE = 640;
+
 function usePhotoFabricTexture(src?: string) {
   const [texture, setTexture] = useState<THREE.Texture | null>(null);
 
@@ -727,6 +916,32 @@ function usePhotoFabricTexture(src?: string) {
     }
 
     let cancelled = false;
+    let generatedTexture: THREE.Texture | null = null;
+
+    const setCanvasTexture = (canvas: HTMLCanvasElement) => {
+      if (cancelled) return;
+      const t = new THREE.CanvasTexture(canvas);
+      t.colorSpace = THREE.SRGBColorSpace;
+      t.wrapS = THREE.RepeatWrapping;
+      t.wrapT = THREE.RepeatWrapping;
+      t.repeat.set(1, 1);
+      t.minFilter = THREE.LinearMipmapLinearFilter;
+      t.magFilter = THREE.LinearFilter;
+      t.generateMipmaps = true;
+      t.needsUpdate = true;
+      generatedTexture = t;
+      setTexture(t);
+    };
+
+    const cachedCanvas = PHOTO_TEXTURE_CACHE.get(src);
+    if (cachedCanvas) {
+      setCanvasTexture(cachedCanvas);
+      return () => {
+        cancelled = true;
+        generatedTexture?.dispose();
+      };
+    }
+
     const img = new Image();
     img.crossOrigin = "anonymous";
 
@@ -734,11 +949,13 @@ function usePhotoFabricTexture(src?: string) {
       if (cancelled || !img.naturalWidth || !img.naturalHeight) return;
 
       const source = document.createElement("canvas");
-      source.width = img.naturalWidth;
-      source.height = img.naturalHeight;
+      const longestSide = Math.max(img.naturalWidth, img.naturalHeight);
+      const imageScale = Math.min(1, 768 / longestSide);
+      source.width = Math.max(1, Math.round(img.naturalWidth * imageScale));
+      source.height = Math.max(1, Math.round(img.naturalHeight * imageScale));
       const sourceCtx = source.getContext("2d", { willReadFrequently: true });
       if (!sourceCtx) return;
-      sourceCtx.drawImage(img, 0, 0);
+      sourceCtx.drawImage(img, 0, 0, source.width, source.height);
 
       const sourceData = sourceCtx.getImageData(0, 0, source.width, source.height);
       const data = sourceData.data;
@@ -750,6 +967,7 @@ function usePhotoFabricTexture(src?: string) {
       let avgG = 0;
       let avgB = 0;
       let samples = 0;
+      const scanStep = Math.max(1, Math.floor(Math.max(source.width, source.height) / 360));
 
       const isBackgroundPixel = (r: number, g: number, b: number, a: number) => {
         if (a < 18) return true;
@@ -758,8 +976,8 @@ function usePhotoFabricTexture(src?: string) {
         return max > 238 && max - min < 22;
       };
 
-      for (let y = 0; y < source.height; y += 1) {
-        for (let x = 0; x < source.width; x += 1) {
+      for (let y = 0; y < source.height; y += scanStep) {
+        for (let x = 0; x < source.width; x += scanStep) {
           const i = (y * source.width + x) * 4;
           const r = data[i];
           const g = data[i + 1];
@@ -794,7 +1012,7 @@ function usePhotoFabricTexture(src?: string) {
       const fillB = Math.round(avgB / samples);
       const cropW = Math.max(1, maxX - minX + 1);
       const cropH = Math.max(1, maxY - minY + 1);
-      const patchSize = Math.max(96, Math.min(360, Math.floor(Math.min(cropW, cropH) * 0.34)));
+      const patchSize = Math.max(72, Math.min(220, Math.floor(Math.min(cropW, cropH) * 0.32)));
       const patchX = Math.round(THREE.MathUtils.clamp(minX + cropW * 0.5 - patchSize / 2, minX, maxX - patchSize));
       const patchY = Math.round(THREE.MathUtils.clamp(minY + cropH * 0.45 - patchSize / 2, minY, maxY - patchSize));
 
@@ -829,8 +1047,8 @@ function usePhotoFabricTexture(src?: string) {
       patchCtx.putImageData(patchImage, 0, 0);
 
       const canvas = document.createElement("canvas");
-      canvas.width = 1024;
-      canvas.height = 1024;
+      canvas.width = PHOTO_TEXTURE_SIZE;
+      canvas.height = PHOTO_TEXTURE_SIZE;
       const ctx = canvas.getContext("2d");
       if (!ctx) return;
 
@@ -849,15 +1067,8 @@ function usePhotoFabricTexture(src?: string) {
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      const t = new THREE.CanvasTexture(canvas);
-      t.colorSpace = THREE.SRGBColorSpace;
-      t.wrapS = THREE.RepeatWrapping;
-      t.wrapT = THREE.RepeatWrapping;
-      t.repeat.set(1, 1);
-      t.minFilter = THREE.LinearMipmapLinearFilter;
-      t.magFilter = THREE.LinearFilter;
-      t.needsUpdate = true;
-      setTexture(t);
+      PHOTO_TEXTURE_CACHE.set(src, canvas);
+      setCanvasTexture(canvas);
     };
 
     img.onerror = () => {
@@ -867,10 +1078,38 @@ function usePhotoFabricTexture(src?: string) {
 
     return () => {
       cancelled = true;
+      generatedTexture?.dispose();
     };
   }, [src]);
 
   return texture;
+}
+
+function useLogoAspect(src?: string | null) {
+  const [aspect, setAspect] = useState(1);
+
+  useEffect(() => {
+    if (!src) {
+      setAspect(1);
+      return;
+    }
+
+    let cancelled = false;
+    const img = new Image();
+    img.onload = () => {
+      if (cancelled) return;
+      setAspect(img.naturalWidth / Math.max(img.naturalHeight, 1));
+    };
+    img.onerror = () => {
+      if (!cancelled) setAspect(1);
+    };
+    img.src = src;
+    return () => {
+      cancelled = true;
+    };
+  }, [src]);
+
+  return aspect;
 }
 
 function Scene3D({
@@ -881,6 +1120,7 @@ function Scene3D({
   productImageUrl,
   solidColorOnly = false,
   activePosition,
+  logoSize,
   autoRotate = false,
   garmentType,
   modelUrl,
@@ -899,6 +1139,7 @@ function Scene3D({
   productImageUrl?: string;
   solidColorOnly?: boolean;
   activePosition: string;
+  logoSize: number;
   autoRotate?: boolean;
   garmentType?: string;
   modelUrl?: string;
@@ -911,6 +1152,7 @@ function Scene3D({
   const [meshReady, setMeshReady] = useState(false);
   const [meshDecalCoords, setMeshDecalCoords] = useState<typeof decalCoords>(null);
   const debug = useDebugFlags();
+  const logoAspect = useLogoAspect(logoSrc);
 
   // Determinar URL del modelo base: usar modelUrl explícito o inferir del tipo
   const fallbackModelUrl = useMemo(() => {
@@ -929,7 +1171,11 @@ function Scene3D({
       ? modelRotationY
       : getDefaultModelRotationY(garmentType, baseModelUrl);
   const positionViewRotation = /espalda/i.test(activePosition) ? Math.PI : 0;
-  const canUsePhotoFabricTexture = Boolean(baseModelUrl && isTextureableLocalModelUrl(baseModelUrl) && productImageUrl);
+  const canUsePhotoFabricTexture = Boolean(
+    baseModelUrl &&
+      isTextureableLocalModelUrl(baseModelUrl) &&
+      productImageUrl
+  );
   const photoFabricTexture = usePhotoFabricTexture(canUsePhotoFabricTexture ? productImageUrl : undefined);
 
   // Fabric → Three sync: genera un canvas oculto con el contenido del editor 2D
@@ -946,6 +1192,12 @@ function Scene3D({
     return t;
   }, [canvasElement, fabricSyncReady, version]);
 
+  useEffect(() => {
+    return () => {
+      fabricTexture?.dispose();
+    };
+  }, [fabricTexture]);
+
   const hasFabricTexture =
     !baseModelUrl && !solidColorOnly && debug.fabricSync && fabricTexture !== null;
   const modelTexture = hasFabricTexture ? fabricTexture : photoFabricTexture;
@@ -959,16 +1211,24 @@ function Scene3D({
 
   const handleProductMeshReady = useCallback((mesh: THREE.Mesh) => {
     garmentRef.current = mesh;
-    setMeshDecalCoords(decalCoords ? fitDecalCoordsToMesh(decalCoords, mesh) : null);
+    setMeshDecalCoords(
+      decalCoords
+        ? fitDecalCoordsToMesh(decalCoords, mesh, activePosition, logoSize, logoAspect, modelGroupRef.current)
+        : null,
+    );
     setMeshReady(true);
-  }, [decalCoords]);
+  }, [activePosition, decalCoords, logoAspect, logoSize]);
 
   useEffect(() => {
     if (!meshReady || !garmentRef.current) return;
-    setMeshDecalCoords(decalCoords ? fitDecalCoordsToMesh(decalCoords, garmentRef.current) : null);
-  }, [decalCoords, meshReady]);
+    setMeshDecalCoords(
+      decalCoords
+        ? fitDecalCoordsToMesh(decalCoords, garmentRef.current, activePosition, logoSize, logoAspect, modelGroupRef.current)
+        : null,
+    );
+  }, [activePosition, decalCoords, logoAspect, logoSize, meshReady]);
 
-  const effectiveDecalCoords = baseModelUrl ? meshDecalCoords : decalCoords;
+  const effectiveDecalCoords = baseModelUrl ? (meshDecalCoords || decalCoords) : decalCoords;
 
   useFrame((_, delta) => {
     const group = modelGroupRef.current;
@@ -997,19 +1257,19 @@ function Scene3D({
           scale={effectiveModelScale}
         >
           <ProductGLB
-            key={`${baseModelUrl}-${colorHex}-${solidColorOnly ? "solid" : "mixed"}`}
+            key={baseModelUrl}
             url={baseModelUrl}
             color={modelTexture ? undefined : colorHex}
             fabricTexture={modelTexture}
             tintTextureWithColor={tintModelTexture}
-            textureAllMeshes={Boolean(photoFabricTexture && !hasFabricTexture)}
+            textureAllMeshes={false}
             scale={1}
             positionY={0}
             rotationY={0}
             onMeshReady={handleProductMeshReady}
           />
-          {!hasFabricTexture && effectiveDecalCoords && logoSrc && meshReady && (
-            <LogoSticker
+          {!hasFabricTexture && effectiveDecalCoords && logoSrc && (
+            <LogoSurfacePatch
               logoSrc={logoSrc}
               position={effectiveDecalCoords.position}
               rotation={effectiveDecalCoords.rotation}
@@ -1067,12 +1327,123 @@ function Scene3D({
 // ─── Logo Size Presets ────────────────────────────────────────────────────────
 
 const LOGO_SIZES = [
+  { label: "7 cm", value: 0.07 },
   { label: "8×8 cm", value: 0.08 },
-  { label: "10×10 cm", value: 0.10 },
-  { label: "12×12 cm", value: 0.12 },
+  { label: "10 cm", value: 0.10 },
+  { label: "28 cm", value: 0.28 },
 ] as const;
 
 // ─── Main Component ───────────────────────────────────────────────────────────
+
+type PositionGroupId = "pecho" | "mangas" | "espalda";
+
+const POSITION_GROUPS: Array<{ id: PositionGroupId; label: string }> = [
+  { id: "pecho", label: "Pecho" },
+  { id: "mangas", label: "Mangas" },
+  { id: "espalda", label: "Espalda" },
+];
+
+function getPositionGroup(label: string): PositionGroupId {
+  const normalized = label.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  if (normalized.includes("manga")) return "mangas";
+  if (normalized.includes("espalda")) return "espalda";
+  return "pecho";
+}
+
+function shortPositionLabel(label: string): string {
+  const normalized = label.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  if (normalized.includes("izquierd")) return "Izq.";
+  if (normalized.includes("derech")) return "Der.";
+  if (normalized.includes("centro")) return "Centro";
+  if (normalized.includes("alta") || normalized.includes("arriba")) return "Alta";
+  if (normalized.includes("baja")) return "Baja";
+  return label.replace(/^Pecho\s+/i, "").replace(/^Manga\s+/i, "").replace(/^Espalda\s+/i, "");
+}
+
+function PositionGroupPicker({
+  labels,
+  activePosition,
+  compact = false,
+  onChange,
+}: {
+  labels: string[];
+  activePosition: string;
+  compact?: boolean;
+  onChange: (label: string) => void;
+}) {
+  const [openGroup, setOpenGroup] = useState<PositionGroupId>(() => getPositionGroup(activePosition));
+
+  useEffect(() => {
+    setOpenGroup(getPositionGroup(activePosition));
+  }, [activePosition]);
+
+  const grouped = useMemo(() => {
+    const map: Record<PositionGroupId, string[]> = {
+      pecho: [],
+      mangas: [],
+      espalda: [],
+    };
+
+    for (const label of labels) {
+      const group = getPositionGroup(label);
+      if (!map[group].includes(label)) map[group].push(label);
+    }
+
+    return map;
+  }, [labels]);
+
+  const visibleOptions = grouped[openGroup].length ? grouped[openGroup] : labels;
+
+  return (
+    <div className="min-w-0">
+      <p className={`${compact ? "mb-1 text-[9px]" : "mb-1.5 text-[10px]"} font-bold uppercase tracking-[0.08em] text-[#8b5e3c]`}>
+        {POSITION_GROUPS.find((group) => group.id === getPositionGroup(activePosition))?.label}: {shortPositionLabel(activePosition)}
+      </p>
+      <div className="grid grid-cols-3 gap-1">
+        {POSITION_GROUPS.map((group) => {
+          const hasOptions = grouped[group.id].length > 0;
+          const active = getPositionGroup(activePosition) === group.id;
+          return (
+            <button
+              key={group.id}
+              type="button"
+              disabled={!hasOptions}
+              onMouseEnter={() => hasOptions && setOpenGroup(group.id)}
+              onFocus={() => hasOptions && setOpenGroup(group.id)}
+              onClick={() => {
+                if (hasOptions) setOpenGroup(group.id);
+              }}
+              className={`${compact ? "h-7 text-[9px]" : "h-8 text-[10px]"} rounded-md border px-2 font-black transition ${
+                active || openGroup === group.id
+                  ? "border-[#c3654d] bg-[#c3654d] text-white"
+                  : "border-black/10 bg-white text-[#655b50] hover:border-[#c3654d]/50"
+              } ${hasOptions ? "" : "cursor-not-allowed opacity-35"}`}
+            >
+              {group.label}
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="mt-1.5 flex max-w-full gap-1 overflow-x-auto pb-1">
+        {visibleOptions.map((label) => (
+          <button
+            key={label}
+            type="button"
+            onClick={() => onChange(label)}
+            className={`${compact ? "h-7 px-2 text-[9px]" : "h-8 px-2.5 text-[10px]"} shrink-0 rounded-md border font-black transition ${
+              activePosition === label
+                ? "border-[#181512] bg-[#181512] text-white"
+                : "border-black/10 bg-white text-[#655b50] hover:border-[#c3654d]/50"
+            }`}
+          >
+            {shortPositionLabel(label)}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 type Props = {
   productImageUrl: string;
@@ -1085,6 +1456,7 @@ type Props = {
   activePosition: string;
   onPositionChange: (label: string) => void;
   logoSize: number;
+  resetKey?: number;
   onSizeChange: (size: number) => void;
   onLogoUpload: (file: File) => void;
   onRemoveLogo: () => void;
@@ -1110,6 +1482,7 @@ export default function Visualizador3D({
   activePosition,
   onPositionChange,
   logoSize,
+  resetKey,
   onSizeChange,
   onLogoUpload,
   onRemoveLogo,
@@ -1149,10 +1522,10 @@ export default function Visualizador3D({
   }, [productCategory, productName, productShortName]);
 
   const colorHex = garmentColor || FALLBACK_COLOR;
-  const positionLabels = useMemo(
-    () => getDecalPositionLabels(garmentType),
-    [garmentType]
-  );
+  const positionLabels = useMemo(() => {
+    const labels = getDecalPositionLabels(garmentType);
+    return Array.from(new Set(["Pecho centro", ...labels]));
+  }, [garmentType]);
   const decalCoords = useMemo(() => {
     const base = getDecalCoords(garmentType, activePosition);
     if (!base) return null;
@@ -1176,6 +1549,11 @@ export default function Visualizador3D({
   useEffect(() => {
     if (is3DOnly) setViewMode("3d");
   }, [is3DOnly]);
+
+  useEffect(() => {
+    setAutoRotate(false);
+    if (is3DOnly) setViewMode("3d");
+  }, [resetKey, is3DOnly]);
 
   return (
     <div className="w-full">
@@ -1210,11 +1588,12 @@ export default function Visualizador3D({
       <div className={`relative flex flex-col gap-3 ${is3DOnly ? "" : "sm:flex-row"}`}>
         {/* Canvas area */}
         <div
-          className={`relative min-w-0 flex-1 overflow-hidden rounded-lg border shadow-lg ${
+          className={`relative min-w-0 flex-1 select-none overflow-hidden overscroll-contain rounded-lg border shadow-lg ${
             is3DOnly
               ? "h-full min-h-[360px] border-black/10 bg-gradient-to-b from-white via-[#fbf7f0] to-[#e4d9ce] sm:min-h-[390px]"
               : "min-h-[400px] rounded-2xl border-slate-200 bg-gradient-to-b from-slate-100 via-white to-slate-200"
           }`}
+          style={{ touchAction: viewMode === "3d" ? "none" : "auto" }}
         >
           {/* 2D overlay — always mounted so Fabric canvas persists */}
           {!is3DOnly && (
@@ -1246,12 +1625,19 @@ export default function Visualizador3D({
                 viewMode === "3d" ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
               }`}
             >
-              <SceneErrorBoundary>
+              <SceneErrorBoundary resetKey={`${modelUrl || garmentType || "fallback"}-${productName}`}>
                 <Canvas
                   orthographic
                   camera={{ zoom: is3DOnly ? 176 : 230, position: [0, 0, 5], near: 0.1, far: 10 }}
                   gl={{ antialias: true, powerPreference: "high-performance" }}
                   dpr={[1, 1.25]}
+                  onCreated={({ gl }) => {
+                    gl.domElement.style.touchAction = "none";
+                    gl.domElement.addEventListener("webglcontextlost", (event) => {
+                      event.preventDefault();
+                      console.warn("[Visualizador3D] WebGL context lost");
+                    });
+                  }}
                 >
                   <Suspense fallback={null}>
                     <Scene3D
@@ -1262,6 +1648,7 @@ export default function Visualizador3D({
                       productImageUrl={productImageUrl}
                       solidColorOnly={is3DOnly}
                       activePosition={activePosition}
+                      logoSize={logoSize}
                       autoRotate={autoRotate}
                       garmentType={garmentType}
                       modelUrl={modelUrl}
@@ -1276,57 +1663,36 @@ export default function Visualizador3D({
         </div>
 
         {logoSrc && is3DOnly && (
-          <div className="absolute bottom-3 left-3 z-10 max-w-[calc(100%-7.5rem)] rounded-lg border border-black/10 bg-white/92 p-2 shadow-sm backdrop-blur-md">
+          <div className="absolute inset-x-3 bottom-16 z-10 rounded-lg border border-black/10 bg-white/92 p-2 shadow-sm backdrop-blur-md sm:inset-x-auto sm:bottom-3 sm:left-3 sm:max-w-[calc(100%-7.5rem)]">
             <p className="mb-1 text-[9px] font-black uppercase tracking-[0.14em] text-[#8b5e3c]">Posicion</p>
-            <div className="flex flex-wrap gap-1">
-              {positionLabels.map((label) => (
-                <button
-                  key={label}
-                  type="button"
-                  onClick={() => {
-                    setAutoRotate(false);
-                    onPositionChange(label);
-                  }}
-                  className={`rounded-md border px-2 py-1 text-[9px] font-black transition ${
-                    activePosition === label
-                      ? "border-[#c3654d] bg-[#c3654d] text-white"
-                      : "border-black/10 bg-white text-[#655b50] hover:border-[#c3654d]/50"
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
+            <PositionGroupPicker
+              labels={positionLabels}
+              activePosition={activePosition}
+              compact
+              onChange={(label) => {
+                setAutoRotate(false);
+                onPositionChange(label);
+              }}
+            />
           </div>
         )}
 
         {/* Sidebar */}
-        <div className={`flex shrink-0 flex-col gap-3 ${is3DOnly ? "absolute bottom-3 right-3 z-10 w-auto" : "sm:w-52"}`}>
+        <div className={`flex shrink-0 flex-col gap-3 ${is3DOnly ? "absolute bottom-3 right-3 z-20 w-auto max-w-[calc(100%-1.5rem)]" : "sm:w-52"}`}>
           {logoSrc && !is3DOnly && (
             <>
               <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                 <h4 className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2">
                   Posición del logo
                 </h4>
-                <div className="flex flex-wrap gap-1.5">
-                  {positionLabels.map((label) => (
-                    <button
-                      key={label}
-                      type="button"
-                      onClick={() => {
-                        setAutoRotate(false);
-                        onPositionChange(label);
-                      }}
-                      className={`rounded-lg border px-2.5 py-1.5 text-[10px] font-bold transition-all ${
-                        activePosition === label
-                          ? "border-accent bg-accent text-white shadow-sm"
-                          : "border-slate-200 bg-white text-slate-600 hover:border-accent hover:text-accent"
-                      }`}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
+                <PositionGroupPicker
+                  labels={positionLabels}
+                  activePosition={activePosition}
+                  onChange={(label) => {
+                    setAutoRotate(false);
+                    onPositionChange(label);
+                  }}
+                />
               </div>
 
               <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -1364,7 +1730,7 @@ export default function Visualizador3D({
                 if (f) onLogoUpload(f);
               }}
             />
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center justify-end gap-1.5">
               <button
                 type="button"
                 onClick={() => inputRef.current?.click()}
