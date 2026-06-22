@@ -1,6 +1,39 @@
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const ADMIN_EMAIL = "brunopsg061@gmail.com";
 
+type QuoteItem = {
+  product: string;
+  color: string;
+  application: string;
+  logoPosition: string;
+  sizes: Record<string, number>;
+  totalUnits: number;
+  unitPrice: number;
+  subtotal: number;
+};
+
+type BrandEmailSettings = {
+  name?: string;
+  phone?: string;
+  email?: string;
+  city?: string;
+  footer?: string;
+  bank_name?: string;
+  bank_account_type?: string;
+  bank_account_number?: string;
+  bank_account_holder?: string;
+  bank_account_rut?: string;
+  bank_account_email?: string;
+  payment_notes?: string;
+};
+
+type CommercialEmailSettings = {
+  discount?: number;
+  terms?: string;
+  vat?: number;
+  validity?: number;
+};
+
 function buildQuoteEmail(
   folio: string,
   client_empresa: string,
@@ -9,20 +42,32 @@ function buildQuoteEmail(
   client_correo: string,
   client_telefono: string,
   client_observaciones: string,
-  items: any[],
+  items: QuoteItem[],
   total: number,
-  brand: any,
-  commercial: any
+  brand: BrandEmailSettings,
+  commercial: CommercialEmailSettings
 ) {
   const vatRate = commercial?.vat ?? 19;
+  const grossTotal = items.reduce((sum, item) => sum + Number(item.subtotal || 0), 0);
+  const discountPercent = Math.max(0, Math.min(100, Number(commercial?.discount || 0)));
+  const discountTotal = Math.max(0, grossTotal - total);
   const neto = Math.round(total / (1 + vatRate / 100));
   const iva = total - neto;
   const dateStr = new Date().toLocaleDateString("es-CL", { year: "numeric", month: "long", day: "numeric" });
   const validity = commercial?.validity ?? 7;
+  const paymentRows = [
+    ["Banco", brand?.bank_name],
+    ["Tipo de cuenta", brand?.bank_account_type],
+    ["Numero de cuenta", brand?.bank_account_number],
+    ["Titular", brand?.bank_account_holder],
+    ["RUT", brand?.bank_account_rut],
+    ["Correo", brand?.bank_account_email],
+  ].filter(([, value]) => String(value || "").trim());
+  const hasPaymentData = paymentRows.length > 0 || String(brand?.payment_notes || "").trim();
 
   const itemRows = items
     .map(
-      (item: any, idx: number) => `
+      (item, idx) => `
     <tr>
       <td style="padding:10px 12px;border-bottom:1px solid #e2e8f0;color:#94a3b8;font-weight:700;text-align:center">${idx + 1}</td>
       <td style="padding:10px 12px;border-bottom:1px solid #e2e8f0;font-weight:700;color:#0f172a">${item.product}</td>
@@ -120,11 +165,34 @@ function buildQuoteEmail(
         </table>
         ` : ""}
 
+        ${hasPaymentData ? `
+        <table style="width:100%;margin-top:12px;border-collapse:collapse">
+          <tr>
+            <td style="padding:14px;background:#ecfeff;border:1px solid #bae6fd;border-radius:8px">
+              <p style="font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:0.15em;color:#0891b2;margin:0 0 8px">Datos de transferencia</p>
+              <table style="width:100%;border-collapse:collapse;font-size:13px;color:#475569">
+                ${paymentRows.map(([label, value]) => `
+                  <tr>
+                    <td style="padding:3px 12px 3px 0;font-weight:800;color:#0f172a;width:130px">${label}</td>
+                    <td style="padding:3px 0">${value}</td>
+                  </tr>
+                `).join("")}
+              </table>
+              ${brand?.payment_notes ? `<p style="font-size:13px;color:#475569;margin:8px 0 0">${brand.payment_notes}</p>` : ""}
+            </td>
+          </tr>
+        </table>
+        ` : ""}
+
         <!-- TOTALS -->
         <table style="width:100%;margin-top:20px">
           <tr>
             <td style="text-align:right">
               <table style="margin-left:auto;width:260px">
+                ${discountPercent > 0 && discountTotal > 0 ? `
+                <tr><td style="padding:4px 0;color:#64748b;font-size:14px">Subtotal</td><td style="padding:4px 0;font-weight:600;color:#1e293b;text-align:right">$${grossTotal.toLocaleString("es-CL")}</td></tr>
+                <tr><td style="padding:4px 0;color:#0891b2;font-size:14px">Descuento (${discountPercent}%)</td><td style="padding:4px 0;font-weight:700;color:#0891b2;text-align:right">-$${discountTotal.toLocaleString("es-CL")}</td></tr>
+                ` : ""}
                 <tr><td style="padding:4px 0;color:#64748b;font-size:14px">Neto</td><td style="padding:4px 0;font-weight:600;color:#1e293b;text-align:right">$${neto.toLocaleString("es-CL")}</td></tr>
                 <tr><td style="padding:4px 0;color:#64748b;font-size:14px">IVA (${vatRate}%)</td><td style="padding:4px 0;font-weight:600;color:#1e293b;text-align:right">$${iva.toLocaleString("es-CL")}</td></tr>
                 <tr><td colspan="2" style="padding:0"><hr style="border:none;border-top:1px solid #e2e8f0"></td></tr>

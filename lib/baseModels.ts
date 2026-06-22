@@ -36,9 +36,15 @@ export function isLegacyProductModelUrl(modelUrl: string | null | undefined): bo
       ? new URL(modelUrl).pathname
       : modelUrl;
 
-    return /(?:^|\/)models\/productos\//i.test(pathname);
+    return (
+      /(?:^|\/)models\/productos\//i.test(pathname) ||
+      /(?:^|\/)models\/(?!base\/)[^/]+\.glb$/i.test(pathname)
+    );
   } catch {
-    return /(?:^|\/)models\/productos\//i.test(modelUrl);
+    return (
+      /(?:^|\/)models\/productos\//i.test(modelUrl) ||
+      /(?:^|\/)models\/(?!base\/)[^/]+\.glb$/i.test(modelUrl)
+    );
   }
 }
 

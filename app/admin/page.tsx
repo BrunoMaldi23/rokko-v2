@@ -44,8 +44,8 @@ export default function AdminPage() {
 
   if (initializing) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-cyan-200 border-t-cyan-500" />
+      <div className="admin-shell min-h-screen flex items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-accent-soft border-t-accent" />
       </div>
     );
   }

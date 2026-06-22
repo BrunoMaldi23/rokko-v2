@@ -2,22 +2,23 @@
 @import "tailwindcss";
 
 @theme {
-  --color-bg: #f4f6f7;
+  --color-bg: #f3f8fa;
   --color-surface: #ffffff;
-  --color-surface-2: #edf0f1;
-  --color-border: #e2e5e8;
+  --color-surface-2: #eaf3f5;
+  --color-border: #dce8eb;
   --color-text: #1e1e1e;
-  --color-muted: #5c656a;
-  --color-accent: #0090a0;
-  --color-accent-deep: #007080;
-  --color-accent-light: #00a8b8;
-  --color-accent-soft: #e0f4f6;
+  --color-muted: #566a70;
+  --color-accent: #46b9c8;
+  --color-accent-deep: #16889a;
+  --color-accent-light: #79d8e3;
+  --color-accent-soft: #e4f7fa;
   --color-brand-dark: #2d3436;
   --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
   --animate-fade-in-up: fade-in-up 0.5s ease-out both;
   --animate-fade-in: fade-in 0.3s ease-out both;
   --animate-scale-in: scale-in 0.3s ease-out both;
   --animate-float: float 3s ease-in-out infinite;
+  --animate-slide-over: slide-over 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
 
   @keyframes fade-in-up {
     from { opacity: 0; transform: translateY(16px); }
@@ -37,6 +38,11 @@
   @keyframes float {
     0%, 100% { transform: translateY(0); }
     50% { transform: translateY(-8px); }
+  }
+
+  @keyframes slide-over {
+    from { opacity: 0; transform: translateX(24px); }
+    to { opacity: 1; transform: translateX(0); }
   }
 }
 
@@ -74,7 +80,7 @@ body {
 }
 
 ::selection {
-  background: #0090a0;
+  background: #46b9c8;
   color: #fff;
 }
 
@@ -143,4 +149,229 @@ input[type="number"]::-webkit-inner-spin-button {
 }
 input[type="number"] {
   -moz-appearance: textfield;
+}
+
+.admin-shell {
+  --admin-panel: rgba(255, 255, 255, 0.88);
+  --admin-panel-strong: #ffffff;
+  --admin-line: rgba(226, 229, 232, 0.92);
+  --admin-shadow: 0 18px 60px rgba(45, 52, 54, 0.08);
+  --admin-soft-shadow: 0 10px 30px rgba(45, 52, 54, 0.06);
+  background:
+    radial-gradient(circle at 9% 0%, rgba(70, 185, 200, 0.18), transparent 32%),
+    radial-gradient(circle at 96% 8%, rgba(121, 216, 227, 0.18), transparent 30%),
+    linear-gradient(180deg, #f8fcfd 0%, var(--color-bg) 46%, #edf8fa 100%);
+}
+
+.admin-sidebar {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(244, 251, 252, 0.9)),
+    radial-gradient(circle at 15% 8%, rgba(70, 185, 200, 0.18), transparent 36%);
+  box-shadow: 18px 0 60px rgba(45, 52, 54, 0.08);
+}
+
+.admin-panel {
+  border: 1px solid var(--admin-line);
+  background: var(--admin-panel);
+  box-shadow: var(--admin-soft-shadow);
+  backdrop-filter: blur(18px);
+}
+
+.admin-panel-strong {
+  border: 1px solid var(--admin-line);
+  background: var(--admin-panel-strong);
+  box-shadow: var(--admin-shadow);
+}
+
+.admin-section-title {
+  color: var(--color-text);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.admin-eyebrow {
+  color: var(--color-accent);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.admin-muted {
+  color: var(--color-muted);
+}
+
+.admin-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 800;
+  transition: transform 0.18s ease, border-color 0.18s ease, background-color 0.18s ease, box-shadow 0.18s ease, color 0.18s ease;
+}
+
+.admin-button:active {
+  transform: scale(0.98);
+}
+
+.admin-button-primary {
+  background: linear-gradient(135deg, var(--color-accent), var(--color-accent-deep));
+  color: #fff;
+  box-shadow: 0 16px 34px rgba(0, 144, 160, 0.2);
+}
+
+.admin-button-primary:hover {
+  box-shadow: 0 18px 42px rgba(0, 144, 160, 0.28);
+}
+
+.admin-button-secondary {
+  border: 1px solid var(--color-border);
+  background: rgba(255, 255, 255, 0.78);
+  color: var(--color-muted);
+}
+
+.admin-button-secondary:hover {
+  border-color: color-mix(in srgb, var(--color-accent) 35%, var(--color-border));
+  background: rgba(224, 244, 246, 0.46);
+  color: var(--color-accent);
+}
+
+.admin-button-danger {
+  border: 1px solid rgba(220, 38, 38, 0.22);
+  background: rgba(254, 242, 242, 0.9);
+  color: #b91c1c;
+}
+
+.admin-table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.admin-table thead {
+  background: rgba(237, 240, 241, 0.62);
+}
+
+.admin-table th {
+  color: color-mix(in srgb, var(--color-muted) 80%, white);
+  font-size: 0.67rem;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.admin-table tbody tr {
+  transition: background-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.admin-table tbody tr:hover {
+  background: rgba(224, 244, 246, 0.32);
+}
+
+.admin-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--color-accent) 18%, var(--color-border));
+  background: rgba(224, 244, 246, 0.68);
+  color: var(--color-accent-deep);
+  padding: 0.35rem 0.7rem;
+  font-size: 0.72rem;
+  font-weight: 850;
+}
+
+.admin-icon-tile {
+  display: flex;
+  height: 2.5rem;
+  width: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.5rem;
+  border: 1px solid color-mix(in srgb, var(--color-accent) 14%, var(--color-border));
+  background: rgba(224, 244, 246, 0.72);
+  color: var(--color-accent);
+}
+
+.admin-login-art {
+  background:
+    radial-gradient(circle at 20% 18%, rgba(121, 216, 227, 0.28), transparent 34%),
+    radial-gradient(circle at 82% 78%, rgba(255, 255, 255, 0.1), transparent 30%),
+    linear-gradient(145deg, #102023 0%, #263c41 58%, #0f1d20 100%);
+}
+
+.admin-shell .rounded-2xl,
+.admin-login .rounded-2xl,
+.admin-login .rounded-\[1\.6rem\] {
+  border-radius: 0.5rem;
+}
+
+.admin-shell .rounded-xl,
+.admin-login .rounded-xl {
+  border-radius: 0.5rem;
+}
+
+.admin-shell section.rounded-2xl,
+.admin-shell div.rounded-2xl,
+.admin-shell aside.rounded-2xl {
+  border-color: var(--admin-line);
+  background-color: var(--admin-panel);
+  box-shadow: var(--admin-soft-shadow);
+  backdrop-filter: blur(18px);
+}
+
+.admin-shell table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.admin-shell thead {
+  background: rgba(237, 240, 241, 0.64);
+}
+
+.admin-shell th {
+  color: color-mix(in srgb, var(--color-muted) 82%, white) !important;
+  font-weight: 900 !important;
+}
+
+.admin-shell tbody tr:hover {
+  background: rgba(224, 244, 246, 0.34) !important;
+}
+
+.admin-shell h2,
+.admin-shell h3 {
+  color: var(--color-text);
+  letter-spacing: -0.01em;
+}
+
+.admin-shell p[class*="text-slate-5"],
+.admin-shell p[class*="text-slate-4"],
+.admin-shell span[class*="text-slate-5"],
+.admin-shell span[class*="text-slate-4"],
+.admin-shell td[class*="text-slate-5"],
+.admin-shell td[class*="text-slate-4"] {
+  color: var(--color-muted) !important;
+}
+
+.admin-shell button.bg-accent,
+.admin-shell button[class*="from-accent"],
+.admin-login button[class*="from-accent"] {
+  background: linear-gradient(135deg, var(--color-accent), var(--color-accent-deep)) !important;
+  box-shadow: 0 16px 34px rgba(0, 144, 160, 0.2);
+}
+
+.admin-shell button.bg-accent:hover,
+.admin-login button[class*="from-accent"]:hover {
+  box-shadow: 0 18px 42px rgba(0, 144, 160, 0.28);
+}
+
+.admin-shell input,
+.admin-shell select,
+.admin-shell textarea,
+.admin-login input,
+.admin-login select,
+.admin-login textarea {
+  letter-spacing: 0;
 }

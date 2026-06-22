@@ -1,4 +1,4 @@
--- ============================================================
+﻿-- ============================================================
 -- 007_bucket_setup.sql
 -- Crear bucket product-models + seed data para modelos 3D
 -- Ejecutar en Supabase SQL Editor DESPUES de 001-006
@@ -92,24 +92,8 @@ USING (auth.jwt() ->> 'email' = 'admin@rokko.cl');
 
 -- ============================================================
 -- 5. Agregar columna base_model a product_models
---    (marca si es el maniquí base para visualización 2.5D)
+--    Se conserva por compatibilidad con instalaciones previas.
+--    El visualizador actual usa prendas GLB reales sin maniqui base.
 -- ============================================================
 ALTER TABLE public.product_models ADD COLUMN IF NOT EXISTS base_model boolean NOT NULL DEFAULT false;
 
--- ============================================================
--- 6. Seed: modelo base (mannequin.glb)
---    Nota: file_path apunta al archivo en storage.
---    Ejecutar seed-script.js para hacer el upload real.
--- ============================================================
-INSERT INTO public.product_models (name, category, model_url, file_path, scale, position_y, rotation_y, base_model)
-VALUES (
-  'Maniquí base',
-  'base',
-  '/models/mannequin.glb',
-  'models/mannequin.glb',
-  0.85,
-  -0.3,
-  0,
-  true
-)
-ON CONFLICT DO NOTHING;

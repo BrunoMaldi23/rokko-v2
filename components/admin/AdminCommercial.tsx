@@ -2,10 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
-import {
-  fetchCommercialSettings,
-  saveCommercialSettings,
-} from "@/lib/settings";
+import { fetchCommercialSettings, saveCommercialSettings } from "@/lib/settings";
 
 const defaultRules = {
   discount: "0",
@@ -44,7 +41,7 @@ export default function AdminCommercial() {
       { id: "tax", label: "IVA", value: `${rules.vat || 0}%` },
       { id: "valid", label: "Validez", value: `${rules.validity || 0} dias` },
     ],
-    [rules]
+    [rules],
   );
 
   function updateRule(field: keyof typeof defaultRules, value: string) {
@@ -78,26 +75,24 @@ export default function AdminCommercial() {
   }
 
   return (
-    <div className="grid items-start gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-      <section className="rounded-2xl border border-accent-soft/50 bg-white p-6 shadow-sm shadow-slate-100/50">
-        <div className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-100 pb-5">
-          <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-accent">
-              Reglas de venta
-            </p>
-            <h2 className="mt-1 text-xl font-bold tracking-tight text-slate-900">
-              Parametros comerciales
-            </h2>
-            <p className="mt-1 text-sm text-slate-500">
-              Ajusta los criterios que guian la cotizacion y las condiciones visibles.
-            </p>
+    <div className="grid items-start gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+      <section className="admin-panel-strong overflow-hidden rounded-lg">
+        <div className="border-b border-border bg-gradient-to-r from-accent-soft/80 via-white to-white px-6 py-6">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <p className="admin-eyebrow">Reglas de venta</p>
+              <h2 className="mt-2 text-2xl font-black tracking-tight text-text">
+                Parametros comerciales
+              </h2>
+              <p className="mt-1 max-w-xl text-sm text-muted">
+                Ajusta descuentos, impuestos y condiciones que se muestran en la cotizacion.
+              </p>
+            </div>
+            <span className="admin-chip">Vista previa activa</span>
           </div>
-          <span className="rounded-full border border-accent-soft/30 bg-accent-soft px-3 py-1 text-xs font-semibold text-accent">
-            Vista previa activa
-          </span>
         </div>
 
-        <div className="mt-6 grid gap-4 md:grid-cols-2">
+        <div className="grid gap-5 p-6 md:grid-cols-2">
           <InputBlock label="Descuento global (%)">
             <input
               type="number"
@@ -132,27 +127,29 @@ export default function AdminCommercial() {
           </InputBlock>
         </div>
 
-        <InputBlock label="Condiciones comerciales" className="mt-5">
-          <textarea
-            value={rules.terms}
-            onChange={(e) => updateRule("terms", e.target.value)}
-            rows={4}
-            className="admin-control resize-none"
-          />
-        </InputBlock>
+        <div className="px-6">
+          <InputBlock label="Condiciones comerciales">
+            <textarea
+              value={rules.terms}
+              onChange={(e) => updateRule("terms", e.target.value)}
+              rows={5}
+              className="admin-control resize-none"
+            />
+          </InputBlock>
+        </div>
 
-        <div className="mt-6 flex flex-wrap gap-3">
+        <div className="mt-6 flex flex-wrap gap-3 border-t border-border bg-surface-2/45 px-6 py-5">
           <button
             onClick={handleSave}
             disabled={saving}
-            className="rounded-xl bg-accent px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-accent disabled:opacity-50"
+            className="admin-button admin-button-primary disabled:opacity-50"
           >
-            {saving ? "Guardando..." : saved ? "¡Guardado!" : "Guardar configuracion"}
+            {saving ? "Guardando..." : saved ? "Guardado" : "Guardar configuracion"}
           </button>
           <button
             type="button"
             onClick={() => setRules(defaultRules)}
-            className="rounded-xl border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-600 transition-colors hover:border-accent-soft hover:bg-accent-soft/30 hover:text-accent"
+            className="admin-button admin-button-secondary"
           >
             Restaurar
           </button>
@@ -160,17 +157,15 @@ export default function AdminCommercial() {
       </section>
 
       <aside className="space-y-6 xl:sticky xl:top-28">
-        <section className="rounded-2xl border border-accent-soft/50 bg-white p-6 shadow-sm shadow-slate-100/50">
-          <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-accent">
-            Resumen actual
-          </p>
+        <section className="admin-panel-strong rounded-lg p-6">
+          <p className="admin-eyebrow">Resumen actual</p>
           <div className="mt-5 grid grid-cols-2 gap-3">
             {summary.map((item) => (
-              <div key={item.id} className="rounded-xl border border-accent-soft/30 bg-surface-2/40 p-4">
-                <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">
+              <div key={item.id} className="rounded-lg border border-border bg-surface-2/55 p-4">
+                <p className="text-[10px] font-black uppercase tracking-[0.12em] text-muted">
                   {item.label}
                 </p>
-                <p className="mt-1.5 text-xl font-extrabold tracking-tight text-slate-900">
+                <p className="mt-1.5 text-xl font-black tracking-tight text-text">
                   {item.value}
                 </p>
               </div>
@@ -178,12 +173,10 @@ export default function AdminCommercial() {
           </div>
         </section>
 
-        <section className="rounded-2xl border border-accent-soft/40 bg-surface-2/50 p-6 shadow-sm shadow-slate-100/50">
-          <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-accent">
-            Texto de cotizacion
-          </p>
-          <div className="mt-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-100/30">
-            <p className="text-xs font-medium italic leading-relaxed text-slate-600">
+        <section className="admin-panel rounded-lg p-6">
+          <p className="admin-eyebrow">Texto de cotizacion</p>
+          <div className="mt-4 rounded-lg border border-border bg-white p-4">
+            <p className="text-xs font-medium italic leading-relaxed text-muted">
               &quot;{rules.terms || "Agrega condiciones comerciales para mostrarlas aqui."}&quot;
             </p>
           </div>
@@ -204,7 +197,7 @@ function InputBlock({
 }) {
   return (
     <label className={`block ${className}`}>
-      <span className="mb-2 block text-xs font-semibold tracking-wide text-slate-500">
+      <span className="mb-2 block text-xs font-semibold tracking-wide text-muted">
         {label}
       </span>
       {children}

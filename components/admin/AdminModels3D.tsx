@@ -123,7 +123,7 @@ export default function AdminModels3D() {
     }
   }
 
-  function useLocalModel(model: ProductModel) {
+  function applyLocalModel(model: ProductModel) {
     setDraft({
       name: model.name,
       category: model.category,
@@ -229,7 +229,7 @@ export default function AdminModels3D() {
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {isLocalModel ? (
-                      <button onClick={() => useLocalModel(model)} className="rounded-xl border border-accent-soft bg-accent-soft px-4 py-2 text-xs font-bold text-accent">
+                      <button onClick={() => applyLocalModel(model)} className="rounded-xl border border-accent-soft bg-accent-soft px-4 py-2 text-xs font-bold text-accent">
                         Usar / asociar
                       </button>
                     ) : (

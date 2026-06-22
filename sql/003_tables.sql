@@ -13,6 +13,13 @@ CREATE TABLE IF NOT EXISTS public.brand_settings (
   email text NOT NULL DEFAULT 'contacto@rokko.cl',
   city text NOT NULL DEFAULT 'Santiago',
   footer text NOT NULL DEFAULT 'Gracias por preferirnos.',
+  bank_name text NOT NULL DEFAULT '',
+  bank_account_type text NOT NULL DEFAULT '',
+  bank_account_number text NOT NULL DEFAULT '',
+  bank_account_holder text NOT NULL DEFAULT '',
+  bank_account_rut text NOT NULL DEFAULT '',
+  bank_account_email text NOT NULL DEFAULT '',
+  payment_notes text NOT NULL DEFAULT '',
   updated_at timestamptz DEFAULT now()
 );
 

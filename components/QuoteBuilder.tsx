@@ -1,21 +1,53 @@
 "use client";
 
 import Image from "next/image";
+import dynamic from "next/dynamic";
 import { useEffect, useState, useCallback, useRef, useMemo, memo } from "react";
-import { certificationLogos } from "@/data/catalog";
 import type { Product } from "@/types/product";
 import { saveQuote } from "@/lib/quotes";
 import { formatRut } from "@/lib/rut";
 import { formatPhone } from "@/lib/phone";
-import { fetchBrandSettings, fetchCommercialSettings } from "@/lib/settings";
+import {
+  fetchBrandSettings,
+  fetchCommercialSettings,
+  type BrandSettings,
+  type CommercialSettings,
+} from "@/lib/settings";
 import { printElement } from "@/lib/print";
 import {
   detectBaseGarmentType,
   getDetectedBaseModelUrl,
+  normalizeProductModelUrl,
 } from "@/lib/baseModels";
 
-import ProductDetailPanel from "@/components/ProductDetailPanel";
-import type { Canvas as FabricCanvas } from "fabric";
+const ProductDetailPanel = dynamic(() => import("@/components/ProductDetailPanel"), {
+  ssr: false,
+  loading: () => (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-neutral-950/80 text-white backdrop-blur-sm">
+      <div className="rounded-2xl border border-white/10 bg-white/10 px-5 py-4 text-sm font-black shadow-2xl">
+        Cargando ficha tecnica...
+      </div>
+    </div>
+  ),
+});
+
+const preloadedDetailModels = new Set<string>();
+
+function preloadProductDetailPanel() {
+  void import("@/components/ProductDetailPanel");
+}
+
+function preloadProductModel(modelUrl: string | null | undefined) {
+  if (!modelUrl || preloadedDetailModels.has(modelUrl)) return;
+  preloadedDetailModels.add(modelUrl);
+
+  const link = document.createElement("link");
+  link.rel = "preload";
+  link.as = "fetch";
+  link.href = modelUrl;
+  link.crossOrigin = "anonymous";
+  document.head.appendChild(link);
+}
 
 const colorMap: Record<string, string> = {
   amarillo: "#eab308",
@@ -93,6 +125,7 @@ function getColorHex(name: string): string {
 }
 
 const sizes = ["S", "M", "L", "XL", "2XL", "3XL", "4XL"];
+const EMPTY_SIZE_FORM: Readonly<Record<string, number>> = Object.freeze({});
 
 type Props = {
   initialProducts: Product[];
@@ -111,6 +144,8 @@ type CartItem = {
   unitPrice: number;
   subtotal: number;
 };
+
+type QuoteItem = Omit<CartItem, "id">;
 
 type ClientData = {
   empresa: string;
@@ -162,19 +197,22 @@ export default function QuoteBuilder({ initialProducts }: Props) {
   const [quoteOpen, setQuoteOpen] = useState(false);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [logoSize, setLogoSize] = useState(0.08);
-  const [visualResetVersion, setVisualResetVersion] = useState(0);
   const [showSuccess, setShowSuccess] = useState(false);
   const [savingQuote, setSavingQuote] = useState(false);
   const [emailStatus, setEmailStatus] = useState<
     "idle" | "sending" | "sent" | "error"
   >("idle");
   const [submittedFolio, setSubmittedFolio] = useState<string | null>(null);
-  const [brand, setBrand] = useState<Record<string, any> | null>(null);
-  const [commercial, setCommercial] = useState<Record<string, any> | null>(
-    null,
+  const [brand, setBrand] = useState<BrandSettings | null>(null);
+  const [commercial, setCommercial] = useState<CommercialSettings | null>(null);
+  const commercialDiscount = useMemo(
+    () => Math.max(0, Math.min(100, Number(commercial?.discount || 0))),
+    [commercial?.discount],
   );
-  const [fabricCanvas, setFabricCanvas] = useState<FabricCanvas | null>(null);
-
+  const commercialWholesaleMin = useMemo(
+    () => Math.max(0, Number(commercial?.wholesale_min || 0)),
+    [commercial?.wholesale_min],
+  );
   useEffect(() => {
     fetchBrandSettings().then(setBrand);
     fetchCommercialSettings().then(setCommercial);
@@ -190,16 +228,20 @@ export default function QuoteBuilder({ initialProducts }: Props) {
   });
 
   const formsRef = useRef(forms);
-  formsRef.current = forms;
   const productsRef = useRef(initialProducts);
-  productsRef.current = initialProducts;
+
+  useEffect(() => {
+    formsRef.current = forms;
+  }, [forms]);
+
+  useEffect(() => {
+    productsRef.current = initialProducts;
+  }, [initialProducts]);
 
   const handleColorSelect = useCallback(
     (
       productId: string,
       color: string,
-      _colorIndex: number,
-      _totalImages: number,
     ) => {
       setForms((prev) => ({
         ...prev,
@@ -233,44 +275,46 @@ export default function QuoteBuilder({ initialProducts }: Props) {
     [],
   );
 
-  const handleAddToCart = useCallback((productId: string) => {
-    const product = productsRef.current.find((p) => p.id === productId);
-    if (!product) return;
-    const form = formsRef.current[productId] || {};
-    const productSizes = form.sizes || {};
-    const totalUnits = Object.values(productSizes).reduce(
-      (sum, qty) => sum + Number(qty || 0),
-      0,
-    );
-    if (totalUnits <= 0) {
-      alert("Debes ingresar al menos una cantidad.");
-      return;
-    }
-    const unitPrice =
-      product.wholesale_from &&
-      product.wholesale_price &&
-      totalUnits >= product.wholesale_from
-        ? product.wholesale_price
-        : product.price;
-    setCart((prev) => [
-      ...prev,
-      {
-        id: Date.now(),
-        product: product.name,
-        productId: product.id,
-        sizes: productSizes,
-        totalUnits,
-        subtotal: unitPrice * totalUnits,
-        color: form.color || product.colors?.[0] || "Sin color",
-        unitPrice,
-        logo: form.logo || "Pecho incluido",
-        application: form.application || "Bordado",
-        logoPosition: form.logoPosition || "Pecho izquierdo",
-      },
-    ]);
-    setShowSuccess(true);
-    setTimeout(() => setShowSuccess(false), 2000);
-  }, []);
+  const handleAddToCart = useCallback(
+    (productId: string) => {
+      const product = productsRef.current.find((p) => p.id === productId);
+      if (!product) return;
+      const form = formsRef.current[productId] || {};
+      const productSizes = form.sizes || {};
+      const totalUnits = Object.values(productSizes).reduce(
+        (sum, qty) => sum + Number(qty || 0),
+        0,
+      );
+      if (totalUnits <= 0) {
+        alert("Debes ingresar al menos una cantidad.");
+        return;
+      }
+      const wholesaleFrom = product.wholesale_from || commercialWholesaleMin;
+      const unitPrice =
+        wholesaleFrom && product.wholesale_price && totalUnits >= wholesaleFrom
+          ? product.wholesale_price
+          : product.price;
+      setCart((prev) => [
+        ...prev,
+        {
+          id: Date.now(),
+          product: product.name,
+          productId: product.id,
+          sizes: productSizes,
+          totalUnits,
+          subtotal: unitPrice * totalUnits,
+          color: form.color || product.colors?.[0] || "Sin color",
+          unitPrice,
+          logo: form.logo || "Pecho incluido",
+          application: form.application || "Bordado",
+          logoPosition: form.logoPosition || "Pecho izquierdo",
+        },
+      ]);
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 2000);
+    },
+    [commercialWholesaleMin],
+  );
 
   function updateForm(
     productId: string,
@@ -292,7 +336,6 @@ export default function QuoteBuilder({ initialProducts }: Props) {
       return null;
     });
     setLogoSize(0.08);
-    setFabricCanvas(null);
     if (productId) {
       setForms((prev) => ({
         ...prev,
@@ -302,7 +345,6 @@ export default function QuoteBuilder({ initialProducts }: Props) {
         },
       }));
     }
-    setVisualResetVersion((prev) => prev + 1);
   }, []);
 
   const closeProductDetail = useCallback(() => {
@@ -310,20 +352,17 @@ export default function QuoteBuilder({ initialProducts }: Props) {
     setSelectedProduct(null);
   }, [resetVisualCustomization, selectedProduct?.id]);
 
-  function updateSize(productId: string, size: string, value: string) {
-    const quantity = Number(value) || 0;
-
-    setForms((prev) => ({
-      ...prev,
-      [productId]: {
-        ...prev[productId],
-        sizes: {
-          ...prev[productId]?.sizes,
-          [size]: quantity,
-        },
-      },
-    }));
-  }
+  const handlePreloadProductDetail = useCallback((product: Product) => {
+    preloadProductDetailPanel();
+    preloadProductModel(
+      normalizeProductModelUrl(product.model_3d_url, [
+        product.category,
+        product.slug,
+        product.short_name,
+        product.name,
+      ]),
+    );
+  }, []);
 
   function updateClient(field: keyof ClientData, value: string) {
     setClientData((prev) => ({
@@ -342,82 +381,6 @@ export default function QuoteBuilder({ initialProducts }: Props) {
     setClientData((prev) => ({ ...prev, telefono: formatted }));
   }
 
-  function setGalleryIndex(
-    productId: string,
-    nextIndex: number,
-    totalImages: number,
-  ) {
-    setGalleryIndexes((prev) => ({
-      ...prev,
-      [productId]: (nextIndex + totalImages) % totalImages,
-    }));
-  }
-
-  function selectProductColor(
-    product: Product,
-    color: string,
-    colorIndex: number,
-  ) {
-    updateForm(product.id, "color", color);
-
-    const totalImages = getProductImages(product).length;
-    if (totalImages > 1) {
-      setGalleryIndex(
-        product.id,
-        Math.min(colorIndex, totalImages - 1),
-        totalImages,
-      );
-    }
-  }
-
-  function handleLogoUpload(file?: File) {
-    if (!file) return;
-
-    if (logoPreview) URL.revokeObjectURL(logoPreview);
-    const url = URL.createObjectURL(file);
-    setLogoPreview(url);
-  }
-
-  function addToCart(product: Product) {
-    const form = forms[product.id] || {};
-    const productSizes = form.sizes || {};
-
-    const totalUnits = Object.values(productSizes).reduce(
-      (sum, qty) => sum + Number(qty || 0),
-      0,
-    );
-
-    if (totalUnits <= 0) {
-      alert("Debes ingresar al menos una cantidad.");
-      return;
-    }
-
-    const unitPrice =
-      product.wholesale_from &&
-      product.wholesale_price &&
-      totalUnits >= product.wholesale_from
-        ? product.wholesale_price
-        : product.price;
-
-    const newItem: CartItem = {
-      id: Date.now(),
-      product: product.name,
-      productId: product.id,
-      color: form.color || product.colors?.[0] || "Sin color",
-      logo: form.logo || "Pecho incluido",
-      application: form.application || "Bordado",
-      logoPosition: form.logoPosition || "Pecho izquierdo",
-      sizes: productSizes,
-      totalUnits,
-      unitPrice,
-      subtotal: totalUnits * unitPrice,
-    };
-
-    setCart((prev) => [...prev, newItem]);
-    setShowSuccess(true);
-    setTimeout(() => setShowSuccess(false), 2000);
-  }
-
   const removeItem = useCallback((id: number) => {
     setCart((prev) => prev.filter((item) => item.id !== id));
   }, []);
@@ -426,9 +389,17 @@ export default function QuoteBuilder({ initialProducts }: Props) {
     setQuoteOpen(true);
   }, []);
 
-  const total = useMemo(
+  const subtotalBeforeDiscount = useMemo(
     () => cart.reduce((sum, item) => sum + item.subtotal, 0),
     [cart],
+  );
+  const discountAmount = useMemo(
+    () => Math.round(subtotalBeforeDiscount * (commercialDiscount / 100)),
+    [subtotalBeforeDiscount, commercialDiscount],
+  );
+  const total = useMemo(
+    () => Math.max(0, subtotalBeforeDiscount - discountAmount),
+    [subtotalBeforeDiscount, discountAmount],
   );
   const cartUnits = useMemo(
     () => cart.reduce((sum, item) => sum + item.totalUnits, 0),
@@ -436,6 +407,22 @@ export default function QuoteBuilder({ initialProducts }: Props) {
   );
   const cartColors = useMemo(
     () => new Set(cart.map((item) => item.color)).size,
+    [cart],
+  );
+  const quoteItems = useMemo<QuoteItem[]>(
+    () =>
+      cart.map((item) => ({
+        product: item.product,
+        productId: item.productId,
+        color: item.color,
+        logo: item.logo,
+        application: item.application,
+        logoPosition: item.logoPosition,
+        sizes: item.sizes,
+        totalUnits: item.totalUnits,
+        unitPrice: item.unitPrice,
+        subtotal: item.subtotal,
+      })),
     [cart],
   );
 
@@ -456,7 +443,7 @@ export default function QuoteBuilder({ initialProducts }: Props) {
         client_correo: clientData.correo,
         client_telefono: clientData.telefono,
         client_observaciones: clientData.observaciones,
-        items: cart.map(({ id: _cartId, ...rest }) => rest),
+        items: quoteItems,
         total,
       });
 
@@ -482,7 +469,7 @@ export default function QuoteBuilder({ initialProducts }: Props) {
           client_correo: clientData.correo,
           client_telefono: clientData.telefono,
           client_observaciones: clientData.observaciones,
-          items: cart.map(({ id: _cartId, ...rest }) => rest),
+          items: quoteItems,
           total,
           brand,
           commercial,
@@ -502,7 +489,7 @@ export default function QuoteBuilder({ initialProducts }: Props) {
     }
 
     setSavingQuote(false);
-  }, [clientData, cart, total, brand, commercial]);
+  }, [clientData, quoteItems, total, brand, commercial]);
 
   const resetQuote = useCallback(() => {
     if (logoPreview) URL.revokeObjectURL(logoPreview);
@@ -571,12 +558,13 @@ export default function QuoteBuilder({ initialProducts }: Props) {
                 animationDelay={i * 80}
                 selectedColor={selectedColor}
                 galleryIndex={galleryIndex}
-                formSizes={forms[product.id]?.sizes || {}}
+                formSizes={forms[product.id]?.sizes || EMPTY_SIZE_FORM}
                 logoPreview={logoPreview}
                 onColorSelect={handleColorSelect}
                 onGalleryNav={handleGalleryNav}
                 onSizeUpdate={handleSizeUpdate}
                 onAddToCart={handleAddToCart}
+                onPreloadDetails={handlePreloadProductDetail}
                 onViewDetails={setSelectedProduct}
               />
             );
@@ -714,6 +702,22 @@ export default function QuoteBuilder({ initialProducts }: Props) {
           </div>
 
           <div className="border-t border-white/[0.08] px-6 py-5">
+            {commercialDiscount > 0 && discountAmount > 0 && (
+              <div className="mb-3 space-y-1 rounded-xl border border-cyan-300/20 bg-cyan-300/10 px-3.5 py-3 text-xs text-white/65">
+                <div className="flex justify-between">
+                  <span>Subtotal</span>
+                  <span className="font-bold text-white/80">
+                    ${subtotalBeforeDiscount.toLocaleString("es-CL")}
+                  </span>
+                </div>
+                <div className="flex justify-between text-cyan-100">
+                  <span>Descuento comercial {commercialDiscount}%</span>
+                  <span className="font-black">
+                    -${discountAmount.toLocaleString("es-CL")}
+                  </span>
+                </div>
+              </div>
+            )}
             <div className="flex items-end justify-between gap-4">
               <span className="text-sm font-semibold text-white/50">Total estimado</span>
               <strong className="text-2xl font-black tracking-tight text-white">
@@ -751,13 +755,14 @@ export default function QuoteBuilder({ initialProducts }: Props) {
           logoPreview={logoPreview}
           logoPosition={forms[selectedProduct.id]?.logoPosition}
           logoSize={logoSize}
-          resetVersion={visualResetVersion}
-          fabricCanvas={fabricCanvas}
-          modelUrl={(() => {
-            const dbUrl = selectedProduct.model_3d_url;
-            if (dbUrl) return dbUrl;
-            return undefined;
-          })()}
+          modelUrl={
+            normalizeProductModelUrl(selectedProduct.model_3d_url, [
+              selectedProduct.category,
+              selectedProduct.slug,
+              selectedProduct.short_name,
+              selectedProduct.name,
+            ]) || undefined
+          }
           modelScale={(() => {
             if (selectedProduct.model_3d_scale != null)
               return selectedProduct.model_3d_scale;
@@ -781,7 +786,6 @@ export default function QuoteBuilder({ initialProducts }: Props) {
           onSizeChange={setLogoSize}
           onResetVisual={() => resetVisualCustomization(selectedProduct.id)}
           onRemoveLogo={() => resetVisualCustomization(selectedProduct.id)}
-          onFabricCanvasReady={(c) => setFabricCanvas(c)}
           onClose={closeProductDetail}
         />
       )}
@@ -929,11 +933,29 @@ export default function QuoteBuilder({ initialProducts }: Props) {
                     </div>
                   ))}
                 </div>
-                <div className="mt-5 flex items-center justify-between border-t border-neutral-200 pt-4">
-                  <span className="text-sm text-neutral-500">Total</span>
-                  <strong className="text-xl font-semibold text-neutral-900">
-                    ${total.toLocaleString("es-CL")}
-                  </strong>
+                <div className="mt-5 border-t border-neutral-200 pt-4">
+                  {commercialDiscount > 0 && discountAmount > 0 && (
+                    <div className="mb-3 space-y-1 rounded-lg bg-cyan-50 px-3 py-2 text-xs text-neutral-500">
+                      <div className="flex justify-between">
+                        <span>Subtotal</span>
+                        <span className="font-semibold text-neutral-700">
+                          ${subtotalBeforeDiscount.toLocaleString("es-CL")}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-cyan-700">
+                        <span>Descuento comercial {commercialDiscount}%</span>
+                        <span className="font-black">
+                          -${discountAmount.toLocaleString("es-CL")}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-neutral-500">Total</span>
+                    <strong className="text-xl font-semibold text-neutral-900">
+                      ${total.toLocaleString("es-CL")}
+                    </strong>
+                  </div>
                 </div>
                 <button
                   onClick={handleSubmitQuote}
@@ -1160,10 +1182,33 @@ export default function QuoteBuilder({ initialProducts }: Props) {
                   <div className="col-span-5">
                     {(() => {
                       const vatRate = commercial?.vat ?? 19;
+                      const grossTotal = cart.reduce((sum, item) => sum + item.subtotal, 0);
+                      const discountPercent = Math.max(0, Math.min(100, Number(commercial?.discount || 0)));
+                      const previewDiscount = Math.max(0, grossTotal - total);
                       const neto = Math.round(total / (1 + vatRate / 100));
                       const iva = total - neto;
                       return (
                         <div className="space-y-2.5">
+                          {discountPercent > 0 && previewDiscount > 0 && (
+                            <>
+                              <div className="flex justify-between text-sm px-1">
+                                <span className="text-slate-500 font-medium">
+                                  Subtotal
+                                </span>
+                                <span className="font-bold text-slate-800">
+                                  ${grossTotal.toLocaleString("es-CL")}
+                                </span>
+                              </div>
+                              <div className="flex justify-between text-sm px-1">
+                                <span className="text-cyan-700 font-medium">
+                                  Descuento ({discountPercent}%)
+                                </span>
+                                <span className="font-bold text-cyan-700">
+                                  -${previewDiscount.toLocaleString("es-CL")}
+                                </span>
+                              </div>
+                            </>
+                          )}
                           <div className="flex justify-between text-sm px-1">
                             <span className="text-slate-500 font-medium">
                               Neto
@@ -1256,7 +1301,7 @@ export default function QuoteBuilder({ initialProducts }: Props) {
                         client_correo: clientData.correo,
                         client_telefono: clientData.telefono,
                         client_observaciones: clientData.observaciones,
-                        items: cart.map(({ id: _cartId, ...rest }) => rest),
+                        items: quoteItems,
                         total,
                         brand,
                         commercial,
@@ -1298,14 +1343,17 @@ function QuoteDocument({
   total,
   submittedFolio,
 }: {
-  brand: Record<string, any> | null;
-  commercial: Record<string, any> | null;
+  brand: BrandSettings | null;
+  commercial: CommercialSettings | null;
   clientData: ClientData;
   cart: CartItem[];
   total: number;
   submittedFolio: string | null;
 }) {
   const vatRate = commercial?.vat ?? 19;
+  const grossTotal = cart.reduce((sum, item) => sum + item.subtotal, 0);
+  const discountPercent = Math.max(0, Math.min(100, Number(commercial?.discount || 0)));
+  const discountTotal = Math.max(0, grossTotal - total);
   const neto = Math.round(total / (1 + vatRate / 100));
   const iva = total - neto;
   const city = brand?.city || "Temuco";
@@ -1313,6 +1361,15 @@ function QuoteDocument({
   const quoteNumber = submittedFolio || "SIN FOLIO";
   const validity = commercial?.validity || 5;
   const paymentTerms = commercial?.terms || "60% al confirmar el trabajo, saldo contra entrega.";
+  const hasPaymentData = [
+    brand?.bank_name,
+    brand?.bank_account_type,
+    brand?.bank_account_number,
+    brand?.bank_account_holder,
+    brand?.bank_account_rut,
+    brand?.bank_account_email,
+    brand?.payment_notes,
+  ].some((value) => String(value || "").trim());
 
   // 👇 esta línea es la que probablemente falta
   const cellBorder = { border: "1px solid #000" } as const;
@@ -1550,7 +1607,7 @@ function QuoteDocument({
             </div>
             <div>
               <p className="font-black uppercase">Contacto</p>
-              <p>{brand?.contact || brand?.name || "ROKKO-TCO"}</p>
+              <p>{brand?.name || "ROKKO-TCO"}</p>
               {brand?.phone && <p>{brand.phone}</p>}
             </div>
             <div>
@@ -1559,11 +1616,44 @@ function QuoteDocument({
               {brand?.email && <p>{brand.email}</p>}
             </div>
           </div>
+
+          {hasPaymentData && (
+            <div className="mt-3 border-t border-black/15 pt-2">
+              <p className="font-black uppercase">Datos de transferencia</p>
+              <div className="mt-1 grid grid-cols-2 gap-x-4 gap-y-0.5">
+                <QuotePaymentLine label="Banco" value={brand?.bank_name} />
+                <QuotePaymentLine label="Tipo" value={brand?.bank_account_type} />
+                <QuotePaymentLine label="Cuenta" value={brand?.bank_account_number} />
+                <QuotePaymentLine label="Titular" value={brand?.bank_account_holder} />
+                <QuotePaymentLine label="RUT" value={brand?.bank_account_rut} />
+                <QuotePaymentLine label="Correo" value={brand?.bank_account_email} />
+              </div>
+              {brand?.payment_notes && (
+                <p className="mt-1.5 font-semibold">{brand.payment_notes}</p>
+              )}
+            </div>
+          )}
         </div>
 
         {/* ────── TOTALES — caja con celdas separadas por borde ────── */}
         <div className="flex items-center p-3">
         <div className="grid grid-cols-[1fr_128px] text-[11px]">
+          {discountPercent > 0 && discountTotal > 0 && (
+            <>
+              <div className="px-3 py-2 font-black uppercase" style={headerCell}>
+                Subtotal
+              </div>
+              <div className="whitespace-nowrap px-3 py-2 text-right font-black" style={cellBorder}>
+                ${grossTotal.toLocaleString("es-CL")}
+              </div>
+              <div className="px-3 py-2 font-black uppercase" style={headerCell}>
+                Descuento {discountPercent}%
+              </div>
+              <div className="whitespace-nowrap px-3 py-2 text-right font-black" style={cellBorder}>
+                -${discountTotal.toLocaleString("es-CL")}
+              </div>
+            </>
+          )}
           <div className="px-3 py-2 font-black uppercase" style={headerCell}>
             Valor neto
           </div>
@@ -1578,12 +1668,6 @@ function QuoteDocument({
           </div>
           <div className="px-3 py-2 text-[13px] font-black uppercase" style={headerCell}>
             Total
-          </div>
-          <div className="whitespace-nowrap px-3 py-2 text-right text-[14px] font-black" style={cellBorder}>
-            ${total.toLocaleString("es-CL")}
-          </div>
-          <div className="px-3 py-2 text-[13px] font-black uppercase" style={headerCell}>
-            Total con descuento
           </div>
           <div className="whitespace-nowrap px-3 py-2 text-right text-[14px] font-black" style={cellBorder}>
             ${total.toLocaleString("es-CL")}
@@ -1617,12 +1701,13 @@ function QuoteDocument({
   );
 }
 
-function QuoteMeta({ label, value }: { label: string; value: string }) {
+function QuotePaymentLine({ label, value }: { label: string; value?: string }) {
+  if (!value) return null;
   return (
-    <>
-      <p className="py-1 pr-2 font-bold uppercase text-muted">{label}</p>
-      <p className="py-1 font-semibold">{value || "-"}</p>
-    </>
+    <p>
+      <span className="font-black">{label}: </span>
+      {value}
+    </p>
   );
 }
 
@@ -1665,13 +1750,14 @@ const ProductCard = memo(function ProductCard({
   onGalleryNav,
   onSizeUpdate,
   onAddToCart,
+  onPreloadDetails,
   onViewDetails,
 }: {
   product: Product;
   animationDelay: number;
   selectedColor: string;
   galleryIndex: number;
-  formSizes: Record<string, number>;
+  formSizes: Readonly<Record<string, number>>;
   logoPreview: string | null;
   onColorSelect: (
     productId: string,
@@ -1686,6 +1772,7 @@ const ProductCard = memo(function ProductCard({
   ) => void;
   onSizeUpdate: (productId: string, size: string, value: string) => void;
   onAddToCart: (productId: string) => void;
+  onPreloadDetails: (product: Product) => void;
   onViewDetails: (product: Product) => void;
 }) {
   const allProductImages = useMemo(() => getProductImages(product), [product]);
@@ -1829,7 +1916,6 @@ const ProductCard = memo(function ProductCard({
         {/* ─── IMAGE ─── */}
         <div className="relative flex aspect-[4/5] items-center justify-center overflow-hidden border-r border-neutral-100 bg-white lg:aspect-auto lg:min-h-[340px]">
           <Image
-            unoptimized
             src={activeImage || "/rokko.png"}
             alt={product.name}
             width={260}
@@ -2068,6 +2154,9 @@ const ProductCard = memo(function ProductCard({
               Agregar al pedido
             </button>
             <button
+              onMouseEnter={() => onPreloadDetails(product)}
+              onFocus={() => onPreloadDetails(product)}
+              onTouchStart={() => onPreloadDetails(product)}
               onClick={() => onViewDetails(product)}
               className="flex h-11 items-center justify-center gap-1.5 rounded-xl border border-[#cfd8d9] bg-white/85 px-4 text-sm font-black text-neutral-700 shadow-sm shadow-slate-900/[0.03] transition-colors hover:border-accent/45 hover:bg-white hover:text-accent"
             >

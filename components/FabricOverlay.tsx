@@ -10,7 +10,6 @@ type Props = {
   productName: string;
   productShortName: string;
   logoSrc: string | null;
-  garmentColor?: string;
   onLogoUpload: (file: File) => void;
   onPositionChange?: (pos: {
     left: number;
@@ -28,9 +27,6 @@ type Props = {
   onActivePositionChange?: (label: string) => void;
   onCanvasReady?: (canvas: Canvas) => void;
   onRemoveLogo?: () => void;
-  onColorChange?: (hex: string) => void;
-  // FIX: these two props were declared in the parent but not passed here
-  skipTint?: boolean;
 };
 
 const CANVAS_W = 600;
@@ -43,7 +39,6 @@ export default function FabricEditor({
   productName,
   productShortName,
   logoSrc,
-  garmentColor,
   onLogoUpload,
   onPositionChange,
   initialPosition,
@@ -51,7 +46,6 @@ export default function FabricEditor({
   onActivePositionChange,
   onCanvasReady,
   onRemoveLogo,
-  onColorChange,
 }: Props) {
   const garmentConfig = useMemo(
     () => getGarmentConfig(productName, productShortName),
@@ -68,7 +62,6 @@ export default function FabricEditor({
   const [imgError, setImgError] = useState(false);
   // FIX: track actual rendered size so logo coords stay in sync with visual
   const [containerSize, setContainerSize] = useState({ w: CANVAS_W, h: CANVAS_H });
-  const [animating, setAnimating] = useState(false);
   const initKey = useRef(0);
   const [activeTool, setActiveTool] = useState<"select" | "text" | "color">("select");
   const [textInput, setTextInput] = useState("");
@@ -271,11 +264,9 @@ export default function FabricEditor({
   // --- View change ---
   const handleViewChange = useCallback(
     (v: GarmentView) => {
-      setAnimating(true);
       setView(v);
       const p = garmentConfig.positions[v][0];
       handlePreset(p.label, p.left, p.top);
-      setTimeout(() => setAnimating(false), 400);
     },
     [garmentConfig, handlePreset]
   );
@@ -365,6 +356,7 @@ export default function FabricEditor({
               }}
             >
               {!imgError ? (
+                // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={productImageUrl}
                   alt="Prenda"

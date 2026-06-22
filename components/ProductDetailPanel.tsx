@@ -5,7 +5,6 @@ import { useMemo } from "react";
 import type { Product } from "@/types/product";
 import { certificationLogos } from "@/data/catalog";
 import Visualizador3D from "@/components/Visualizador3D";
-import type { Canvas as FabricCanvas } from "fabric";
 
 const colorMap: Record<string, string> = {
   amarillo: "#eab308",
@@ -74,8 +73,6 @@ type ProductDetailPanelProps = {
   logoPreview: string | null;
   logoPosition?: string;
   logoSize: number;
-  resetVersion: number;
-  fabricCanvas: FabricCanvas | null;
   modelUrl?: string;
   modelScale?: number;
   modelPositionY?: number;
@@ -92,7 +89,6 @@ type ProductDetailPanelProps = {
   onSizeChange: (size: number) => void;
   onResetVisual: () => void;
   onRemoveLogo: () => void;
-  onFabricCanvasReady: (canvas: FabricCanvas) => void;
   onClose: () => void;
 };
 
@@ -163,8 +159,6 @@ export default function ProductDetailPanel({
   logoPreview,
   logoPosition,
   logoSize,
-  resetVersion,
-  fabricCanvas,
   modelUrl,
   modelScale,
   modelPositionY,
@@ -176,7 +170,6 @@ export default function ProductDetailPanel({
   onSizeChange,
   onResetVisual,
   onRemoveLogo,
-  onFabricCanvasReady,
   onClose,
 }: ProductDetailPanelProps) {
   const productImagesLength = productImages.length;
@@ -265,17 +258,20 @@ export default function ProductDetailPanel({
   }
 
   return (
-    <aside className="fixed inset-0 z-[100] overflow-hidden bg-neutral-950/80 backdrop-blur-sm">
-      <div className="h-full overflow-y-auto bg-[#f6f1ea] text-[#181512]">
-        <header className="sticky top-0 z-30 border-b border-black/10 bg-[#f6f1ea]/92 backdrop-blur-xl">
+    <aside className="fixed inset-0 z-[100] overflow-hidden bg-brand-dark/72 backdrop-blur-md">
+      <div className="h-full overflow-y-auto bg-bg text-text">
+        <header className="sticky top-0 z-30 border-b border-border bg-white/86 backdrop-blur-xl">
           <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
             <div className="min-w-0">
-              <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#8b5e3c]">Ficha tecnica ROKKO</p>
-              <h2 className="truncate text-lg font-black sm:text-2xl">{product.name}</h2>
+              <div className="flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-accent" />
+                <p className="text-[10px] font-black uppercase tracking-[0.26em] text-accent">Ficha tecnica ROKKO</p>
+              </div>
+              <h2 className="mt-1 truncate text-lg font-black tracking-normal sm:text-2xl">{product.name}</h2>
             </div>
             <button
               onClick={onClose}
-              className="inline-flex h-10 items-center gap-2 rounded-lg border border-black/10 bg-white px-3 text-xs font-black uppercase tracking-[0.14em] text-[#181512] shadow-sm transition hover:border-[#bd7b2f]/40 hover:text-[#9a5a16]"
+              className="inline-flex h-10 items-center gap-2 rounded-lg border border-border bg-white px-3 text-xs font-black uppercase tracking-[0.14em] text-muted shadow-sm transition hover:border-accent/45 hover:text-accent-deep"
               aria-label="Cerrar ficha tecnica"
             >
               <span className="hidden sm:inline">Cerrar</span>
@@ -284,25 +280,24 @@ export default function ProductDetailPanel({
           </div>
         </header>
 
-        <main className="mx-auto grid max-w-7xl items-start gap-4 px-4 py-4 sm:px-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:px-8">
-          <section className="space-y-5">
-            <div className="overflow-hidden rounded-lg border border-black/10 bg-white shadow-sm lg:h-[520px]">
-              <div className="relative h-[420px] bg-white sm:h-[500px] lg:h-full">
+        <main className="mx-auto grid max-w-7xl items-start gap-5 px-4 py-5 sm:px-6 lg:grid-cols-[minmax(0,0.88fr)_minmax(0,1.12fr)] lg:px-8">
+          <section className="space-y-4 lg:sticky lg:top-24">
+            <div className="overflow-hidden rounded-lg border border-border bg-white shadow-[0_18px_50px_rgba(45,52,54,0.08)]">
+              <div className="relative h-[360px] bg-white sm:h-[460px]">
                 {currentImage ? (
                   <Image
                     src={currentImage}
                     alt={product.name}
                     fill
-                    className="object-contain object-center"
-                    sizes="(max-width: 1024px) 100vw, 42vw"
-                    priority
+                    className="object-contain object-center p-4"
+                    sizes="(max-width: 1024px) 100vw, 40vw"
                   />
                 ) : (
-                  <div className="flex h-full items-center justify-center px-8 text-center text-sm font-semibold text-white/70">
+                  <div className="flex h-full items-center justify-center px-8 text-center text-sm font-semibold text-muted">
                     Sin imagen disponible
                   </div>
                 )}
-                <div className="absolute inset-x-3 bottom-3 rounded-lg border border-white/20 bg-black/62 p-3 text-white backdrop-blur-md">
+                <div className="absolute inset-x-3 bottom-3 rounded-lg border border-white/20 bg-brand-dark/82 p-3 text-white shadow-lg backdrop-blur-md">
                   <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0">
                       <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/55">Color seleccionado</p>
@@ -340,68 +335,74 @@ export default function ProductDetailPanel({
               </div>
             </div>
 
-            <div className="rounded-lg border border-black/10 bg-white p-4 shadow-sm">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="rounded-md bg-[#181512] px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-white">
-                  Cod. {productCode}
-                </span>
-                <span className="rounded-md border border-[#bd7b2f]/25 bg-[#fff7ec] px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-[#8b5e3c]">
-                  {product.category}
-                </span>
-              </div>
-              <h1 className="mt-3 text-3xl font-black leading-none tracking-normal sm:text-4xl">{product.name}</h1>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-[#655b50]">{productDescription}</p>
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                <div className="min-h-24 rounded-lg border border-black/10 bg-[#181512] p-4 text-white">
-                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/50">Precio base</p>
-                  <p className="mt-1 text-3xl font-black">${priceInfo.base.toLocaleString("es-CL")}</p>
-                </div>
-                <div className="min-h-24 rounded-lg border border-black/10 bg-[#f6f1ea] p-4">
-                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#8b5e3c]">Mayorista</p>
-                  {priceInfo.wholesale ? (
-                    <p className="mt-1 text-2xl font-black">
-                      ${priceInfo.wholesale.toLocaleString("es-CL")}
-                      <span className="ml-2 text-xs font-bold text-[#655b50]">desde {priceInfo.from} und.</span>
-                    </p>
-                  ) : (
-                    <p className="mt-2 text-sm font-bold text-[#655b50]">Disponible por cotizacion</p>
-                  )}
-                </div>
-              </div>
-            </div>
-
             <div className="grid gap-3 sm:grid-cols-2">
-              {technicalStats.map((stat) => (
-                <div key={stat.label} className="min-h-20 rounded-lg border border-black/10 bg-white p-4 shadow-sm">
-                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#8b5e3c]">{stat.label}</p>
-                  <p className="mt-2 text-sm font-black text-[#181512]">{stat.value}</p>
-                </div>
-              ))}
+              <div className="rounded-lg bg-brand-dark p-4 text-white shadow-[0_18px_42px_rgba(45,52,54,0.18)]">
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/50">Precio base</p>
+                <p className="mt-1 text-3xl font-black">${priceInfo.base.toLocaleString("es-CL")}</p>
+                <p className="mt-1 text-xs font-semibold text-white/55">IVA incluido, sujeto a volumen</p>
+              </div>
+              <div className="rounded-lg border border-accent/18 bg-accent-soft p-4">
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-accent-deep">Mayorista</p>
+                {priceInfo.wholesale ? (
+                  <p className="mt-1 text-2xl font-black text-text">
+                    ${priceInfo.wholesale.toLocaleString("es-CL")}
+                    <span className="ml-2 text-xs font-bold text-muted">desde {priceInfo.from} und.</span>
+                  </p>
+                ) : (
+                  <p className="mt-2 text-sm font-bold text-muted">Disponible por cotizacion</p>
+                )}
+              </div>
             </div>
           </section>
 
-          <section className="space-y-5">
-            <div className="rounded-lg border border-black/10 bg-white p-3 text-[#181512] shadow-sm lg:min-h-[520px]">
-              <div className="mb-3 flex flex-wrap items-start justify-between gap-3 px-2 pt-1">
+          <section className="space-y-4">
+            <div className="rounded-lg border border-border bg-white p-5 shadow-[0_18px_50px_rgba(45,52,54,0.08)]">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="rounded-md bg-brand-dark px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-white">
+                  Cod. {productCode}
+                </span>
+                <span className="rounded-md border border-accent/25 bg-accent-soft px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-accent-deep">
+                  {product.category}
+                </span>
+                <span className="rounded-md border border-border bg-surface-2 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-muted">
+                  {availableSizes.length} tallas
+                </span>
+              </div>
+              <h1 className="mt-4 max-w-3xl text-3xl font-black leading-none tracking-normal sm:text-5xl">{product.name}</h1>
+              <p className="mt-4 max-w-3xl text-sm font-medium leading-7 text-muted">{productDescription}</p>
+
+              <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                {technicalStats.map((stat) => (
+                  <div key={stat.label} className="min-h-20 rounded-lg border border-border bg-surface-2 p-4">
+                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-accent-deep">{stat.label}</p>
+                    <p className="mt-2 text-sm font-black text-text">{stat.value}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="overflow-hidden rounded-lg border border-border bg-white shadow-[0_20px_60px_rgba(45,52,54,0.10)]">
+              <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border bg-gradient-to-r from-white via-accent-soft/65 to-white px-5 py-4">
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#8b5e3c]">Laboratorio visual</p>
-                  <h3 className="text-xl font-black">Simulador 3D aplicado</h3>
+                  <p className="text-[10px] font-black uppercase tracking-[0.24em] text-accent-deep">Laboratorio visual</p>
+                  <h3 className="text-2xl font-black tracking-normal">Simulador 3D aplicado</h3>
+                  <p className="mt-1 text-xs font-semibold text-muted">Textura, color y logo en una vista interactiva.</p>
                 </div>
                 <button
                   onClick={onResetVisual}
-                  className="inline-flex h-9 items-center gap-2 rounded-lg border border-black/10 px-3 text-[10px] font-black uppercase tracking-[0.16em] text-[#655b50] transition hover:border-[#bd7b2f]/40 hover:text-[#9a5a16]"
+                  className="inline-flex h-9 items-center gap-2 rounded-lg border border-border bg-white px-3 text-[10px] font-black uppercase tracking-[0.16em] text-muted shadow-sm transition hover:border-accent/45 hover:text-accent-deep"
                 >
                   <Icon type="reset" className="h-4 w-4" />
                   Reset
                 </button>
               </div>
               {product.colors && product.colors.length > 0 && (
-                <div className="mb-3 rounded-lg border border-black/10 bg-[#f6f1ea] p-3">
-                  <div className="mb-2 flex items-center justify-between gap-3">
-                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#8b5e3c]">Color 3D</p>
-                    <p className="truncate text-xs font-black text-[#181512]">{modelColor}</p>
+                <div className="border-b border-border bg-white px-5 py-4">
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-accent-deep">Color 3D</p>
+                    <p className="truncate text-xs font-black text-text">{modelColor}</p>
                   </div>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
                     {product.colors.map((color, index) => {
                       const selected = normalizeColorName(color) === normalizeColorName(modelColor);
                       return (
@@ -410,149 +411,108 @@ export default function ProductDetailPanel({
                           type="button"
                           onClick={() => selectColor(color, index)}
                           title={color}
-                          className={`flex h-9 min-w-9 items-center gap-2 rounded-lg border bg-white px-2.5 text-xs font-black transition ${
+                          className={`flex h-10 shrink-0 items-center gap-2 rounded-lg border bg-white px-3 text-xs font-black transition ${
                             selected
-                              ? "border-[#bd7b2f] text-[#181512] shadow-sm ring-2 ring-[#bd7b2f]/20"
-                              : "border-black/10 text-[#655b50] hover:border-[#bd7b2f]/40"
+                              ? "border-accent text-text shadow-sm ring-2 ring-accent/20"
+                              : "border-border text-muted hover:border-accent/45 hover:text-accent-deep"
                           }`}
                         >
                           <span
                             className="h-4 w-4 rounded-full border border-black/15"
                             style={{ backgroundColor: getColorHex(color) }}
                           />
-                          <span className="hidden sm:inline">{color}</span>
+                          <span>{color}</span>
                         </button>
                       );
                     })}
                   </div>
                 </div>
               )}
-              <div className="overflow-hidden rounded-lg border border-black/10 bg-[#f7f2ea]">
-                <Visualizador3D
-                  productImageUrl={currentImage}
-                  imageAlreadyColorMatched={false}
-                  productName={product.name}
-                  productShortName={product.short_name}
-                  productCategory={product.category || product.slug}
-                  garmentColor={getColorHex(modelColor)}
-                  logoSrc={logoPreview}
-                  onLogoUpload={onLogoUpload}
-                  activePosition={logoPosition || "Pecho centro"}
-                  onPositionChange={onPositionChange}
-                  logoSize={logoSize}
-                  resetKey={resetVersion}
-                  onSizeChange={onSizeChange}
-                  onRemoveLogo={onRemoveLogo}
-                  fabricCanvas={fabricCanvas}
-                  onFabricCanvasReady={onFabricCanvasReady}
-                  modelUrl={modelUrl}
-                  modelScale={modelScale}
-                  modelPositionY={modelPositionY}
-                  modelRotationY={modelRotationY}
-                  displayMode="3d-only"
-                />
-              </div>
+              <Visualizador3D
+                productImageUrl={currentImage}
+                productName={product.name}
+                productShortName={product.short_name}
+                productCategory={product.category || product.slug}
+                garmentColor={getColorHex(modelColor)}
+                logoSrc={logoPreview}
+                onLogoUpload={onLogoUpload}
+                activePosition={logoPosition || "Pecho centro"}
+                onPositionChange={onPositionChange}
+                logoSize={logoSize}
+                onSizeChange={onSizeChange}
+                onRemoveLogo={onRemoveLogo}
+                modelUrl={modelUrl}
+                modelScale={modelScale}
+                modelPositionY={modelPositionY}
+                modelRotationY={modelRotationY}
+                displayMode="3d-only"
+              />
             </div>
 
-            {product.technologies && product.technologies.length > 0 && (
-              <div className="rounded-lg border border-black/10 bg-white p-5 shadow-sm">
-                <div className="mb-4 flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#181512] text-[#d7b27d]">
-                    <Icon type="spark" />
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#8b5e3c]">Tecnologias</p>
-                    <h3 className="text-lg font-black">Prestaciones de la prenda</h3>
-                  </div>
-                </div>
-                <div className="grid gap-2 sm:grid-cols-2">
-                  {product.technologies.map((tech) => (
-                    <div key={tech} className="flex items-center gap-3 rounded-lg border border-black/10 bg-[#f6f1ea] p-3">
-                      <span className="flex h-10 w-12 shrink-0 items-center justify-center rounded-md bg-white text-xs font-black text-[#8b5e3c] shadow-sm">
-                        {getTechLabel(tech)}
-                      </span>
-                      <p className="text-sm font-black text-[#181512]">{tech}</p>
+            <div className="grid gap-4 xl:grid-cols-[1fr_0.9fr]">
+              {product.technologies && product.technologies.length > 0 && (
+                <div className="rounded-lg border border-border bg-white p-5 shadow-sm">
+                  <div className="mb-4 flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand-dark text-accent-light">
+                      <Icon type="spark" />
                     </div>
-                  ))}
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-accent-deep">Tecnologias</p>
+                      <h3 className="text-lg font-black">Prestaciones de la prenda</h3>
+                    </div>
+                  </div>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {product.technologies.map((tech) => (
+                      <div key={tech} className="flex items-center gap-3 rounded-lg border border-border bg-surface-2 p-3">
+                        <span className="flex h-10 w-12 shrink-0 items-center justify-center rounded-md bg-white text-xs font-black text-accent-deep shadow-sm">
+                          {getTechLabel(tech)}
+                        </span>
+                        <p className="text-sm font-black text-text">{tech}</p>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {((product.colors && product.colors.length > 0) || availableSizes.length > 0) && (
-              <div className="rounded-lg border border-black/10 bg-white p-5 shadow-sm">
-                <div className="mb-4 flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#fff7ec] text-[#9a5a16]">
-                    <Icon type="palette" />
+              {availableSizes.length > 0 && (
+                <div className="rounded-lg border border-border bg-white p-5 shadow-sm">
+                  <div className="mb-4 flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent-soft text-accent-deep">
+                      <Icon type="ruler" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-accent-deep">Disponibilidad</p>
+                      <h3 className="text-lg font-black">Tallas disponibles</h3>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#8b5e3c]">Variantes</p>
-                    <h3 className="text-lg font-black">Colorama y tallas disponibles</h3>
+                  <div className="grid grid-cols-4 gap-2 sm:grid-cols-6 xl:grid-cols-4">
+                    {availableSizes.map((size) => (
+                      <div
+                        key={size}
+                        className="flex h-11 items-center justify-center rounded-lg border border-border bg-surface-2 text-sm font-black text-text"
+                      >
+                        {size}
+                      </div>
+                    ))}
                   </div>
                 </div>
-                <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
-                  {product.colors && product.colors.length > 0 && (
-                    <div>
-                      <div className="mb-2 flex items-center justify-between gap-3">
-                        <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#8b5e3c]">
-                          {product.colors.length} colores
-                        </p>
-                        <p className="truncate text-xs font-black text-[#655b50]">{selectedColor}</p>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        {product.colors.map((color) => (
-                          <div
-                            key={color}
-                            className={`flex min-h-11 items-center gap-2 rounded-lg border px-2.5 py-2 ${
-                              normalizeColorName(color) === normalizeColorName(selectedColor)
-                                ? "border-[#bd7b2f] bg-[#fff7ec]"
-                                : "border-black/10 bg-[#f6f1ea]"
-                            }`}
-                          >
-                            <span
-                              className="h-5 w-5 shrink-0 rounded-full border border-black/15 shadow-sm"
-                              style={{ backgroundColor: getColorHex(color) }}
-                            />
-                            <span className="min-w-0 truncate text-xs font-black uppercase tracking-normal text-[#181512]">{color}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {availableSizes.length > 0 && (
-                    <div>
-                      <p className="mb-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#18724f]">
-                        Tallas del producto
-                      </p>
-                      <div className="grid grid-cols-4 gap-2 sm:grid-cols-6 xl:grid-cols-3">
-                        {availableSizes.map((size) => (
-                          <div
-                            key={size}
-                            className="flex h-11 items-center justify-center rounded-lg border border-black/10 bg-[#edf7f2] text-sm font-black text-[#181512]"
-                          >
-                            {size}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
+              )}
+            </div>
 
             {certificationLogos.length > 0 && (
-              <div className="rounded-lg border border-black/10 bg-white p-5 shadow-sm">
+              <div className="rounded-lg border border-border bg-white p-5 shadow-sm">
                 <div className="mb-4 flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#eef3fb] text-[#24588d]">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent-soft text-accent-deep">
                     <Icon type="shield" />
                   </div>
                   <div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#24588d]">Respaldo</p>
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-accent-deep">Respaldo</p>
                     <h3 className="text-lg font-black">Certificaciones y control</h3>
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
                   {certificationLogos.slice(0, 6).map((logo) => (
-                    <div key={logo} className="flex h-16 items-center justify-center rounded-lg border border-black/10 bg-[#f6f1ea] p-2">
+                    <div key={logo} className="flex h-16 items-center justify-center rounded-lg border border-border bg-surface-2 p-2">
                       <Image src={logo} alt="Certificacion" width={86} height={46} className="h-auto max-h-full w-auto object-contain" />
                     </div>
                   ))}

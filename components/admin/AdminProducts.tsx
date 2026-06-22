@@ -136,8 +136,11 @@ export default function AdminProducts() {
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Partial<Product> | null>(null);
   const editingRef = useRef(editingProduct);
-  editingRef.current = editingProduct;
   const isNewProduct = !editingProduct?.id;
+
+  useEffect(() => {
+    editingRef.current = editingProduct;
+  }, [editingProduct]);
 
   useEffect(() => {
     let mounted = true;
@@ -166,6 +169,15 @@ export default function AdminProducts() {
     () => products.filter((product) => product.active).length,
     [products]
   );
+
+  const selectedColors = Array.isArray(editingProduct?.colors) ? editingProduct.colors : [];
+  const selectedSizes = Array.isArray(editingProduct?.sizes) ? editingProduct.sizes : [];
+  const selectedTechnologies = Array.isArray(editingProduct?.technologies)
+    ? editingProduct.technologies
+    : [];
+  const selectedCertifications = Array.isArray(editingProduct?.certifications)
+    ? editingProduct.certifications
+    : [];
 
   // Abrir panel para Crear
   function handleCreateClick() {
@@ -246,7 +258,7 @@ export default function AdminProducts() {
   const stepNumberValue = useCallback((field: "price" | "wholesale_price" | "wholesale_from", step: number) => {
     const current = Number(editingRef.current?.[field] || 0);
     setNumberValue(field, current + step);
-  }, []);
+  }, [setNumberValue]);
 
   const updateImageGallery = useCallback((images: string[]) => {
     const product = editingRef.current;
@@ -819,7 +831,7 @@ export default function AdminProducts() {
                   </p>
                   <div className="mt-4 flex flex-wrap gap-3">
                     {colorOptions.map((color) => {
-                      const selected = getArrayValue("colors").includes(color.name);
+                      const selected = selectedColors.includes(color.name);
                       return (
                         <button
                           key={color.name}
@@ -852,7 +864,7 @@ export default function AdminProducts() {
                   </p>
                   <div className="mt-4 grid grid-cols-4 gap-2 sm:grid-cols-7">
                     {sizeOptions.map((size) => {
-                      const selected = getArrayValue("sizes").includes(size);
+                      const selected = selectedSizes.includes(size);
                       return (
                         <button
                           key={size}
@@ -916,7 +928,7 @@ export default function AdminProducts() {
                   </p>
                   <div className="mt-4 flex flex-wrap gap-2">
                     {technologyOptions.map((tech) => {
-                      const selected = getArrayValue("technologies").includes(tech);
+                      const selected = selectedTechnologies.includes(tech);
                       return (
                         <button
                           key={tech}
@@ -947,7 +959,7 @@ export default function AdminProducts() {
                   </p>
                   <div className="mt-4 flex flex-wrap gap-2">
                     {certificationOptions.map((certification) => {
-                      const selected = getArrayValue("certifications").includes(certification);
+                      const selected = selectedCertifications.includes(certification);
                       return (
                         <button
                           key={certification}

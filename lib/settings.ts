@@ -1,4 +1,5 @@
 import { supabase } from "./supabaseClient";
+import { adminFetch } from "./adminQuotes";
 
 export type BrandSettings = {
   id: number;
@@ -7,6 +8,13 @@ export type BrandSettings = {
   email: string;
   city: string;
   footer: string;
+  bank_name: string;
+  bank_account_type: string;
+  bank_account_number: string;
+  bank_account_holder: string;
+  bank_account_rut: string;
+  bank_account_email: string;
+  payment_notes: string;
 };
 
 export type CommercialSettings = {
@@ -31,12 +39,16 @@ export async function fetchBrandSettings(): Promise<BrandSettings | null> {
 export async function saveBrandSettings(
   settings: Omit<BrandSettings, "id">
 ): Promise<boolean> {
-  if (!supabase) return false;
-  const { error } = await supabase
-    .from("brand_settings")
-    .upsert({ id: 1, ...settings }, { onConflict: "id" });
-  if (error) console.error("saveBrandSettings error:", error);
-  return !error;
+  try {
+    await adminFetch("/api/admin/settings", {
+      method: "PATCH",
+      body: JSON.stringify({ type: "brand", settings }),
+    });
+    return true;
+  } catch (error) {
+    console.error("saveBrandSettings error:", error);
+    return false;
+  }
 }
 
 export async function fetchCommercialSettings(): Promise<CommercialSettings | null> {
@@ -52,10 +64,14 @@ export async function fetchCommercialSettings(): Promise<CommercialSettings | nu
 export async function saveCommercialSettings(
   settings: Omit<CommercialSettings, "id">
 ): Promise<boolean> {
-  if (!supabase) return false;
-  const { error } = await supabase
-    .from("commercial_settings")
-    .upsert({ id: 1, ...settings }, { onConflict: "id" });
-  if (error) console.error("saveCommercialSettings error:", error);
-  return !error;
+  try {
+    await adminFetch("/api/admin/settings", {
+      method: "PATCH",
+      body: JSON.stringify({ type: "commercial", settings }),
+    });
+    return true;
+  } catch (error) {
+    console.error("saveCommercialSettings error:", error);
+    return false;
+  }
 }
