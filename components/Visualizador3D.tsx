@@ -836,10 +836,10 @@ function Scene3D({
   return (
     <>
       <ambientLight intensity={1.15} />
-      <directionalLight position={[3.5, 5, 4]} intensity={1.6} />
-      <directionalLight position={[-4, 2.5, 3]} intensity={0.9} />
-      <directionalLight position={[0, 1, -4]} intensity={0.45} />
-      <hemisphereLight args={["#fff8ee", "#b7afa7", 1.1]} />
+      <directionalLight position={[3.5, 5, 4]} intensity={1.65} />
+      <directionalLight position={[-4, 2.5, 3]} intensity={0.9} color="#dff8fb" />
+      <directionalLight position={[0, 1, -4]} intensity={0.45} color="#eaf3f5" />
+      <hemisphereLight args={["#f8fcfd", "#b9dce2", 1.08]} />
 
       {baseModelUrl && (
         <group
@@ -876,7 +876,7 @@ function Scene3D({
         <meshBasicMaterial
           transparent
           opacity={0.16}
-          color="#7b746d"
+          color="#46b9c8"
           depthWrite={false}
         />
       </mesh>
@@ -1034,6 +1034,10 @@ type Props = {
 
 const FALLBACK_COLOR = "#2d3436";
 
+function isThreeClockWarning(message?: unknown) {
+  return typeof message === "string" && message.includes("THREE.Clock: This module has been deprecated");
+}
+
 export default function Visualizador3D({
   productName,
   productImageUrl,
@@ -1084,17 +1088,29 @@ export default function Visualizador3D({
   const inputRef = useRef<HTMLInputElement>(null);
   const effectiveViewMode = is3DOnly ? "3d" : viewMode;
 
+  useEffect(() => {
+    if (process.env.NODE_ENV !== "development") return;
+    const originalWarn = console.warn;
+    console.warn = (...args) => {
+      if (isThreeClockWarning(args[0])) return;
+      originalWarn(...args);
+    };
+    return () => {
+      console.warn = originalWarn;
+    };
+  }, []);
+
   return (
     <div className="w-full">
       {!is3DOnly && (
-        <div className="mb-3 flex w-fit items-center gap-1 rounded-xl bg-slate-100 p-1">
+        <div className="mb-3 flex w-fit items-center gap-1 rounded-xl bg-surface-2 p-1">
           <button
             type="button"
             onClick={() => setViewMode("2d")}
             className={`rounded-lg px-4 py-2 text-xs font-bold transition-all ${
               viewMode === "2d"
-                ? "bg-white text-slate-900 shadow-sm"
-                : "text-slate-500 hover:text-slate-700"
+                ? "bg-white text-text shadow-sm"
+                : "text-muted hover:text-accent-deep"
             }`}
           >
             Ver en 2D
@@ -1104,8 +1120,8 @@ export default function Visualizador3D({
             onClick={() => setViewMode("3d")}
             className={`rounded-lg px-4 py-2 text-xs font-bold transition-all ${
               viewMode === "3d"
-                ? "bg-white text-slate-900 shadow-sm"
-                : "text-slate-500 hover:text-slate-700"
+                ? "bg-white text-text shadow-sm"
+                : "text-muted hover:text-accent-deep"
             }`}
           >
             Ver en 3D
@@ -1120,7 +1136,7 @@ export default function Visualizador3D({
           className={`relative min-w-0 flex-1 select-none overflow-hidden overscroll-contain rounded-lg border shadow-lg ${
             is3DOnly
               ? "h-full min-h-[380px] border-border bg-gradient-to-b from-white via-accent-soft/45 to-surface-2 sm:min-h-[430px]"
-              : "min-h-[400px] rounded-2xl border-slate-200 bg-gradient-to-b from-slate-100 via-white to-slate-200"
+              : "min-h-[400px] rounded-2xl border-border bg-gradient-to-b from-surface-2 via-white to-accent-soft/45"
           }`}
           style={{ touchAction: effectiveViewMode === "3d" ? "none" : "auto" }}
         >
@@ -1164,7 +1180,6 @@ export default function Visualizador3D({
                     gl.domElement.style.touchAction = "none";
                     gl.domElement.addEventListener("webglcontextlost", (event) => {
                       event.preventDefault();
-                      console.warn("[Visualizador3D] WebGL context lost");
                     });
                   }}
                 >
@@ -1209,8 +1224,8 @@ export default function Visualizador3D({
         <div className={`flex shrink-0 flex-col gap-3 ${is3DOnly ? "absolute bottom-3 right-3 z-20 w-auto max-w-[calc(100%-1.5rem)]" : "sm:w-52"}`}>
           {logoSrc && !is3DOnly && (
             <>
-              <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                <h4 className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2">
+              <div className="rounded-2xl border border-border bg-white p-4 shadow-sm">
+                <h4 className="text-[10px] font-black uppercase tracking-wider text-muted/70 mb-2">
                   Posición del logo
                 </h4>
                 <PositionGroupPicker
@@ -1223,8 +1238,8 @@ export default function Visualizador3D({
                 />
               </div>
 
-              <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                <h4 className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2">
+              <div className="rounded-2xl border border-border bg-white p-4 shadow-sm">
+                <h4 className="text-[10px] font-black uppercase tracking-wider text-muted/70 mb-2">
                   Tamaño del logo
                 </h4>
                 <div className="flex gap-1.5">
@@ -1236,7 +1251,7 @@ export default function Visualizador3D({
                       className={`flex-1 rounded-lg border px-2 py-2 text-[10px] font-bold transition-all ${
                         logoSize === preset.value
                           ? "border-accent bg-accent text-white shadow-sm"
-                          : "border-slate-200 bg-white text-slate-600 hover:border-accent hover:text-accent"
+                          : "border-border bg-white text-muted hover:border-accent hover:text-accent"
                       }`}
                     >
                       {preset.label}
@@ -1247,7 +1262,7 @@ export default function Visualizador3D({
             </>
           )}
 
-          <div className={`border bg-white/92 p-2 shadow-sm backdrop-blur-md ${is3DOnly ? "rounded-lg border-border" : "rounded-2xl border-slate-200 p-4"}`}>
+          <div className={`border bg-white/92 p-2 shadow-sm backdrop-blur-md ${is3DOnly ? "rounded-lg border-border" : "rounded-2xl border-border p-4"}`}>
             <input
               ref={inputRef}
               type="file"

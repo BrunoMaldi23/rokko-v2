@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import type { Product } from "@/types/product";
 import { certificationLogos } from "@/data/catalog";
 import Visualizador3D from "@/components/Visualizador3D";
@@ -127,7 +127,7 @@ function Icon({
   type,
   className = "h-5 w-5",
 }: {
-  type: "close" | "left" | "right" | "shield" | "box" | "palette" | "ruler" | "spark" | "reset";
+  type: "close" | "left" | "right" | "shield" | "box" | "palette" | "ruler" | "spark" | "reset" | "check";
   className?: string;
 }) {
   const paths: Record<typeof type, string[]> = {
@@ -140,6 +140,7 @@ function Icon({
     ruler: ["M4 17 17 4l3 3L7 20l-3-3Z", "m14 7 3 3M11 10l2 2M8 13l2 2"],
     spark: ["M13 3 4 14h7l-1 7 9-11h-7l1-7Z"],
     reset: ["M4 7v5h5", "M20 17a8 8 0 0 1-13.7 4.9L4 20", "M4 12a8 8 0 0 1 13.7-4.9L20 9"],
+    check: ["m5 12 4 4L19 6"],
   };
 
   return (
@@ -209,6 +210,26 @@ export default function ProductDetailPanel({
   const inferredGalleryColor = imageEntries[galleryIndex]?.color || selectedColor;
   const modelColor = inferredGalleryColor;
   const availableSizes = product.sizes && product.sizes.length > 0 ? product.sizes : DEFAULT_SIZES;
+  const hasTechnologies = Boolean(product.technologies && product.technologies.length > 0);
+
+  useEffect(() => {
+    const bodyOverflow = document.body.style.overflow;
+    const htmlOverflow = document.documentElement.style.overflow;
+    const bodyPaddingRight = document.body.style.paddingRight;
+    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+    if (scrollbarWidth > 0) {
+      document.body.style.paddingRight = `${scrollbarWidth}px`;
+    }
+
+    return () => {
+      document.body.style.overflow = bodyOverflow;
+      document.documentElement.style.overflow = htmlOverflow;
+      document.body.style.paddingRight = bodyPaddingRight;
+    };
+  }, []);
 
   const priceInfo = useMemo(() => {
     if (product.wholesale_from && product.wholesale_price) {
@@ -259,7 +280,7 @@ export default function ProductDetailPanel({
 
   return (
     <aside className="fixed inset-0 z-[100] overflow-hidden bg-brand-dark/72 backdrop-blur-md">
-      <div className="h-full overflow-y-auto bg-bg text-text">
+        <div className="h-full overflow-y-auto overscroll-contain bg-bg text-text">
         <header className="sticky top-0 z-30 border-b border-border bg-white/86 backdrop-blur-xl">
           <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
             <div className="min-w-0">
@@ -397,31 +418,67 @@ export default function ProductDetailPanel({
                 </button>
               </div>
               {product.colors && product.colors.length > 0 && (
-                <div className="border-b border-border bg-white px-5 py-4">
-                  <div className="mb-3 flex items-center justify-between gap-3">
-                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-accent-deep">Color 3D</p>
-                    <p className="truncate text-xs font-black text-text">{modelColor}</p>
+                <div className="border-b border-white/10 bg-brand-dark px-5 py-4 text-white shadow-inner shadow-black/10">
+                  <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex items-center gap-2.5">
+                      <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/10 text-accent-light ring-1 ring-white/12">
+                        <Icon type="palette" className="h-4 w-4" />
+                      </span>
+                      <div>
+                        <p className="text-[10px] font-black uppercase tracking-[0.18em] text-accent-light">Color 3D</p>
+                        <p className="mt-0.5 text-xs font-semibold text-white/58">Selecciona el tono aplicado al modelo.</p>
+                      </div>
+                    </div>
+                    <p className="inline-flex max-w-full items-center gap-2 rounded-full border border-white/10 bg-white/8 px-3 py-1 text-xs font-black text-white shadow-sm">
+                      <span
+                        className="h-3 w-3 shrink-0 rounded-full border border-white/40 ring-2 ring-white/15"
+                        style={{
+                          backgroundColor: getColorHex(modelColor),
+                          backgroundImage:
+                            normalizeColorName(modelColor) === "blanco"
+                              ? "linear-gradient(135deg,#ffffff 0 46%,#dce8eb 46% 54%,#ffffff 54% 100%)"
+                              : undefined,
+                        }}
+                      />
+                      <span className="truncate">{modelColor}</span>
+                    </p>
                   </div>
-                  <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
                     {product.colors.map((color, index) => {
                       const selected = normalizeColorName(color) === normalizeColorName(modelColor);
+                      const colorHex = getColorHex(color);
+                      const isWhite = normalizeColorName(color) === "blanco";
                       return (
                         <button
                           key={color}
                           type="button"
                           onClick={() => selectColor(color, index)}
                           title={color}
-                          className={`flex h-10 shrink-0 items-center gap-2 rounded-lg border bg-white px-3 text-xs font-black transition ${
+                          className={`group/color flex h-12 min-w-0 items-center justify-between gap-2 rounded-lg border px-3 text-xs font-black transition ${
                             selected
-                              ? "border-accent text-text shadow-sm ring-2 ring-accent/20"
-                              : "border-border text-muted hover:border-accent/45 hover:text-accent-deep"
+                              ? "border-accent bg-white text-text shadow-[0_14px_30px_rgba(70,185,200,0.22)] ring-2 ring-accent/35"
+                              : "border-white/10 bg-white/[0.075] text-white/78 hover:border-accent/45 hover:bg-white hover:text-text"
                           }`}
                         >
-                          <span
-                            className="h-4 w-4 rounded-full border border-black/15"
-                            style={{ backgroundColor: getColorHex(color) }}
-                          />
-                          <span>{color}</span>
+                          <span className="flex min-w-0 items-center gap-2">
+                            <span
+                              className={`h-5 w-5 shrink-0 rounded-full border ring-2 ring-white shadow-sm ${
+                                isWhite ? "border-accent/28" : "border-black/15"
+                              }`}
+                              style={{
+                                backgroundColor: colorHex,
+                                backgroundImage: isWhite
+                                  ? "linear-gradient(135deg,#ffffff 0 46%,#dce8eb 46% 54%,#ffffff 54% 100%)"
+                                  : undefined,
+                              }}
+                            />
+                            <span className="truncate capitalize">{color}</span>
+                          </span>
+                          {selected && (
+                            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent text-white">
+                              <Icon type="check" className="h-3 w-3" />
+                            </span>
+                          )}
                         </button>
                       );
                     })}
@@ -449,11 +506,11 @@ export default function ProductDetailPanel({
               />
             </div>
 
-            <div className="grid gap-4 xl:grid-cols-[1fr_0.9fr]">
-              {product.technologies && product.technologies.length > 0 && (
-                <div className="rounded-lg border border-border bg-white p-5 shadow-sm">
+            <div className={`grid gap-4 ${hasTechnologies ? "xl:grid-cols-[1fr_0.9fr]" : ""}`}>
+              {hasTechnologies && (
+                <div className="flex h-full flex-col rounded-lg border border-border bg-white p-5 shadow-[0_14px_34px_rgba(45,52,54,0.055)]">
                   <div className="mb-4 flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand-dark text-accent-light">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand-dark text-accent-light shadow-sm">
                       <Icon type="spark" />
                     </div>
                     <div>
@@ -461,13 +518,13 @@ export default function ProductDetailPanel({
                       <h3 className="text-lg font-black">Prestaciones de la prenda</h3>
                     </div>
                   </div>
-                  <div className="grid gap-2 sm:grid-cols-2">
+                  <div className="grid gap-2">
                     {product.technologies.map((tech) => (
-                      <div key={tech} className="flex items-center gap-3 rounded-lg border border-border bg-surface-2 p-3">
-                        <span className="flex h-10 w-12 shrink-0 items-center justify-center rounded-md bg-white text-xs font-black text-accent-deep shadow-sm">
+                      <div key={tech} className="flex min-h-12 items-center gap-3 rounded-lg border border-border bg-surface-2/75 p-2.5 transition hover:border-accent/25 hover:bg-white">
+                        <span className="flex h-8 w-10 shrink-0 items-center justify-center rounded-md bg-white text-[10px] font-black text-accent-deep shadow-sm ring-1 ring-accent/8">
                           {getTechLabel(tech)}
                         </span>
-                        <p className="text-sm font-black text-text">{tech}</p>
+                        <p className="text-xs font-black leading-4 text-text">{tech}</p>
                       </div>
                     ))}
                   </div>
@@ -475,21 +532,32 @@ export default function ProductDetailPanel({
               )}
 
               {availableSizes.length > 0 && (
-                <div className="rounded-lg border border-border bg-white p-5 shadow-sm">
-                  <div className="mb-4 flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent-soft text-accent-deep">
-                      <Icon type="ruler" />
+                <div className="rounded-lg border border-border bg-white p-5 shadow-[0_14px_34px_rgba(45,52,54,0.055)]">
+                  <div className="mb-4 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent-soft text-accent-deep ring-1 ring-accent/10">
+                        <Icon type="ruler" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-accent-deep">Disponibilidad</p>
+                        <h3 className="text-lg font-black">Tallas disponibles</h3>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-accent-deep">Disponibilidad</p>
-                      <h3 className="text-lg font-black">Tallas disponibles</h3>
-                    </div>
+                    <span className="rounded-full border border-accent/20 bg-accent-soft px-2.5 py-1 text-[10px] font-black text-accent-deep">
+                      {availableSizes.length} tallas
+                    </span>
                   </div>
-                  <div className="grid grid-cols-4 gap-2 sm:grid-cols-6 xl:grid-cols-4">
+                  <div
+                    className={`grid gap-2 ${
+                      hasTechnologies
+                        ? "flex-1 content-center grid-cols-1"
+                        : "grid-cols-4 sm:grid-cols-7 xl:grid-cols-7"
+                    }`}
+                  >
                     {availableSizes.map((size) => (
                       <div
                         key={size}
-                        className="flex h-11 items-center justify-center rounded-lg border border-border bg-surface-2 text-sm font-black text-text"
+                        className="flex h-12 items-center justify-center rounded-lg border border-border bg-surface-2/75 text-sm font-black text-text shadow-sm transition hover:border-accent/32 hover:bg-white hover:text-accent-deep"
                       >
                         {size}
                       </div>
@@ -500,20 +568,25 @@ export default function ProductDetailPanel({
             </div>
 
             {certificationLogos.length > 0 && (
-              <div className="rounded-lg border border-border bg-white p-5 shadow-sm">
-                <div className="mb-4 flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent-soft text-accent-deep">
-                    <Icon type="shield" />
+              <div className="rounded-lg border border-border bg-white p-5 shadow-[0_14px_34px_rgba(45,52,54,0.055)]">
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent-soft text-accent-deep ring-1 ring-accent/10">
+                      <Icon type="shield" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-accent-deep">Respaldo</p>
+                      <h3 className="text-lg font-black">Certificaciones y control</h3>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-accent-deep">Respaldo</p>
-                    <h3 className="text-lg font-black">Certificaciones y control</h3>
-                  </div>
+                  <span className="rounded-full border border-border bg-surface-2 px-2.5 py-1 text-[10px] font-black text-muted">
+                    Control textil
+                  </span>
                 </div>
-                <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
                   {certificationLogos.slice(0, 6).map((logo) => (
-                    <div key={logo} className="flex h-16 items-center justify-center rounded-lg border border-border bg-surface-2 p-2">
-                      <Image src={logo} alt="Certificacion" width={86} height={46} className="h-auto max-h-full w-auto object-contain" />
+                    <div key={logo} className="flex h-20 items-center justify-center rounded-lg border border-border bg-surface-2/75 p-3 shadow-sm transition hover:border-accent/32 hover:bg-white">
+                      <Image src={logo} alt="Certificacion" width={98} height={52} className="h-auto max-h-full w-auto object-contain" />
                     </div>
                   ))}
                 </div>

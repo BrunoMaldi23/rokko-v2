@@ -6,10 +6,11 @@
   --color-surface: #ffffff;
   --color-surface-2: #eaf3f5;
   --color-border: #dce8eb;
-  --color-text: #1e1e1e;
-  --color-muted: #566a70;
+  --color-text: #15191a;
+  --color-muted: #3f5258;
   --color-accent: #46b9c8;
-  --color-accent-deep: #16889a;
+  --color-accent-deep: #0b7280;
+  --color-accent-ink: #087181;
   --color-accent-light: #79d8e3;
   --color-accent-soft: #e4f7fa;
   --color-brand-dark: #2d3436;
@@ -73,7 +74,7 @@ body {
   border: 0;
   outline: 0;
   background: var(--color-bg);
-  color: #1e1e1e;
+  color: var(--color-text);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -139,6 +140,11 @@ textarea {
 /* Ring input focus */
 input:focus, textarea:focus, select:focus {
   outline: none;
+}
+
+:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--color-accent) 58%, white);
+  outline-offset: 3px;
 }
 
 /* Number input hide spinners */

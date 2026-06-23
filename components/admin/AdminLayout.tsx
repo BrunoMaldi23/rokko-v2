@@ -134,6 +134,7 @@ export default function AdminLayout({ onLogout }: Props) {
                   alt="Rokko Logo"
                   fill
                   priority
+                  sizes="176px"
                   className="object-contain object-left"
                 />
               </div>

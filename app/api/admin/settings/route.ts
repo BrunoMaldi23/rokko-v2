@@ -1,11 +1,11 @@
 import { createClient } from "@supabase/supabase-js";
+import { ADMIN_PERMISSION_ERROR, isAdminUser } from "@/lib/adminAuth";
 
 export const dynamic = "force-dynamic";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const adminEmail = process.env.ADMIN_EMAIL || "admin@rokko.cl";
 
 function json(data: unknown, status = 200) {
   return Response.json(data, {
@@ -48,10 +48,8 @@ async function requireAdmin(request: Request) {
     return { error: json({ error: "Sesion invalida." }, 401) };
   }
 
-  const role = data.user.app_metadata?.role || data.user.user_metadata?.role;
-  const isAdmin = role === "admin" || data.user.email === adminEmail;
-  if (!isAdmin) {
-    return { error: json({ error: "Permisos insuficientes." }, 403) };
+  if (!isAdminUser(data.user)) {
+    return { error: json({ error: ADMIN_PERMISSION_ERROR }, 403) };
   }
 
   return { clients };

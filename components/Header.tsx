@@ -24,7 +24,7 @@ export default function Header() {
   }
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-neutral-100 bg-white/80 backdrop-blur-md">
+    <header className="sticky top-0 z-50 w-full border-b border-border bg-white/90 backdrop-blur-md">
       <div className="mx-auto flex h-24 max-w-7xl items-center justify-between px-6 lg:px-8">
 
         {/* BLOQUE IZQUIERDO: Logo totalmente libre sin contenedores */}
@@ -45,8 +45,8 @@ export default function Header() {
           </Link>
           
           {/* Separador y texto complementario perfectamente alineados */}
-          <span className="hidden h-6 w-px bg-neutral-200 md:block" />
-          <span className="hidden text-[11px] uppercase tracking-widest font-bold text-neutral-400 select-none md:block leading-none">
+          <span className="hidden h-6 w-px bg-border md:block" />
+          <span className="hidden select-none text-[11px] font-black uppercase leading-none tracking-widest text-muted md:block">
             Cotizador corporativo
           </span>
         </div>
@@ -59,15 +59,15 @@ export default function Header() {
               <Link
                 key={l.href}
                 href={l.href}
-                className={`relative px-4 py-2 text-sm font-medium transition-colors rounded-md ${
+                className={`relative rounded-md px-4 py-2 text-sm font-bold transition-colors ${
                   active
-                    ? "text-cyan-600"
-                    : "text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50/60"
+                    ? "text-accent-ink"
+                    : "text-muted hover:bg-surface-2/70 hover:text-text"
                 }`}
               >
                 {l.label}
                 {active && (
-                  <span className="absolute bottom-0 left-4 right-4 h-0.5 rounded-full bg-cyan-600" />
+                  <span className="absolute bottom-0 left-4 right-4 h-0.5 rounded-full bg-accent-ink" />
                 )}
               </Link>
             );
@@ -78,7 +78,7 @@ export default function Header() {
         <div className="flex items-center md:hidden">
           <button
             type="button"
-            className="flex h-10 w-10 items-center justify-center rounded-full text-neutral-500 transition-colors hover:bg-neutral-100"
+            className="flex h-10 w-10 items-center justify-center rounded-full text-muted transition-colors hover:bg-surface-2 hover:text-text"
             onClick={() => setMenuOpen(!menuOpen)}
             aria-label={menuOpen ? "Cerrar menú" : "Abrir menú"}
           >
@@ -109,10 +109,10 @@ export default function Header() {
                 key={l.href}
                 href={l.href}
                 onClick={() => setMenuOpen(false)}
-                className={`rounded-xl px-4 py-2.5 text-sm font-medium transition-colors ${
+                className={`rounded-xl px-4 py-2.5 text-sm font-bold transition-colors ${
                   active
-                    ? "bg-cyan-50/60 text-cyan-700"
-                    : "text-neutral-500 hover:bg-neutral-50 hover:text-neutral-800"
+                    ? "bg-accent-soft text-accent-ink"
+                    : "text-muted hover:bg-surface-2 hover:text-text"
                 }`}
               >
                 {l.label}

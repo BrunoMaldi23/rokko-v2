@@ -18,7 +18,7 @@ const categories = [
     slug: "poleras",
     code: "PL",
     desc: "Prendas livianas para equipos comerciales y uso diario.",
-    tint: "bg-accent-soft text-accent",
+    tint: "bg-accent-soft text-accent-ink",
   },
   {
     name: "Polerones",
@@ -39,7 +39,7 @@ const categories = [
     slug: "pantalones",
     code: "PT",
     desc: "Lineas funcionales para operacion, oficina y terreno.",
-    tint: "bg-surface-2 text-muted",
+    tint: "bg-surface-2 text-brand-dark",
   },
 ];
 
@@ -199,26 +199,26 @@ export default function HomeClient({ initialProducts }: HomeClientProps) {
 
         <div className="relative grid w-full items-center gap-12 rounded-[2rem] border border-white/80 bg-white/70 px-5 py-10 shadow-[0_24px_80px_rgba(45,52,54,0.08)] backdrop-blur-xl sm:px-8 lg:grid-cols-[0.9fr_1.1fr] lg:px-12 lg:py-14">
         <div className="max-w-xl">
-          <div className="inline-flex items-center gap-3 rounded-full border border-border bg-white/90 px-4 py-2 shadow-sm">
+          <div className="inline-flex items-center gap-3 rounded-full border border-accent/18 bg-white/95 px-4 py-2 shadow-sm">
             <span className="h-2 w-2 rounded-full bg-accent" />
-            <span className="text-[10px] font-black uppercase tracking-[0.32em] text-accent">
+            <span className="text-[10px] font-black uppercase tracking-[0.32em] text-accent-ink">
               Catalogo corporativo 2026
             </span>
           </div>
 
           <h1 className="mt-6 text-5xl font-black leading-[0.98] text-text sm:text-6xl">
             Eleva la identidad de tu{" "}
-            <span className="text-accent">empresa</span>.
+            <span className="text-accent-ink">empresa</span>.
           </h1>
 
-          <p className="mt-6 max-w-md text-sm font-medium leading-7 text-muted">
+          <p className="mt-6 max-w-md text-[15px] font-semibold leading-7 text-muted">
             Selecciona una linea de vestuario corporativo y arma una cotizacion clara, visual y lista para tu equipo.
           </p>
 
           <div className="relative z-30 mt-7 max-w-lg">
             <form
               onSubmit={handleSubmit}
-              className="rounded-2xl border border-border bg-white p-1.5 shadow-[0_16px_40px_rgba(45,52,54,0.08)]"
+              className="rounded-2xl border border-border bg-white p-1.5 shadow-[0_16px_40px_rgba(45,52,54,0.08)] focus-within:border-accent/55 focus-within:ring-4 focus-within:ring-accent/12"
             >
               <div className="flex items-center gap-2">
                 <input
@@ -229,13 +229,13 @@ export default function HomeClient({ initialProducts }: HomeClientProps) {
                   onFocus={() => search.length >= 2 && setShowResults(true)}
                   onKeyDown={handleKeyDown}
                   placeholder="Busca por nombre, color o tecnologia..."
-                  className="h-11 min-w-0 flex-1 bg-transparent px-3 text-sm font-semibold text-text outline-none placeholder:text-muted/60"
+                  className="h-11 min-w-0 flex-1 bg-transparent px-3 text-sm font-bold text-text outline-none placeholder:text-muted/75"
                 />
 
                 <button
                   type="submit"
                   aria-label="Buscar"
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-dark text-white transition hover:bg-accent active:scale-[0.96]"
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-dark text-white transition hover:bg-accent-ink active:scale-[0.96]"
                 >
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.2-5.2M10.8 18a7.2 7.2 0 1 1 0-14.4 7.2 7.2 0 0 1 0 14.4Z" />
@@ -283,7 +283,7 @@ export default function HomeClient({ initialProducts }: HomeClientProps) {
                               ))}
                             </div>
                           </div>
-                          <span className="shrink-0 text-xs font-black text-accent">
+                          <span className="shrink-0 text-xs font-black text-accent-ink">
                             ${p.price.toLocaleString("es-CL")}
                           </span>
                         </div>
@@ -307,7 +307,7 @@ export default function HomeClient({ initialProducts }: HomeClientProps) {
             ].map(([title, caption]) => (
               <div key={title}>
                 <p className="text-sm font-black text-text">{title}</p>
-                <p className="mt-1 text-[11px] font-medium text-muted">{caption}</p>
+                <p className="mt-1 text-xs font-semibold text-muted">{caption}</p>
               </div>
             ))}
           </div>
@@ -325,9 +325,9 @@ export default function HomeClient({ initialProducts }: HomeClientProps) {
               </div>
 
               <h2 className="mt-4 text-base font-black text-text">{category.name}</h2>
-              <p className="mt-2 max-w-[260px] text-[11px] font-medium leading-5 text-muted">{category.desc}</p>
+              <p className="mt-2 max-w-[260px] text-xs font-semibold leading-5 text-muted">{category.desc}</p>
 
-              <div className="mt-4 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.12em] text-accent">
+              <div className="mt-4 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.12em] text-accent-ink">
                 Explorar
                 <span className="transition group-hover:translate-x-1">-&gt;</span>
               </div>

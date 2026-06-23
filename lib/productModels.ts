@@ -2,9 +2,41 @@ import { supabase, hasSupabaseConfig } from "@/lib/supabaseClient";
 import type { ProductModel } from "@/types/productModel";
 import { BASE_MODEL_MAP } from "@/lib/baseModels";
 
-const MODEL_BUCKET = "product-models";
-
 export type ProductModelInput = Omit<ProductModel, "id" | "created_at">;
+
+async function adminProductModelRequest<T>(
+  path: string,
+  init: RequestInit = {},
+): Promise<T> {
+  if (!supabase) {
+    throw new Error("Supabase no esta configurado.");
+  }
+
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+  if (!token) {
+    throw new Error("Sesion requerida.");
+  }
+
+  const isFormData = init.body instanceof FormData;
+  const response = await fetch(path, {
+    ...init,
+    headers: {
+      ...(isFormData ? {} : { "Content-Type": "application/json" }),
+      Authorization: `Bearer ${token}`,
+      ...(init.headers || {}),
+    },
+  });
+
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(
+      typeof payload.error === "string" ? payload.error : "Error en API admin.",
+    );
+  }
+
+  return payload as T;
+}
 
 const BASE_MODEL_LABELS: Record<string, string> = {
   "t-shirt": "Polera manga corta base",
@@ -84,28 +116,16 @@ export async function uploadProductModelFile(file: File) {
     throw new Error("Solo se permiten archivos .glb o .gltf.");
   }
 
-  const safeBase = file.name
-    .replace(/\.[^.]+$/, "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-zA-Z0-9_-]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .toLowerCase() || "modelo";
-  const fileName = `${Date.now()}-${safeBase}.${ext}`;
-  const filePath = `models/${fileName}`;
+  const formData = new FormData();
+  formData.append("file", file);
 
-  const { error } = await supabase.storage
-    .from(MODEL_BUCKET)
-    .upload(filePath, file, {
-      cacheControl: "3600",
-      upsert: false,
-      contentType: ext === "glb" ? "model/gltf-binary" : "model/gltf+json",
-    });
-
-  if (error) throw error;
-
-  const { data } = supabase.storage.from(MODEL_BUCKET).getPublicUrl(filePath);
-  return { publicUrl: data.publicUrl, filePath };
+  return adminProductModelRequest<{ publicUrl: string; filePath: string }>(
+    "/api/admin/product-models",
+    {
+      method: "POST",
+      body: formData,
+    },
+  );
 }
 
 export async function createProductModel(input: ProductModelInput) {
@@ -124,15 +144,15 @@ export async function createProductModel(input: ProductModelInput) {
     rotation_y: Number(input.rotation_y || 0),
   };
 
-  const { data, error } = await supabase
-    .from("product_models")
-    .insert(payload)
-    .select()
-    .single();
+  const data = await adminProductModelRequest<{ model: ProductModel }>(
+    "/api/admin/product-models",
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+  );
 
-  if (error) throw new Error(error.message);
-  await syncProductModelAssignment(data as ProductModel);
-  return data as ProductModel;
+  return data.model;
 }
 
 export async function updateProductModel(model: ProductModel) {
@@ -140,23 +160,27 @@ export async function updateProductModel(model: ProductModel) {
     throw new Error("Supabase no esta configurado.");
   }
 
-  const { data, error } = await supabase
-    .from("product_models")
-    .update({
-      name: model.name,
-      category: model.category,
-      product_id: model.product_id || null,
-      scale: Number(model.scale || 1),
-      position_y: Number(model.position_y || 0),
-      rotation_y: Number(model.rotation_y || 0),
-    })
-    .eq("id", model.id)
-    .select()
-    .single();
+  const data = await adminProductModelRequest<{ model: ProductModel }>(
+    "/api/admin/product-models",
+    {
+      method: "PATCH",
+      body: JSON.stringify({
+        id: model.id,
+        model: {
+          model_url: model.model_url,
+          file_path: model.file_path,
+          name: model.name,
+          category: model.category,
+          product_id: model.product_id || null,
+          scale: Number(model.scale || 1),
+          position_y: Number(model.position_y || 0),
+          rotation_y: Number(model.rotation_y || 0),
+        },
+      }),
+    },
+  );
 
-  if (error) throw new Error(error.message);
-  await syncProductModelAssignment(data as ProductModel);
-  return data as ProductModel;
+  return data.model;
 }
 
 export async function deleteProductModel(model: ProductModel) {
@@ -164,34 +188,8 @@ export async function deleteProductModel(model: ProductModel) {
     throw new Error("Supabase no esta configurado.");
   }
 
-  const { error } = await supabase.from("product_models").delete().eq("id", model.id);
-  if (error) throw new Error(error.message);
-
-  if (model.file_path) {
-    const { error: removeError } = await supabase.storage.from(MODEL_BUCKET).remove([model.file_path]);
-    if (removeError) console.error("Error eliminando archivo 3D:", removeError.message);
-  }
-
-  if (model.product_id) {
-    await supabase
-      .from("products")
-      .update({ model_3d_url: null, model_3d_scale: 1, model_3d_position_y: 0, model_3d_rotation_y: 0 })
-      .eq("id", model.product_id);
-  }
-}
-
-export async function syncProductModelAssignment(model: ProductModel) {
-  if (!hasSupabaseConfig || !supabase || !model.product_id) return;
-
-  const { error } = await supabase
-    .from("products")
-    .update({
-      model_3d_url: model.model_url,
-      model_3d_scale: Number(model.scale || 1),
-      model_3d_position_y: Number(model.position_y || 0),
-      model_3d_rotation_y: Number(model.rotation_y || 0),
-    })
-    .eq("id", model.product_id);
-
-  if (error) throw new Error(error.message);
+  await adminProductModelRequest<{ ok: true }>(
+    `/api/admin/product-models?id=${encodeURIComponent(model.id)}`,
+    { method: "DELETE" },
+  );
 }

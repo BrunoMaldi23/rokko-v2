@@ -5,6 +5,39 @@ import { normalizeProductModelUrl } from "@/lib/baseModels";
 
 type AdminProductInput = Partial<Omit<Product, "id">>;
 
+async function adminProductRequest<T>(
+  path: string,
+  init: RequestInit = {},
+): Promise<T> {
+  if (!supabase) {
+    throw new Error("Supabase no esta configurado.");
+  }
+
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+  if (!token) {
+    throw new Error("Sesion requerida.");
+  }
+
+  const response = await fetch(path, {
+    ...init,
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+      ...(init.headers || {}),
+    },
+  });
+
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(
+      typeof payload.error === "string" ? payload.error : "Error en API admin.",
+    );
+  }
+
+  return payload as T;
+}
+
 function makeSlug(value: string) {
   return value
     .toLowerCase()
@@ -80,17 +113,12 @@ export async function createAdminProduct(product: AdminProductInput) {
     throw new Error("Supabase no esta configurado.");
   }
 
-  const { data, error } = await supabase
-    .from("products")
-    .insert(normalizeProductInput(product))
-    .select()
-    .single();
+  const data = await adminProductRequest<{ product: Product }>("/api/admin/products", {
+    method: "POST",
+    body: JSON.stringify(normalizeProductInput(product)),
+  });
 
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  return data as Product;
+  return data.product;
 }
 
 export async function updateAdminProduct(product: Product) {
@@ -98,41 +126,37 @@ export async function updateAdminProduct(product: Product) {
     throw new Error("Supabase no esta configurado.");
   }
 
-  const { data, error } = await supabase
-    .from("products")
-    .update({
-      slug: product.slug,
-      category: product.category,
-      name: product.name,
-      short_name: product.short_name,
-      description: product.description,
-      extract: product.extract,
-      image: product.image,
-      color_images: product.color_images ?? {},
-      model_3d_url: product.model_3d_url ?? null,
-      model_3d_scale: product.model_3d_scale ?? 1,
-      model_3d_position_y: product.model_3d_position_y ?? 0,
-      model_3d_rotation_y: product.model_3d_rotation_y ?? 0,
-      price: product.price,
-      wholesale_price: product.wholesale_price,
-      wholesale_from: product.wholesale_from,
-      sizes: product.sizes,
-      colors: product.colors,
-      composition: product.composition,
-      weight: product.weight,
-      technologies: product.technologies,
-      certifications: product.certifications,
-      active: product.active,
-    })
-    .eq("id", product.id)
-    .select()
-    .single();
+  const payload = {
+    slug: product.slug,
+    category: product.category,
+    name: product.name,
+    short_name: product.short_name,
+    description: product.description,
+    extract: product.extract,
+    image: product.image,
+    color_images: product.color_images ?? {},
+    model_3d_url: product.model_3d_url ?? null,
+    model_3d_scale: product.model_3d_scale ?? 1,
+    model_3d_position_y: product.model_3d_position_y ?? 0,
+    model_3d_rotation_y: product.model_3d_rotation_y ?? 0,
+    price: product.price,
+    wholesale_price: product.wholesale_price,
+    wholesale_from: product.wholesale_from,
+    sizes: product.sizes,
+    colors: product.colors,
+    composition: product.composition,
+    weight: product.weight,
+    technologies: product.technologies,
+    certifications: product.certifications,
+    active: product.active,
+  };
 
-  if (error) {
-    throw new Error(error.message);
-  }
+  const data = await adminProductRequest<{ product: Product }>("/api/admin/products", {
+    method: "PATCH",
+    body: JSON.stringify({ id: product.id, product: payload }),
+  });
 
-  return data as Product;
+  return data.product;
 }
 
 export async function deleteAdminProduct(id: string) {
@@ -140,21 +164,11 @@ export async function deleteAdminProduct(id: string) {
     throw new Error("Supabase no esta configurado.");
   }
   await deleteProductImages(id);
-  const { data, error } = await supabase
-    .from("products")
-    .delete()
-    .eq("id", id)
-    .select("id")
-    .maybeSingle();
-  if (error) {
-    throw new Error(error.message);
-  }
-  if (!data) {
-    throw new Error(
-      "Supabase no elimino ninguna fila. Revisa las policies/RLS de DELETE para la tabla products."
-    );
-  }
-  return data as Pick<Product, "id">;
+  const data = await adminProductRequest<{ product: Pick<Product, "id"> }>(
+    `/api/admin/products?id=${encodeURIComponent(id)}`,
+    { method: "DELETE" },
+  );
+  return data.product;
 }
 
 export async function toggleAdminProductStatus(id: string, active: boolean) {
@@ -162,16 +176,10 @@ export async function toggleAdminProductStatus(id: string, active: boolean) {
     throw new Error("Supabase no esta configurado.");
   }
 
-  const { data, error } = await supabase
-    .from("products")
-    .update({ active })
-    .eq("id", id)
-    .select()
-    .single();
+  const data = await adminProductRequest<{ product: Product }>("/api/admin/products", {
+    method: "PATCH",
+    body: JSON.stringify({ id, product: { active } }),
+  });
 
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  return data as Product;
+  return data.product;
 }

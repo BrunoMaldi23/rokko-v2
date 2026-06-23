@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import type { Product } from "@/types/product";
 import { ADMIN_PERMISSION_ERROR, isAdminUser } from "@/lib/adminAuth";
 
 export const dynamic = "force-dynamic";
@@ -55,17 +56,19 @@ async function requireAdmin(request: Request) {
   return { clients };
 }
 
-export async function GET(request: Request) {
+export async function POST(request: Request) {
   const guard = await requireAdmin(request);
   if ("error" in guard) return guard.error;
 
+  const product = await request.json();
   const { data, error } = await guard.clients.adminClient
-    .from("quotes")
+    .from("products")
+    .insert(product)
     .select("*")
-    .order("created_at", { ascending: false });
+    .single();
 
   if (error) return json({ error: error.message }, 500);
-  return json({ quotes: data || [] });
+  return json({ product: data });
 }
 
 export async function PATCH(request: Request) {
@@ -73,41 +76,47 @@ export async function PATCH(request: Request) {
   if ("error" in guard) return guard.error;
 
   const body = await request.json();
-  const id = Number(body.id);
-  if (!id) return json({ error: "Cotizacion requerida." }, 400);
+  const id = String(body.id || "");
+  const product = body.product as Partial<Product> | undefined;
 
-  const updates: Record<string, string> = {};
-  if (typeof body.status === "string") updates.status = body.status;
-  if (typeof body.admin_notes === "string") updates.admin_notes = body.admin_notes;
-
-  if (Object.keys(updates).length === 0) {
-    return json({ error: "No hay cambios para guardar." }, 400);
+  if (!id || !product) {
+    return json({ error: "Producto e id son requeridos." }, 400);
   }
 
-  const { data, error } = await guard.clients.adminClient
-    .from("quotes")
-    .update(updates)
+  const { data, error, count } = await guard.clients.adminClient
+    .from("products")
+    .update(product, { count: "exact" })
     .eq("id", id)
     .select("*")
-    .single();
+    .maybeSingle();
 
-  if (error) return json({ error: error.message }, 400);
-  return json({ quote: data });
+  if (error) return json({ error: error.message }, 500);
+  if (count === 0 || !data) {
+    return json({ error: "No se encontro el producto para actualizar." }, 404);
+  }
+
+  return json({ product: data });
 }
 
 export async function DELETE(request: Request) {
   const guard = await requireAdmin(request);
   if ("error" in guard) return guard.error;
 
-  const url = new URL(request.url);
-  const id = Number(url.searchParams.get("id"));
-  if (!id) return json({ error: "Cotizacion requerida." }, 400);
+  const { searchParams } = new URL(request.url);
+  const id = searchParams.get("id") || "";
+  if (!id) return json({ error: "Id requerido." }, 400);
 
-  const { error } = await guard.clients.adminClient
-    .from("quotes")
-    .delete()
-    .eq("id", id);
+  const { data, error, count } = await guard.clients.adminClient
+    .from("products")
+    .delete({ count: "exact" })
+    .eq("id", id)
+    .select("id")
+    .maybeSingle();
 
-  if (error) return json({ error: error.message }, 400);
-  return json({ ok: true });
+  if (error) return json({ error: error.message }, 500);
+  if (count === 0 || !data) {
+    return json({ error: "No se encontro el producto para eliminar." }, 404);
+  }
+
+  return json({ product: data });
 }

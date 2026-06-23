@@ -479,14 +479,14 @@ export default function AdminProducts() {
                   <tr key={product.id} className="transition-colors duration-150 hover:bg-surface-2/30">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-4">
-                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-slate-100 bg-white p-1 shadow-sm shadow-slate-100">
+                        <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-slate-100 bg-white p-1 shadow-sm shadow-slate-100">
                           <Image
                             unoptimized
                             src={getProductImages(product)[0] || ""}
                             alt={product.name || ""}
-                            width={48}
-                            height={48}
-                            className="h-auto max-h-full w-auto object-contain"
+                            fill
+                            sizes="48px"
+                            className="object-contain p-1"
                           />
                         </div>
                         <div className="min-w-0">
@@ -590,14 +590,14 @@ export default function AdminProducts() {
             {/* Cuerpo del Formulario */}
             <div className="flex-1 overflow-y-auto px-6 py-6">
               {/* Vista previa de imagen */}
-              <div className="mb-6 flex h-48 items-center justify-center rounded-2xl border border-slate-100 bg-slate-50/50 p-6 shadow-inner">
+              <div className="relative mb-6 flex h-48 items-center justify-center rounded-2xl border border-slate-100 bg-slate-50/50 p-6 shadow-inner">
                 <Image
                   unoptimized
                   src={getProductImages(editingProduct)[0] || "/rokko.png"}
                   alt={editingProduct.name || ""}
-                  width={140}
-                  height={140}
-                  className="h-auto max-h-full w-auto object-contain"
+                  fill
+                  sizes="(max-width: 768px) 100vw, 420px"
+                  className="object-contain p-6"
                 />
               </div>
 
@@ -711,14 +711,14 @@ export default function AdminProducts() {
                               key={`${image}-${index}`}
                               className="group relative overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-2"
                             >
-                              <div className="flex h-24 items-center justify-center">
+                              <div className="relative flex h-24 items-center justify-center">
                                 <Image
                                   unoptimized
                                   src={image}
                                   alt={`Imagen ${index + 1}`}
-                                  width={96}
-                                  height={96}
-                                  className="h-auto max-h-full w-auto object-contain"
+                                  fill
+                                  sizes="96px"
+                                  className="object-contain p-1"
                                 />
                               </div>
                               <select

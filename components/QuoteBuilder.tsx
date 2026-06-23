@@ -518,8 +518,8 @@ export default function QuoteBuilder({ initialProducts }: Props) {
         </div>
       )}
 
-      <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_360px]">
-        <div className="space-y-5">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
+        <div className="space-y-6">
           {initialProducts.length === 0 && (
             <div className="animate-fade-in-up rounded-[2rem] border border-slate-200/80 bg-white/80 p-8 text-center shadow-sm backdrop-blur-sm">
               <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100">
@@ -571,7 +571,7 @@ export default function QuoteBuilder({ initialProducts }: Props) {
           })}
         </div>
 
-        <aside className="sticky top-28 h-fit overflow-hidden rounded-2xl border border-[#0b3137]/15 bg-[#15181b] text-white shadow-lg shadow-slate-900/10">
+        <aside className="sticky top-28 h-fit overflow-hidden rounded-2xl border border-accent/20 bg-brand-dark text-white shadow-[0_24px_70px_rgba(45,52,54,0.18)]">
           <div className="relative overflow-hidden border-b border-white/[0.08] p-6">
             <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-accent via-accent-light to-[#7dd3fc]" />
             <div className="relative">
@@ -604,7 +604,7 @@ export default function QuoteBuilder({ initialProducts }: Props) {
                 </div>
               </div>
               <div className="mt-5 grid grid-cols-3 gap-2">
-                <div className="rounded-xl bg-white/[0.07] p-3 ring-1 ring-white/[0.08]">
+                <div className="rounded-xl bg-white/[0.08] p-3 ring-1 ring-accent-light/10">
                   <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-white/45">
                     Items
                   </p>
@@ -612,7 +612,7 @@ export default function QuoteBuilder({ initialProducts }: Props) {
                     {cart.length}
                   </p>
                 </div>
-                <div className="rounded-xl bg-white/[0.07] p-3 ring-1 ring-white/[0.08]">
+                <div className="rounded-xl bg-white/[0.08] p-3 ring-1 ring-accent-light/10">
                   <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-white/45">
                     Unid.
                   </p>
@@ -620,7 +620,7 @@ export default function QuoteBuilder({ initialProducts }: Props) {
                     {cartUnits}
                   </p>
                 </div>
-                <div className="rounded-xl bg-white/[0.07] p-3 ring-1 ring-white/[0.08]">
+                <div className="rounded-xl bg-white/[0.08] p-3 ring-1 ring-accent-light/10">
                   <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-white/45">
                     Colores
                   </p>
@@ -1909,18 +1909,21 @@ const ProductCard = memo(function ProductCard({
 
   return (
     <div
-      className="animate-fade-in-up group/card overflow-hidden rounded-2xl border border-[#dfe4e2] bg-gradient-to-br from-[#fbfaf7] via-[#f7f7f2] to-[#eef7f6] shadow-sm shadow-slate-900/5 transition-colors duration-200 hover:border-accent/30"
+      className="animate-fade-in-up group/card overflow-hidden rounded-2xl border border-border bg-white shadow-[0_16px_45px_rgba(45,52,54,0.06)] transition-all duration-200 hover:-translate-y-0.5 hover:border-accent/35 hover:shadow-[0_22px_60px_rgba(45,52,54,0.10)]"
       style={{ animationDelay: `${animationDelay}ms` }}
     >
-      <div className="grid gap-0 lg:grid-cols-[300px_1fr]">
+      <div className="grid gap-0 lg:grid-cols-[320px_1fr]">
         {/* ─── IMAGE ─── */}
-        <div className="relative flex aspect-[4/5] items-center justify-center overflow-hidden border-r border-neutral-100 bg-white lg:aspect-auto lg:min-h-[340px]">
+        <div className="relative flex aspect-[4/5] items-center justify-center overflow-hidden border-r border-border bg-gradient-to-b from-white via-accent-soft/30 to-surface-2/70 lg:aspect-auto lg:min-h-[360px]">
           <Image
             src={activeImage || "/rokko.png"}
             alt={product.name}
             width={260}
             height={300}
-            className="relative h-auto max-h-[84%] w-auto max-w-[84%] object-contain"
+            loading={animationDelay === 0 ? "eager" : "lazy"}
+            fetchPriority={animationDelay === 0 ? "high" : "auto"}
+            className="relative h-auto max-h-[88%] w-auto max-w-[88%] object-contain drop-shadow-[0_18px_28px_rgba(45,52,54,0.10)]"
+            style={{ width: "auto", height: "auto" }}
           />
           {logoPreview && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -1942,7 +1945,7 @@ const ProductCard = memo(function ProductCard({
               <button
                 type="button"
                 onClick={() => handleGallery(activeImageIndex - 1)}
-                className="absolute left-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white text-neutral-700 opacity-0 shadow-sm ring-1 ring-black/5 transition-colors duration-200 hover:bg-accent hover:text-white group-hover/card:opacity-100"
+                className="absolute left-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/92 text-muted opacity-0 shadow-sm ring-1 ring-border backdrop-blur transition-colors duration-200 hover:bg-accent hover:text-white group-hover/card:opacity-100"
                 aria-label="Imagen anterior"
               >
                 <svg
@@ -1962,7 +1965,7 @@ const ProductCard = memo(function ProductCard({
               <button
                 type="button"
                 onClick={() => handleGallery(activeImageIndex + 1)}
-                className="absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white text-neutral-700 opacity-0 shadow-sm ring-1 ring-black/5 transition-colors duration-200 hover:bg-accent hover:text-white group-hover/card:opacity-100"
+                className="absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/92 text-muted opacity-0 shadow-sm ring-1 ring-border backdrop-blur transition-colors duration-200 hover:bg-accent hover:text-white group-hover/card:opacity-100"
                 aria-label="Imagen siguiente"
               >
                 <svg
@@ -1979,7 +1982,7 @@ const ProductCard = memo(function ProductCard({
                   />
                 </svg>
               </button>
-              <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1.5 rounded-full bg-white px-2.5 py-1.5 shadow-sm ring-1 ring-black/5">
+              <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1.5 rounded-full bg-white/92 px-2.5 py-1.5 shadow-sm ring-1 ring-border backdrop-blur">
                 {displayImages.map((image, index) => (
                   <button
                     key={`${image}-${index}`}
@@ -1996,14 +1999,14 @@ const ProductCard = memo(function ProductCard({
 
           {/* Badge */}
           {hasBaseModel && (
-            <span className="absolute left-3 top-3 rounded-md bg-white px-2 py-0.5 text-[10px] font-black text-accent shadow-sm ring-1 ring-accent/10">
+            <span className="absolute left-3 top-3 rounded-md bg-white/92 px-2 py-0.5 text-[10px] font-black text-accent shadow-sm ring-1 ring-accent/15 backdrop-blur">
               3D
             </span>
           )}
         </div>
 
         {/* ─── CONTENT ─── */}
-        <div className="flex flex-col bg-white/45 p-5 sm:p-6">
+        <div className="flex flex-col bg-white p-5 sm:p-6">
           {/* Header */}
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0 flex-1">
@@ -2014,29 +2017,29 @@ const ProductCard = memo(function ProductCard({
                 {product.name}
               </h2>
               {description && (
-                <p className="mt-1 text-sm leading-relaxed text-neutral-500 line-clamp-2">
+                <p className="mt-1 text-sm leading-relaxed text-muted line-clamp-2">
                   {description}
                 </p>
               )}
             </div>
             <div className="shrink-0 text-right">
-              <p className="text-[10px] font-bold text-neutral-500">Desde</p>
+              <p className="text-[10px] font-bold text-muted">Desde</p>
               <p className="text-lg font-black text-accent">
                 ${product.price.toLocaleString("es-CL")}
               </p>
-              <p className="text-[9px] text-neutral-400">IVA incl.</p>
+              <p className="text-[9px] text-muted/65">IVA incl.</p>
             </div>
           </div>
 
           {/* Tags */}
           <div className="mt-3 flex flex-wrap gap-1">
-            <span className="rounded-md border border-neutral-200 bg-white/70 px-2 py-0.5 text-[10px] font-bold text-neutral-600">
+            <span className="rounded-md border border-border bg-surface-2 px-2 py-0.5 text-[10px] font-bold text-muted">
               {baseGarmentType}
             </span>
             {(product.technologies || []).slice(0, 3).map((tech) => (
               <span
                 key={tech}
-                className="rounded-md border border-neutral-200 bg-white/70 px-2 py-0.5 text-[10px] font-bold text-neutral-600"
+                className="rounded-md border border-border bg-surface-2 px-2 py-0.5 text-[10px] font-bold text-muted"
               >
                 {tech}
               </span>
@@ -2045,10 +2048,10 @@ const ProductCard = memo(function ProductCard({
 
           {/* Color + Logo */}
           <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_180px]">
-            <div className="rounded-xl border border-[#e3ded6] bg-white/70 p-3 shadow-sm shadow-slate-900/[0.03]">
-              <label className="mb-2 flex items-center justify-between gap-2 text-[11px] font-black text-neutral-700">
+            <div className="rounded-xl border border-border bg-white p-3 shadow-sm shadow-slate-900/[0.03]">
+              <label className="mb-2 flex items-center justify-between gap-2 text-[11px] font-black text-text">
                 Color
-                <span className="inline-flex min-w-0 items-center gap-1.5 rounded-full border border-neutral-200 bg-[#f7f4ef] px-2 py-1 text-[10px] font-black text-neutral-700 capitalize">
+                <span className="inline-flex min-w-0 items-center gap-1.5 rounded-full border border-accent/20 bg-accent-soft px-2 py-1 text-[10px] font-black text-accent-deep capitalize">
                   <span
                     className="h-2.5 w-2.5 shrink-0 rounded-full ring-1 ring-black/10"
                     style={{ backgroundColor: selectedColorHex }}
@@ -2088,7 +2091,7 @@ const ProductCard = memo(function ProductCard({
                 })}
               </div>
             </div>
-            <div className="rounded-xl border border-accent/15 bg-accent-soft/45 p-3 shadow-sm shadow-accent/5">
+            <div className="rounded-xl border border-accent/18 bg-accent-soft p-3 shadow-sm shadow-accent/5">
               <p className="text-[10px] font-black uppercase tracking-[0.08em] text-accent">
                 Logo incluido
               </p>
@@ -2099,9 +2102,9 @@ const ProductCard = memo(function ProductCard({
           </div>
 
           {/* Sizes */}
-          <div className="mt-4 rounded-xl border border-[#ddd8d0] bg-[#fbfaf7]/80 p-3 shadow-sm shadow-slate-900/[0.03]">
+          <div className="mt-4 rounded-xl border border-border bg-surface-2/70 p-3 shadow-sm shadow-slate-900/[0.03]">
             <div className="mb-2 flex items-center justify-between gap-3">
-              <label className="text-[11px] font-black uppercase tracking-[0.08em] text-neutral-700">
+              <label className="text-[11px] font-black uppercase tracking-[0.08em] text-text">
                 Tallas
               </label>
               <span className="rounded-full bg-accent px-2.5 py-1 text-[10px] font-black text-white shadow-sm shadow-accent/20">
@@ -2124,7 +2127,7 @@ const ProductCard = memo(function ProductCard({
                       disabled={!isAvail}
                       value={val ?? ""}
                       onChange={(e) => onSizeUpdate(pid, size, e.target.value)}
-                      className={`h-9 w-full rounded-lg border text-center text-sm font-black outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent/15 ${isAvail ? "border-[#d3d7d8] bg-white text-neutral-900 shadow-inner shadow-slate-900/[0.02]" : "border-neutral-100 bg-neutral-100/70 text-neutral-300"}`}
+                      className={`h-9 w-full rounded-lg border text-center text-sm font-black outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent/15 ${isAvail ? "border-border bg-white text-neutral-900 shadow-inner shadow-slate-900/[0.02]" : "border-border/60 bg-white/55 text-muted/35"}`}
                     />
                   </div>
                 );
@@ -2136,7 +2139,7 @@ const ProductCard = memo(function ProductCard({
           <div className="mt-auto grid grid-cols-[minmax(0,1fr)_112px] items-center gap-2.5 pt-4">
             <button
               onClick={() => onAddToCart(pid)}
-              className="flex h-11 items-center justify-center gap-2 rounded-xl bg-accent px-4 text-sm font-black text-white shadow-md shadow-accent/10 transition-colors hover:bg-accent-deep"
+              className="flex h-11 items-center justify-center gap-2 rounded-xl bg-accent px-4 text-sm font-black text-white shadow-[0_14px_32px_rgba(70,185,200,0.22)] transition-all hover:bg-accent-deep hover:shadow-[0_18px_40px_rgba(22,136,154,0.24)] active:scale-[0.98]"
             >
               <svg
                 className="h-4 w-4"
@@ -2158,7 +2161,7 @@ const ProductCard = memo(function ProductCard({
               onFocus={() => onPreloadDetails(product)}
               onTouchStart={() => onPreloadDetails(product)}
               onClick={() => onViewDetails(product)}
-              className="flex h-11 items-center justify-center gap-1.5 rounded-xl border border-[#cfd8d9] bg-white/85 px-4 text-sm font-black text-neutral-700 shadow-sm shadow-slate-900/[0.03] transition-colors hover:border-accent/45 hover:bg-white hover:text-accent"
+              className="flex h-11 items-center justify-center gap-1.5 rounded-xl border border-border bg-white px-4 text-sm font-black text-muted shadow-sm shadow-slate-900/[0.03] transition-colors hover:border-accent/45 hover:bg-accent-soft hover:text-accent-deep"
             >
               <svg
                 className="h-3.5 w-3.5"
