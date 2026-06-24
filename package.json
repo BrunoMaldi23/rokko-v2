@@ -2,6 +2,7 @@
   "name": "rokko-cotizador",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "pnpm@10.25.0",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -34,5 +35,13 @@
   },
   "overrides": {
     "postcss": "^8.5.15"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "canvas",
+      "core-js",
+      "sharp",
+      "unrs-resolver"
+    ]
   }
 }
