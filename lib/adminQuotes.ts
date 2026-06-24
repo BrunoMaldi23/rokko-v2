@@ -1,5 +1,5 @@
 import { supabase } from "./supabaseClient";
-import type { QuoteRecord } from "./quotes";
+import type { QuoteItem, QuoteRecord } from "./quotes";
 
 export async function adminFetch(path: string, init: RequestInit = {}) {
   const { data } = supabase ? await supabase.auth.getSession() : { data: null };
@@ -33,7 +33,7 @@ export async function fetchAdminQuotes(): Promise<QuoteRecord[]> {
 
 export async function updateAdminQuoteFull(
   id: number,
-  updates: { status?: string; admin_notes?: string },
+  updates: { status?: string; admin_notes?: string; items?: QuoteItem[]; total?: number },
 ): Promise<boolean> {
   await adminFetch("/api/admin/quotes", {
     method: "PATCH",

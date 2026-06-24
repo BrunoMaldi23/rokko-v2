@@ -80,6 +80,167 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+html[data-font-scale="large"] {
+  font-size: 17px;
+  --rokko-a11y-scale: 1.12;
+}
+
+html[data-font-scale="xlarge"] {
+  font-size: 18.5px;
+  --rokko-a11y-scale: 1.24;
+}
+
+html[data-font-scale="normal"] {
+  --rokko-a11y-scale: 1;
+}
+
+html[data-font-scale="large"] .text-\[9px\],
+html[data-font-scale="large"] .text-\[10px\],
+html[data-font-scale="large"] .text-\[11px\],
+html[data-font-scale="large"] .text-\[9\.5px\],
+html[data-font-scale="large"] .text-\[10\.5px\] {
+  font-size: 12px !important;
+}
+
+html[data-font-scale="xlarge"] .text-\[9px\],
+html[data-font-scale="xlarge"] .text-\[10px\],
+html[data-font-scale="xlarge"] .text-\[11px\],
+html[data-font-scale="xlarge"] .text-\[9\.5px\],
+html[data-font-scale="xlarge"] .text-\[10\.5px\] {
+  font-size: 13.5px !important;
+}
+
+html[data-font-scale="large"] .text-xs {
+  font-size: 0.86rem !important;
+}
+
+html[data-font-scale="large"] .text-sm {
+  font-size: 1rem !important;
+}
+
+html[data-font-scale="xlarge"] .text-xs {
+  font-size: 0.96rem !important;
+}
+
+html[data-font-scale="xlarge"] .text-sm {
+  font-size: 1.08rem !important;
+}
+
+html.rokko-dark {
+  --color-bg: #111817;
+  --color-surface: #1d2927;
+  --color-surface-2: #263634;
+  --color-border: #3b514d;
+  --color-text: #f4f7f3;
+  --color-muted: #c1d0cc;
+  --color-accent: #59c7cf;
+  --color-accent-deep: #96e2e8;
+  --color-accent-ink: #a6edf2;
+  --color-accent-light: #b2edf2;
+  --color-accent-soft: #1b4548;
+  --color-brand-dark: #131c1b;
+  color-scheme: dark;
+}
+
+html.rokko-dark body {
+  background:
+    radial-gradient(circle at 12% 2%, rgba(89, 199, 207, 0.16), transparent 30%),
+    radial-gradient(circle at 92% 18%, rgba(169, 196, 173, 0.11), transparent 28%),
+    linear-gradient(180deg, #17211f 0%, var(--color-bg) 48%, #101615 100%);
+  color: var(--color-text);
+}
+
+html.rokko-dark main,
+html.rokko-dark body > div {
+  background: transparent;
+}
+
+html.rokko-dark header,
+html.rokko-dark .bg-white,
+html.rokko-dark .bg-white\/10,
+html.rokko-dark .bg-white\/55,
+html.rokko-dark .bg-white\/70,
+html.rokko-dark .bg-white\/80,
+html.rokko-dark .bg-white\/86,
+html.rokko-dark .bg-white\/90,
+html.rokko-dark .bg-white\/92,
+html.rokko-dark .bg-white\/95,
+html.rokko-dark .bg-surface {
+  background-color: color-mix(in srgb, var(--color-surface) 94%, transparent) !important;
+  color: var(--color-text);
+}
+
+html.rokko-dark .bg-gradient-to-b,
+html.rokko-dark .bg-gradient-to-r,
+html.rokko-dark .bg-gradient-to-br {
+  background-image: linear-gradient(145deg, #22312f 0%, #182321 62%, #243330 100%) !important;
+}
+
+html.rokko-dark .bg-surface-2,
+html.rokko-dark .bg-surface-2\/70,
+html.rokko-dark .bg-slate-50,
+html.rokko-dark .bg-slate-50\/60,
+html.rokko-dark .bg-neutral-50 {
+  background-color: var(--color-surface-2) !important;
+}
+
+html.rokko-dark .text-neutral-950,
+html.rokko-dark .text-neutral-900,
+html.rokko-dark .text-neutral-800,
+html.rokko-dark .text-slate-950,
+html.rokko-dark .text-slate-900,
+html.rokko-dark .text-slate-800,
+html.rokko-dark .text-brand-dark,
+html.rokko-dark .text-\[\#1e1e1e\],
+html.rokko-dark .text-text {
+  color: var(--color-text) !important;
+}
+
+html.rokko-dark .text-muted,
+html.rokko-dark .text-neutral-600,
+html.rokko-dark .text-neutral-500,
+html.rokko-dark .text-neutral-400,
+html.rokko-dark .text-slate-500,
+html.rokko-dark .text-slate-600,
+html.rokko-dark .text-slate-700 {
+  color: var(--color-muted) !important;
+}
+
+html.rokko-dark .border-border,
+html.rokko-dark .border-neutral-100,
+html.rokko-dark .border-neutral-200,
+html.rokko-dark .border-slate-100,
+html.rokko-dark .border-slate-200 {
+  border-color: var(--color-border) !important;
+}
+
+html.rokko-dark input,
+html.rokko-dark select,
+html.rokko-dark textarea {
+  background-color: #101817 !important;
+  color: var(--color-text) !important;
+  border-color: var(--color-border) !important;
+}
+
+html.rokko-dark table,
+html.rokko-dark tbody,
+html.rokko-dark tr {
+  color: var(--color-text);
+}
+
+html.rokko-dark thead,
+html.rokko-dark .divide-y > :not([hidden]) ~ :not([hidden]) {
+  border-color: var(--color-border) !important;
+}
+
+html.rokko-dark [class*="shadow-"] {
+  --tw-shadow-color: rgba(0, 0, 0, 0.34);
+}
+
+html.rokko-dark img {
+  color-scheme: light;
+}
+
 ::selection {
   background: #46b9c8;
   color: #fff;

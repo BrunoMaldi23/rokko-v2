@@ -76,9 +76,11 @@ export async function PATCH(request: Request) {
   const id = Number(body.id);
   if (!id) return json({ error: "Cotizacion requerida." }, 400);
 
-  const updates: Record<string, string> = {};
+  const updates: Record<string, unknown> = {};
   if (typeof body.status === "string") updates.status = body.status;
   if (typeof body.admin_notes === "string") updates.admin_notes = body.admin_notes;
+  if (Array.isArray(body.items)) updates.items = body.items;
+  if (typeof body.total === "number" && Number.isFinite(body.total)) updates.total = body.total;
 
   if (Object.keys(updates).length === 0) {
     return json({ error: "No hay cambios para guardar." }, 400);

@@ -166,6 +166,27 @@ type ProductForm = {
   sizes?: Record<string, number>;
 };
 
+const logoPositionOptions = [
+  "Pecho izquierdo",
+  "Pecho derecho",
+  "Pecho centro",
+  "Manga izquierda (L)",
+  "Manga derecha (R)",
+  "Espalda centro arriba",
+];
+
+function normalizeLogoPosition(position?: string) {
+  if (position === "Manga") return "Manga izquierda (L)";
+  if (position === "Espalda") return "Espalda centro arriba";
+  return position || "Pecho centro";
+}
+
+type Notice = {
+  title: string;
+  message: string;
+  actionLabel?: string;
+};
+
 function getProductImages(product: Product) {
   const directImages = Array.isArray(product.image) ? product.image : [];
   const imageField = product.image?.trim();
@@ -198,9 +219,11 @@ export default function QuoteBuilder({ initialProducts }: Props) {
   );
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [quoteOpen, setQuoteOpen] = useState(false);
+  const [quoteStep, setQuoteStep] = useState<"review" | "client">("review");
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [logoSize, setLogoSize] = useState(0.08);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [notice, setNotice] = useState<Notice | null>(null);
   const [savingQuote, setSavingQuote] = useState(false);
   const [emailStatus, setEmailStatus] = useState<
     "idle" | "sending" | "sent" | "error"
@@ -222,26 +245,46 @@ export default function QuoteBuilder({ initialProducts }: Props) {
   }, []);
 
   useEffect(() => {
+    const modalOpen = quoteOpen || Boolean(submittedFolio);
+    if (!modalOpen) return;
+
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousHtmlOverflow = document.documentElement.style.overflow;
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousBodyOverflow;
+      document.documentElement.style.overflow = previousHtmlOverflow;
+    };
+  }, [quoteOpen, submittedFolio]);
+
+  useEffect(() => {
     try {
       const raw = window.localStorage.getItem(CART_STORAGE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw);
         if (Array.isArray(parsed)) {
           setCart(
-            parsed.filter((item): item is CartItem =>
-              Boolean(
-                item &&
-                  typeof item.id === "number" &&
-                  typeof item.product === "string" &&
-                  typeof item.productId === "string" &&
-                  typeof item.color === "string" &&
-                  typeof item.logoPosition === "string" &&
-                  typeof item.sizes === "object" &&
-                  typeof item.totalUnits === "number" &&
-                  typeof item.unitPrice === "number" &&
-                  typeof item.subtotal === "number",
-              ),
-            ),
+            parsed
+              .filter((item): item is CartItem =>
+                Boolean(
+                  item &&
+                    typeof item.id === "number" &&
+                    typeof item.product === "string" &&
+                    typeof item.productId === "string" &&
+                    typeof item.color === "string" &&
+                    typeof item.logoPosition === "string" &&
+                    typeof item.sizes === "object" &&
+                    typeof item.totalUnits === "number" &&
+                    typeof item.unitPrice === "number" &&
+                    typeof item.subtotal === "number",
+                ),
+              )
+              .map((item) => ({
+                ...item,
+                logoPosition: normalizeLogoPosition(item.logoPosition),
+              })),
           );
         }
       }
@@ -255,11 +298,15 @@ export default function QuoteBuilder({ initialProducts }: Props) {
   useEffect(() => {
     if (!cartLoaded) return;
     try {
+      if (submittedFolio) {
+        window.localStorage.removeItem(CART_STORAGE_KEY);
+        return;
+      }
       window.localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
     } catch (err) {
       console.warn("No se pudo guardar el carrito:", err);
     }
-  }, [cart, cartLoaded]);
+  }, [cart, cartLoaded, submittedFolio]);
 
   const [clientData, setClientData] = useState<ClientData>({
     empresa: "",
@@ -329,7 +376,12 @@ export default function QuoteBuilder({ initialProducts }: Props) {
         0,
       );
       if (totalUnits <= 0) {
-        alert("Debes ingresar al menos una cantidad.");
+        setNotice({
+          title: "Falta la cantidad",
+          message:
+            "Ingresa al menos una talla con unidades para agregar esta prenda al pedido.",
+          actionLabel: "Entendido",
+        });
         return;
       }
       const unitPrice = getUnitPriceForQuantity(
@@ -350,7 +402,7 @@ export default function QuoteBuilder({ initialProducts }: Props) {
           unitPrice,
           logo: form.logo || "Pecho incluido",
           application: form.application || "Bordado",
-          logoPosition: form.logoPosition || "Pecho izquierdo",
+          logoPosition: form.logoPosition || "Pecho centro",
         },
       ]);
       setShowSuccess(true);
@@ -428,7 +480,14 @@ export default function QuoteBuilder({ initialProducts }: Props) {
     setCart((prev) => prev.filter((item) => item.id !== id));
   }, []);
 
+  const updateCartItem = useCallback((id: number, updates: Partial<CartItem>) => {
+    setCart((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, ...updates } : item)),
+    );
+  }, []);
+
   const openQuoteModal = useCallback(() => {
+    setQuoteStep("review");
     setQuoteOpen(true);
   }, []);
 
@@ -460,7 +519,7 @@ export default function QuoteBuilder({ initialProducts }: Props) {
         color: item.color,
         logo: item.logo,
         application: item.application,
-        logoPosition: item.logoPosition,
+        logoPosition: normalizeLogoPosition(item.logoPosition),
         sizes: item.sizes,
         totalUnits: item.totalUnits,
         unitPrice: item.unitPrice,
@@ -471,7 +530,12 @@ export default function QuoteBuilder({ initialProducts }: Props) {
 
   const handleSubmitQuote = useCallback(async () => {
     if (!clientData.empresa.trim()) {
-      alert("Ingresa el nombre de la empresa o institución.");
+      setNotice({
+        title: "Falta el nombre de la empresa",
+        message:
+          "Para emitir la cotización necesitamos identificar la empresa o institución solicitante.",
+        actionLabel: "Completar datos",
+      });
       return;
     }
 
@@ -491,14 +555,18 @@ export default function QuoteBuilder({ initialProducts }: Props) {
       });
 
       if (!result) {
-        alert(
-          "Error al guardar. Revisa la consola (F12) y ejecuta 'NOTIFY pgrst, reload schema;' en SQL Editor.",
-        );
+        setNotice({
+          title: "No pudimos guardar la cotización",
+          message:
+            "Intenta nuevamente en unos segundos. Si el problema continúa, revisa la conexión con la base de datos.",
+          actionLabel: "Revisar",
+        });
         setSavingQuote(false);
         return;
       }
 
       setSubmittedFolio(result.folio);
+      window.localStorage.removeItem(CART_STORAGE_KEY);
       setEmailStatus("sending");
 
       const emailRes = await fetch("/api/send-quote", {
@@ -538,6 +606,7 @@ export default function QuoteBuilder({ initialProducts }: Props) {
     if (logoPreview) URL.revokeObjectURL(logoPreview);
     setLogoPreview(null);
     setQuoteOpen(false);
+    setQuoteStep("review");
     setSubmittedFolio(null);
     setClientData({
       empresa: "",
@@ -558,6 +627,73 @@ export default function QuoteBuilder({ initialProducts }: Props) {
             ✓
           </span>
           Producto agregado al carrito
+        </div>
+      )}
+
+      {notice && (
+        <div
+          className="fixed inset-0 z-[240] flex items-center justify-center bg-neutral-950/55 p-4 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="rokko-notice-title"
+        >
+          <button
+            className="absolute inset-0 cursor-default"
+            onClick={() => setNotice(null)}
+            aria-label="Cerrar aviso"
+          />
+          <div className="relative w-full max-w-md overflow-hidden rounded-xl border border-white/70 bg-white shadow-2xl">
+            <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-accent via-accent-light to-brand-dark" />
+            <div className="absolute right-5 top-5 h-12 w-36 opacity-90">
+              <Image
+                src="/brand/rokko-navbar.png"
+                alt="ROKKO"
+                fill
+                sizes="144px"
+                className="object-contain object-right"
+              />
+            </div>
+
+            <div className="px-7 pb-7 pt-20">
+              <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-lg bg-accent-soft text-accent-deep ring-1 ring-accent/20">
+                <svg
+                  className="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 9v4m0 4h.01M10.3 4.3 2.7 17.5A2 2 0 0 0 4.4 20h15.2a2 2 0 0 0 1.7-2.5L13.7 4.3a2 2 0 0 0-3.4 0Z"
+                  />
+                </svg>
+              </div>
+
+              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-accent">
+                Cotizador ROKKO
+              </p>
+              <h2
+                id="rokko-notice-title"
+                className="mt-2 text-2xl font-black tracking-tight text-text"
+              >
+                {notice.title}
+              </h2>
+              <p className="mt-3 text-sm leading-6 text-muted">
+                {notice.message}
+              </p>
+
+              <div className="mt-7 flex justify-end">
+                <button
+                  onClick={() => setNotice(null)}
+                  className="rounded-lg bg-brand-dark px-5 py-3 text-sm font-black text-white shadow-lg shadow-brand-dark/15 transition hover:bg-neutral-800 active:scale-[0.98]"
+                >
+                  {notice.actionLabel || "Entendido"}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
@@ -614,22 +750,22 @@ export default function QuoteBuilder({ initialProducts }: Props) {
           })}
         </div>
 
-        <aside className="sticky top-28 h-fit overflow-hidden rounded-2xl border border-accent/20 bg-brand-dark text-white shadow-[0_24px_70px_rgba(45,52,54,0.18)]">
-          <div className="relative overflow-hidden border-b border-white/[0.08] p-6">
-            <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-accent via-accent-light to-[#7dd3fc]" />
+        <aside className="sticky top-28 h-fit overflow-hidden rounded-2xl border border-cyan-200/60 bg-gradient-to-br from-white via-[#effdff] to-[#bfeff5] text-slate-950 shadow-[0_24px_70px_rgba(0,144,160,0.16)]">
+          <div className="relative overflow-hidden border-b border-cyan-100 p-6">
+            <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#071c20] via-accent to-cyan-300" />
             <div className="relative">
               <div className="flex items-center justify-between gap-4">
                 <div className="min-w-0">
-                  <p className="text-[10px] font-black uppercase tracking-[0.24em] text-accent-light">
+                  <p className="text-[10px] font-black uppercase tracking-[0.24em] text-accent-deep">
                     Carrito
                   </p>
                   <h2 className="mt-1 text-lg font-black tracking-tight">
                     Resumen del pedido
                   </h2>
                 </div>
-                <div className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/[0.07] ring-1 ring-white/10">
+                <div className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#071c20] text-white ring-1 ring-cyan-300/30">
                   <svg
-                    className="h-5 w-5 text-white/80"
+                    className="h-5 w-5 text-cyan-100"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -647,24 +783,24 @@ export default function QuoteBuilder({ initialProducts }: Props) {
                 </div>
               </div>
               <div className="mt-5 grid grid-cols-3 gap-2">
-                <div className="rounded-xl bg-white/[0.08] p-3 ring-1 ring-accent-light/10">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-white/45">
+                <div className="rounded-xl bg-white/80 p-3 ring-1 ring-cyan-200">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">
                     Items
                   </p>
                   <p className="mt-1 text-xl font-black tracking-tight">
                     {cart.length}
                   </p>
                 </div>
-                <div className="rounded-xl bg-white/[0.08] p-3 ring-1 ring-accent-light/10">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-white/45">
+                <div className="rounded-xl bg-white/80 p-3 ring-1 ring-cyan-200">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">
                     Unid.
                   </p>
                   <p className="mt-1 text-xl font-black tracking-tight">
                     {cartUnits}
                   </p>
                 </div>
-                <div className="rounded-xl bg-white/[0.08] p-3 ring-1 ring-accent-light/10">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-white/45">
+                <div className="rounded-xl bg-white/80 p-3 ring-1 ring-cyan-200">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">
                     Colores
                   </p>
                   <p className="mt-1 text-xl font-black tracking-tight">
@@ -677,10 +813,10 @@ export default function QuoteBuilder({ initialProducts }: Props) {
 
           <div className="px-6 pb-2">
             {cart.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-accent/25 bg-accent/[0.05] p-5 text-center">
-                <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-white/[0.08]">
+              <div className="rounded-xl border border-dashed border-cyan-300 bg-white/70 p-5 text-center">
+                <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-cyan-50">
                   <svg
-                    className="h-5 w-5 text-accent-light"
+                    className="h-5 w-5 text-accent"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -693,10 +829,10 @@ export default function QuoteBuilder({ initialProducts }: Props) {
                     />
                   </svg>
                 </div>
-                <h3 className="text-sm font-black text-white/85">
+                <h3 className="text-sm font-black text-slate-950">
                   Tu carrito está vacío
                 </h3>
-                <p className="mt-1 text-xs leading-relaxed text-white/45">
+                <p className="mt-1 text-xs leading-relaxed text-slate-500">
                   Selecciona colores, tallas y agrega prendas para armar tu
                   cotización.
                 </p>
@@ -706,35 +842,38 @@ export default function QuoteBuilder({ initialProducts }: Props) {
                 {cart.map((item) => (
                   <div
                     key={item.id}
-                    className="group rounded-xl bg-white/[0.06] p-3.5 ring-1 ring-white/[0.08] transition-all hover:bg-white/[0.09]"
+                    className="group rounded-xl bg-white/88 p-3.5 shadow-sm ring-1 ring-cyan-100 transition-all hover:bg-white hover:ring-cyan-200"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0 flex-1">
-                        <h3 className="truncate text-sm font-black text-white/95">
+                          <h3 className="truncate text-sm font-black text-slate-950">
                           {item.product}
                         </h3>
-                        <p className="mt-0.5 text-xs font-medium text-white/40">
-                          {item.color} · {item.logoPosition}
+                        <p className="mt-0.5 text-xs font-semibold text-slate-600">
+                          {item.color} · {item.application}
                         </p>
-                        <p className="mt-1.5 text-[11px] leading-relaxed text-white/30">
+                        <p className="mt-1.5 text-[11px] font-semibold leading-relaxed text-slate-500">
                           {Object.entries(item.sizes)
                             .filter(([, qty]) => qty > 0)
-                            .map(([size, qty]) => `${size}: ${qty}`)
+                            .map(([size, qty]) => `${qty}/${size}`)
                             .join(" · ")}
+                        </p>
+                        <p className="mt-1 text-[11px] font-black text-accent-deep">
+                          Unidad ${item.unitPrice.toLocaleString("es-CL")}
                         </p>
                       </div>
                       <div className="shrink-0 text-right">
-                        <p className="text-sm font-black text-white">
+                        <p className="text-sm font-black text-slate-950">
                           ${item.subtotal.toLocaleString("es-CL")}
                         </p>
-                        <p className="text-[11px] text-white/30">
+                        <p className="text-[11px] font-semibold text-slate-500">
                           {item.totalUnits} und.
                         </p>
                       </div>
                     </div>
                     <button
                       onClick={() => removeItem(item.id)}
-                      className="mt-2.5 w-full rounded-lg border border-white/[0.06] bg-white/[0.03] px-3 py-1.5 text-[11px] font-medium text-red-200/50 opacity-0 transition-all hover:border-red-500/20 hover:bg-red-500/10 hover:text-red-300/80 group-hover:opacity-100"
+                      className="mt-2.5 w-full rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-[11px] font-black text-red-600 transition-all hover:border-red-500 hover:bg-red-500 hover:text-white"
                     >
                       Eliminar
                     </button>
@@ -744,16 +883,16 @@ export default function QuoteBuilder({ initialProducts }: Props) {
             )}
           </div>
 
-          <div className="border-t border-white/[0.08] px-6 py-5">
+          <div className="border-t border-cyan-100 px-6 py-5">
             {commercialDiscount > 0 && discountAmount > 0 && (
-              <div className="mb-3 space-y-1 rounded-xl border border-cyan-300/20 bg-cyan-300/10 px-3.5 py-3 text-xs text-white/65">
+              <div className="mb-3 space-y-1 rounded-xl border border-cyan-200 bg-white/75 px-3.5 py-3 text-xs text-slate-600">
                 <div className="flex justify-between">
                   <span>Subtotal</span>
-                  <span className="font-bold text-white/80">
+                  <span className="font-bold text-slate-900">
                     ${subtotalBeforeDiscount.toLocaleString("es-CL")}
                   </span>
                 </div>
-                <div className="flex justify-between text-cyan-100">
+                <div className="flex justify-between text-accent-deep">
                   <span>Descuento comercial {commercialDiscount}%</span>
                   <span className="font-black">
                     -${discountAmount.toLocaleString("es-CL")}
@@ -762,8 +901,8 @@ export default function QuoteBuilder({ initialProducts }: Props) {
               </div>
             )}
             <div className="flex items-end justify-between gap-4">
-              <span className="text-sm font-semibold text-white/50">Total estimado</span>
-              <strong className="text-2xl font-black tracking-tight text-white">
+              <span className="text-sm font-semibold text-slate-600">Total estimado</span>
+              <strong className="text-2xl font-black tracking-tight text-slate-950">
                 ${total.toLocaleString("es-CL")}
               </strong>
             </div>
@@ -848,17 +987,184 @@ export default function QuoteBuilder({ initialProducts }: Props) {
                   Cotización
                 </p>
                 <h2 className="mt-0.5 text-xl font-semibold text-neutral-900">
-                  Datos del cliente
+                  {quoteStep === "review" ? "Revisar pedido" : "Datos del cliente"}
                 </h2>
               </div>
-              <button
-                onClick={() => setQuoteOpen(false)}
-                className="rounded-lg border border-neutral-200 bg-white px-4 py-2 text-sm font-medium text-neutral-500 transition-colors hover:border-neutral-300 hover:text-neutral-700"
-              >
-                Cerrar
-              </button>
+              <div className="flex items-center gap-2">
+                {quoteStep === "client" && (
+                  <button
+                    onClick={() => setQuoteStep("review")}
+                    className="rounded-lg border border-cyan-200 bg-cyan-50 px-4 py-2 text-sm font-black text-accent-deep transition-colors hover:bg-cyan-100"
+                  >
+                    Volver a revisar
+                  </button>
+                )}
+                <button
+                  onClick={() => setQuoteOpen(false)}
+                  className="rounded-lg border border-neutral-200 bg-white px-4 py-2 text-sm font-medium text-neutral-500 transition-colors hover:border-neutral-300 hover:text-neutral-700"
+                >
+                  Cerrar
+                </button>
+              </div>
             </div>
 
+            {quoteStep === "review" ? (
+              <div className="grid gap-6 p-8 lg:grid-cols-[minmax(0,1fr)_300px]">
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-accent">
+                      Verifica tu seleccion
+                    </p>
+                    <h3 className="mt-1 text-2xl font-black text-neutral-950">
+                      Prendas, tallas, colores y logo
+                    </h3>
+                    <p className="mt-1 text-sm text-neutral-500">
+                      Ajusta la ubicacion del logo y adjunta el archivo por prenda antes de continuar.
+                    </p>
+                  </div>
+
+                  <div className="scrollbar-none max-h-[58vh] space-y-3 overflow-y-auto pr-1">
+                    {cart.map((item) => {
+                      const sizeSummary = Object.entries(item.sizes)
+                        .filter(([, qty]) => qty > 0)
+                        .map(([size, qty]) => `${qty}/${size}`)
+                        .join(" - ");
+                      const logoPosition = normalizeLogoPosition(item.logoPosition);
+                      const hasCustomLogo = Boolean(
+                        item.logo && item.logo !== "Pecho incluido",
+                      );
+
+                      return (
+                        <div
+                          key={item.id}
+                          className="rounded-2xl border border-cyan-300/70 bg-gradient-to-br from-[#dff8fb] via-[#eefbfc] to-[#bdeef4] p-4 shadow-[0_18px_42px_rgba(8,116,140,0.22)] ring-1 ring-cyan-50/80"
+                        >
+                          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                            <div className="min-w-0">
+                              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-emerald-600">
+                                Item
+                              </p>
+                              <p className="mt-1 text-base font-black text-neutral-950">
+                                {item.product}
+                              </p>
+                              <div className="mt-2 flex flex-wrap gap-2">
+                                <span className="rounded-full bg-[#073137] px-3 py-1 text-[11px] font-black text-cyan-50 shadow-sm ring-1 ring-cyan-200/30">
+                                  {item.color}
+                                </span>
+                                <span className="rounded-full bg-white/72 px-3 py-1 text-[11px] font-black text-slate-800 shadow-sm ring-1 ring-cyan-200">
+                                  {item.application}
+                                </span>
+                                <span className="rounded-full bg-cyan-200/80 px-3 py-1 text-[11px] font-black text-[#06343b] shadow-sm ring-1 ring-cyan-300">
+                                  {sizeSummary}
+                                </span>
+                              </div>
+                              <p className="mt-2 text-[11px] font-semibold text-neutral-500">
+                                Unidad ${item.unitPrice.toLocaleString("es-CL")} · {item.totalUnits} und.
+                              </p>
+                            </div>
+                            <div className="rounded-xl bg-[#073137] px-4 py-3 text-right shadow-[0_12px_28px_rgba(6,49,55,0.18)] ring-1 ring-cyan-300/30">
+                              <p className="text-[10px] font-black uppercase tracking-[0.12em] text-cyan-200">
+                                Subtotal
+                              </p>
+                              <p className="text-lg font-black text-white">
+                                ${item.subtotal.toLocaleString("es-CL")}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="mt-4 grid gap-3 sm:grid-cols-[220px_minmax(0,1fr)]">
+                            <label>
+                              <span className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">
+                                Ubicacion logo
+                              </span>
+                              <select
+                                value={logoPosition}
+                                onChange={(event) =>
+                                  updateCartItem(item.id, { logoPosition: event.target.value })
+                                }
+                                className="mt-1 h-11 w-full rounded-xl border border-cyan-300 bg-[#f2fdff] px-3 text-xs font-black text-slate-900 shadow-sm outline-none transition focus:border-accent focus:ring-4 focus:ring-cyan-200"
+                              >
+                                {logoPositionOptions.map((position) => (
+                                  <option key={position} value={position}>
+                                    {position}
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
+                            <div>
+                              <span className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">
+                                Archivo logo
+                              </span>
+                              <div className="mt-1 flex flex-col gap-2 sm:flex-row">
+                                <label className="min-w-0 flex-1">
+                                  <span className="flex h-11 cursor-pointer items-center justify-center truncate rounded-xl border border-dashed border-cyan-400 bg-[#f2fdff] px-3 text-center text-xs font-black text-accent-deep shadow-sm transition hover:border-accent hover:bg-cyan-100">
+                                    <input
+                                      type="file"
+                                      accept=".svg,.png,.jpg,.jpeg,image/svg+xml,image/png,image/jpeg"
+                                      className="sr-only"
+                                      onChange={(event) => {
+                                        const file = event.target.files?.[0];
+                                        if (!file) return;
+                                        updateCartItem(item.id, { logo: file.name });
+                                      }}
+                                    />
+                                    {hasCustomLogo ? item.logo : "Adjuntar SVG/PNG/JPG"}
+                                  </span>
+                                </label>
+                                {hasCustomLogo && (
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      updateCartItem(item.id, { logo: "Pecho incluido" })
+                                    }
+                                    className="h-11 rounded-xl border border-red-200 bg-red-50 px-4 text-xs font-black text-red-600 shadow-sm transition hover:border-red-500 hover:bg-red-500 hover:text-white"
+                                  >
+                                    Quitar logo
+                                  </button>
+                                )}
+                              </div>
+                              <p className="mt-1 text-[10px] font-semibold text-slate-400">
+                                Manga permite elegir L/R. Espalda se aplica centro arriba.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <aside className="h-fit rounded-2xl border border-cyan-300/70 bg-gradient-to-br from-[#c7f3f8] via-[#e5fbfd] to-[#9ee0e9] p-5 shadow-[0_20px_48px_rgba(8,116,140,0.22)] ring-1 ring-cyan-50/80">
+                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#06343b]">
+                    Resumen
+                  </p>
+                  <div className="mt-4 space-y-3 text-sm">
+                    <div className="flex justify-between rounded-xl bg-[#f3fdff]/78 px-3 py-2 shadow-sm ring-1 ring-cyan-200">
+                      <span className="font-semibold text-slate-600">Productos</span>
+                      <span className="font-black text-[#06272d]">{cart.length}</span>
+                    </div>
+                    <div className="flex justify-between rounded-xl bg-[#f3fdff]/78 px-3 py-2 shadow-sm ring-1 ring-cyan-200">
+                      <span className="font-semibold text-slate-600">Unidades</span>
+                      <span className="font-black text-[#06272d]">{cartUnits}</span>
+                    </div>
+                    <div className="rounded-xl bg-gradient-to-br from-[#06272d] to-[#0b5862] px-4 py-3 text-white shadow-lg shadow-cyan-900/20">
+                      <div className="flex items-end justify-between">
+                        <span className="font-semibold text-cyan-100">Total</span>
+                        <span className="text-2xl font-black text-white">
+                          ${total.toLocaleString("es-CL")}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setQuoteStep("client")}
+                    className="mt-5 w-full rounded-xl bg-gradient-to-r from-[#24b8c8] to-[#0b8794] px-5 py-3 text-sm font-black text-white shadow-lg shadow-cyan-800/22 transition hover:from-[#1baabb] hover:to-[#076f7b] active:scale-[0.98]"
+                  >
+                    Continuar a datos
+                  </button>
+                </aside>
+              </div>
+            ) : (
             <div className="grid gap-8 p-8 lg:grid-cols-[1fr_1fr]">
               <div className="space-y-5">
                 <div>
@@ -1019,6 +1325,7 @@ export default function QuoteBuilder({ initialProducts }: Props) {
                 </p>
               </div>
             </div>
+            )}
           </div>
         </div>
       )}
@@ -1029,7 +1336,7 @@ export default function QuoteBuilder({ initialProducts }: Props) {
         <>
           <div
             id="quote-invoice-wrapper"
-            className="fixed inset-0 z-[120] overflow-y-auto bg-black/40 backdrop-blur-sm no-print print:static print:bg-white print:p-0"
+            className="fixed inset-0 z-[120] overflow-y-auto overscroll-contain bg-black/40 pb-24 backdrop-blur-sm no-print print:static print:bg-white print:p-0"
           >
             <QuoteDocument
               brand={brand}
@@ -1328,7 +1635,7 @@ export default function QuoteBuilder({ initialProducts }: Props) {
             </div>
 
             {/* ────── BOTONES — solo en pantalla ────── */}
-            <div className="no-print sticky bottom-0 flex flex-wrap items-center justify-center gap-3 border-t border-neutral-100 bg-white/90 p-5 backdrop-blur-md shadow-lg">
+            <div className="no-print sticky bottom-0 mx-auto mb-5 flex w-[min(92vw,640px)] flex-wrap items-center justify-center gap-2 rounded-xl border border-accent/25 bg-brand-dark/95 px-3 py-3 shadow-[0_18px_55px_rgba(0,0,0,0.28)] backdrop-blur-xl">
               {emailStatus === "error" && (
                 <button
                   onClick={() => {
@@ -1353,22 +1660,31 @@ export default function QuoteBuilder({ initialProducts }: Props) {
                       .then((r) => setEmailStatus(r.ok ? "sent" : "error"))
                       .catch(() => setEmailStatus("error"));
                   }}
-                  className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-700 hover:bg-amber-100 transition"
+                  className="rounded-lg border border-amber-300/35 bg-amber-400/15 px-4 py-3 text-sm font-black text-amber-100 transition hover:bg-amber-400/25"
                 >
                   Reintentar envío
                 </button>
               )}
               <button
                 onClick={() => printElement("quote-invoice-wrapper")}
-                className="rounded-lg bg-neutral-900 px-6 py-3 text-sm font-medium text-white shadow-sm hover:bg-neutral-800 transition"
+                className="rounded-lg bg-accent px-6 py-3 text-sm font-black text-white shadow-lg shadow-accent/20 transition hover:bg-accent-deep active:scale-[0.98]"
               >
                 Imprimir / PDF
               </button>
               <button
                 onClick={resetQuote}
-                className="rounded-lg border border-neutral-200 bg-white px-6 py-3 text-sm font-medium text-neutral-600 hover:border-neutral-300 hover:text-neutral-800 transition"
+                className="rounded-lg border border-white/12 bg-white/8 px-6 py-3 text-sm font-bold text-white/82 transition hover:bg-white/14 hover:text-white active:scale-[0.98]"
               >
                 Nueva cotización
+              </button>
+              <button
+                onClick={() => {
+                  resetQuote();
+                  window.location.href = "/";
+                }}
+                className="rounded-lg border border-white/12 bg-white/8 px-6 py-3 text-sm font-bold text-white/82 transition hover:bg-white/14 hover:text-white active:scale-[0.98]"
+              >
+                Volver al inicio
               </button>
             </div>
           </div>
@@ -1424,7 +1740,10 @@ function QuoteDocument({
   } as const;
 
   return (
-    <div className="mx-auto my-8 min-h-[1123px] w-[794px] bg-white px-[38px] py-[34px] text-[11px] leading-tight text-black shadow-2xl print:my-0 print:min-h-0 print:w-full print:px-0 print:py-0 print:shadow-none">
+    <div
+      data-quote-print-document
+      className="mx-auto my-8 min-h-[1123px] w-[794px] bg-white px-[38px] py-[34px] text-[11px] leading-tight text-black shadow-2xl print:my-0 print:min-h-0 print:w-full print:px-0 print:py-0 print:shadow-none"
+    >
       <div className="grid grid-cols-[210px_1fr_150px] items-start gap-6">
         <div className="pt-1">
           <Image
@@ -1875,7 +2194,6 @@ const ProductCard = memo(function ProductCard({
       : selectedColor;
   const activeColorHex = getColorHex(activeGalleryColor);
   const selectedColorHex = getColorHex(selectedColor);
-
   const handleGallery = useCallback(
     (nextIndex: number) => {
       const total = displayImages.length;
@@ -1952,6 +2270,12 @@ const ProductCard = memo(function ProductCard({
 
   return (
     <div
+      data-speakable-product
+      data-speak-name={product.name}
+      data-speak-description={description || product.description || ""}
+      data-speak-price={`$${product.price.toLocaleString("es-CL")}`}
+      data-speak-colors={(product.colors || []).join(", ")}
+      data-speak-sizes={productSizes.join(", ")}
       className="animate-fade-in-up group/card overflow-hidden rounded-2xl border border-border bg-white shadow-[0_16px_45px_rgba(45,52,54,0.06)] transition-all duration-200 hover:-translate-y-0.5 hover:border-accent/35 hover:shadow-[0_22px_60px_rgba(45,52,54,0.10)]"
       style={{ animationDelay: `${animationDelay}ms` }}
     >

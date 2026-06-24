@@ -229,6 +229,216 @@ function buildQuoteEmail(
 </html>`;
 }
 
+function escapeHtml(value: unknown) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function formatMoney(value: number) {
+  return `$${Math.round(Number(value || 0)).toLocaleString("es-CL")}`;
+}
+
+function buildPrintableQuoteEmail(
+  folio: string,
+  client_empresa: string,
+  client_rut: string,
+  client_contacto: string,
+  client_correo: string,
+  client_telefono: string,
+  client_observaciones: string,
+  items: QuoteItem[],
+  total: number,
+  brand: BrandEmailSettings,
+  commercial: CommercialEmailSettings,
+  appOrigin: string
+) {
+  const vatRate = commercial?.vat ?? 19;
+  const grossTotal = items.reduce((sum, item) => sum + Number(item.subtotal || 0), 0);
+  const discountPercent = Math.max(0, Math.min(100, Number(commercial?.discount || 0)));
+  const discountTotal = Math.max(0, grossTotal - total);
+  const neto = Math.round(total / (1 + vatRate / 100));
+  const iva = total - neto;
+  const quoteDate = new Date().toLocaleDateString("es-CL");
+  const city = brand?.city || "Temuco";
+  const validity = commercial?.validity || 5;
+  const paymentTerms = commercial?.terms || "60% al confirmar el trabajo, saldo contra entrega.";
+  const logoUrl = `${appOrigin}/brand/rokko-navbar.png`;
+  const paymentRows = [
+    ["Banco", brand?.bank_name],
+    ["Tipo", brand?.bank_account_type],
+    ["Cuenta", brand?.bank_account_number],
+    ["Titular", brand?.bank_account_holder],
+    ["RUT", brand?.bank_account_rut],
+    ["Correo", brand?.bank_account_email],
+  ].filter(([, value]) => String(value || "").trim());
+
+  const itemRows = items
+    .map((item) => {
+      const sizes = Object.entries(item.sizes || {})
+        .filter(([, quantity]) => Number(quantity) > 0)
+        .map(([size, quantity]) => `${escapeHtml(size)}/${escapeHtml(quantity)}`)
+        .join(" | ");
+
+      return `
+        <tr>
+          <td style="border:1px solid #000;padding:7px 8px;vertical-align:top;font-weight:800;text-transform:uppercase">${escapeHtml(item.color || "Sin color")}</td>
+          <td style="border:1px solid #000;padding:7px 8px;vertical-align:top">
+            <div style="font-weight:900;text-transform:uppercase">${escapeHtml(item.product)}</div>
+            <div style="margin-top:3px;font-size:10px;line-height:1.35">* Incluye logo ${escapeHtml(String(item.logoPosition || "").toLowerCase())} ${escapeHtml(String(item.application || "").toLowerCase())}</div>
+            <div style="font-size:10px;line-height:1.35">* Producto sujeto a disponibilidad de stock y color.</div>
+          </td>
+          <td style="border:1px solid #000;padding:7px 8px;vertical-align:top;font-weight:700">${sizes || "-"}</td>
+          <td style="border:1px solid #000;padding:7px 8px;vertical-align:top;text-align:right;font-weight:900">${escapeHtml(item.totalUnits)}</td>
+          <td style="border:1px solid #000;padding:7px 8px;vertical-align:top;text-align:right;white-space:nowrap">${formatMoney(item.unitPrice)}</td>
+          <td style="border:1px solid #000;padding:7px 8px;vertical-align:top;text-align:right;white-space:nowrap;font-weight:900">${formatMoney(item.subtotal)}</td>
+        </tr>`;
+    })
+    .join("");
+
+  const paymentHtml = paymentRows.length
+    ? `
+      <div style="margin-top:10px;border-top:1px solid rgba(0,0,0,.18);padding-top:8px">
+        <div style="font-weight:900;text-transform:uppercase">Datos de transferencia</div>
+        <table style="width:100%;border-collapse:collapse;margin-top:4px;font-size:10px">
+          ${paymentRows
+            .map(
+              ([label, value]) => `
+                <tr>
+                  <td style="padding:1px 8px 1px 0;font-weight:900;width:54px">${label}:</td>
+                  <td style="padding:1px 0">${escapeHtml(value)}</td>
+                </tr>`
+            )
+            .join("")}
+        </table>
+        ${brand?.payment_notes ? `<div style="margin-top:5px;font-weight:700">${escapeHtml(brand.payment_notes)}</div>` : ""}
+      </div>`
+    : "";
+
+  return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body style="margin:0;padding:24px;background:#eef3f5;font-family:Arial,Helvetica,sans-serif;color:#000">
+  <div style="max-width:794px;margin:0 auto;background:#fff;padding:34px 38px;box-shadow:0 18px 50px rgba(15,23,42,.12);box-sizing:border-box;font-size:11px;line-height:1.25">
+    <table style="width:100%;border-collapse:collapse;margin-bottom:28px">
+      <tr>
+        <td style="width:210px;vertical-align:top">
+          <img src="${logoUrl}" alt="ROKKO" width="205" style="display:block;max-width:205px;height:auto">
+        </td>
+        <td style="vertical-align:top;text-align:center">
+          <div style="font-size:9px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:#0b8fa1">Vestuario corporativo profesional</div>
+          <div style="margin-top:5px;font-size:21px;font-weight:900;text-transform:uppercase">Cotizacion comercial</div>
+          <div style="margin-top:4px;font-size:11px;font-weight:700;color:#4b5563">Nro. ${escapeHtml(folio)}</div>
+        </td>
+        <td style="width:150px;vertical-align:top">
+          <table style="width:100%;border-collapse:collapse;font-size:10px">
+            <tr><td style="border:1px solid #000;background:#f2f2f2;padding:4px 6px;font-weight:900;text-transform:uppercase">Fecha</td><td style="border:1px solid #000;padding:4px 6px;font-weight:700">${escapeHtml(quoteDate)}</td></tr>
+            <tr><td style="border:1px solid #000;background:#f2f2f2;padding:4px 6px;font-weight:900;text-transform:uppercase">Ciudad</td><td style="border:1px solid #000;padding:4px 6px;font-weight:700">${escapeHtml(city)}</td></tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+
+    <table style="width:100%;border-collapse:collapse;font-size:10.5px;margin-bottom:12px">
+      <tr>
+        <th style="border:1px solid #000;background:#f2f2f2;padding:6px 8px;text-align:left;text-transform:uppercase">Cotizacion</th>
+        <td style="border:1px solid #000;padding:6px 8px;font-weight:700">${escapeHtml(folio)}</td>
+        <th style="border:1px solid #000;background:#f2f2f2;padding:6px 8px;text-align:left;text-transform:uppercase">Empresa</th>
+        <td style="border:1px solid #000;padding:6px 8px;font-weight:700">${escapeHtml(client_empresa || "-")}</td>
+      </tr>
+      <tr>
+        <th style="border:1px solid #000;background:#f2f2f2;padding:6px 8px;text-align:left;text-transform:uppercase">Contacto</th>
+        <td style="border:1px solid #000;padding:6px 8px;font-weight:700">${escapeHtml(client_contacto || "-")}</td>
+        <th style="border:1px solid #000;background:#f2f2f2;padding:6px 8px;text-align:left;text-transform:uppercase">Telefono</th>
+        <td style="border:1px solid #000;padding:6px 8px;font-weight:700">${escapeHtml(client_telefono && client_telefono !== "+56 9" ? client_telefono : "-")}</td>
+      </tr>
+      <tr>
+        <th style="border:1px solid #000;background:#f2f2f2;padding:6px 8px;text-align:left;text-transform:uppercase">Mail</th>
+        <td style="border:1px solid #000;padding:6px 8px;font-weight:700">${escapeHtml(client_correo || "-")}</td>
+        <th style="border:1px solid #000;background:#f2f2f2;padding:6px 8px;text-align:left;text-transform:uppercase">Direccion</th>
+        <td style="border:1px solid #000;padding:6px 8px;font-weight:700">${escapeHtml(client_observaciones || city || "-")}</td>
+      </tr>
+      ${client_rut ? `<tr><th style="border:1px solid #000;background:#f2f2f2;padding:6px 8px;text-align:left;text-transform:uppercase">RUT</th><td colspan="3" style="border:1px solid #000;padding:6px 8px;font-weight:700">${escapeHtml(client_rut)}</td></tr>` : ""}
+    </table>
+
+    <table style="border-collapse:collapse;font-size:10.5px;margin-bottom:18px;width:360px">
+      <tr>
+        <td style="border:1px solid #000;background:#f2f2f2;padding:6px 8px;font-weight:900;text-transform:uppercase">Abono 60%</td>
+        <td style="border:1px solid #000;padding:6px 8px;font-weight:700">SI</td>
+        <td style="border:1px solid #000;background:#f2f2f2;padding:6px 8px;font-weight:900;text-transform:uppercase">Tipo Pago</td>
+        <td style="border:1px solid #000;padding:6px 8px;font-weight:700">CONTADO</td>
+      </tr>
+    </table>
+
+    <table style="width:100%;border-collapse:collapse;font-size:10.5px">
+      <thead>
+        <tr>
+          <th style="border:1px solid #000;background:#0b8fa1;color:#fff;padding:7px 8px;text-align:left;text-transform:uppercase;font-size:9.5px">Color</th>
+          <th style="border:1px solid #000;background:#0b8fa1;color:#fff;padding:7px 8px;text-align:left;text-transform:uppercase;font-size:9.5px">Descripcion</th>
+          <th style="border:1px solid #000;background:#0b8fa1;color:#fff;padding:7px 8px;text-align:left;text-transform:uppercase;font-size:9.5px">Talla</th>
+          <th style="border:1px solid #000;background:#0b8fa1;color:#fff;padding:7px 8px;text-align:right;text-transform:uppercase;font-size:9.5px">Cantidad</th>
+          <th style="border:1px solid #000;background:#0b8fa1;color:#fff;padding:7px 8px;text-align:right;text-transform:uppercase;font-size:9.5px">Valor unitario</th>
+          <th style="border:1px solid #000;background:#0b8fa1;color:#fff;padding:7px 8px;text-align:right;text-transform:uppercase;font-size:9.5px">Total neto</th>
+        </tr>
+      </thead>
+      <tbody>${itemRows}</tbody>
+    </table>
+
+    <table style="width:100%;border:1px solid #000;border-collapse:collapse;margin-top:18px;font-size:10px">
+      <tr><td colspan="2" style="border:1px solid #000;background:#f2f2f2;padding:7px 10px;font-weight:900;text-transform:uppercase">Condiciones y resumen financiero</td></tr>
+      <tr>
+        <td style="border-right:1px solid #000;padding:12px;vertical-align:top;width:58%">
+          <table style="width:100%;font-size:10px">
+            <tr>
+              <td style="vertical-align:top;width:50%;padding:0 10px 8px 0"><strong style="text-transform:uppercase">Plazo</strong><br>2 semanas con diseno aprobado.</td>
+              <td style="vertical-align:top;width:50%;padding:0 0 8px 10px"><strong style="text-transform:uppercase">Pago</strong><br>${escapeHtml(paymentTerms)}</td>
+            </tr>
+            <tr>
+              <td style="vertical-align:top;padding:0 10px 0 0"><strong style="text-transform:uppercase">Contacto</strong><br>${escapeHtml(brand?.name || "ROKKO-TCO")}<br>${escapeHtml(brand?.phone || "")}</td>
+              <td style="vertical-align:top;padding:0 0 0 10px"><strong style="text-transform:uppercase">Inicio de trabajos</strong><br>${escapeHtml(brand?.name || "ROKKO-TCO")}<br>${escapeHtml(brand?.email || "")}</td>
+            </tr>
+          </table>
+          ${paymentHtml}
+        </td>
+        <td style="padding:12px;vertical-align:middle;width:42%">
+          <table style="margin-left:auto;border-collapse:collapse;font-size:11px;width:250px">
+            ${
+              discountPercent > 0 && discountTotal > 0
+                ? `<tr><td style="border:1px solid #000;background:#f2f2f2;padding:8px 10px;font-weight:900;text-transform:uppercase">Subtotal</td><td style="border:1px solid #000;padding:8px 10px;text-align:right;font-weight:900">${formatMoney(grossTotal)}</td></tr>
+                   <tr><td style="border:1px solid #000;background:#f2f2f2;padding:8px 10px;font-weight:900;text-transform:uppercase">Descuento ${discountPercent}%</td><td style="border:1px solid #000;padding:8px 10px;text-align:right;font-weight:900">-${formatMoney(discountTotal)}</td></tr>`
+                : ""
+            }
+            <tr><td style="border:1px solid #000;background:#f2f2f2;padding:8px 10px;font-weight:900;text-transform:uppercase">Valor neto</td><td style="border:1px solid #000;padding:8px 10px;text-align:right;font-weight:900">${formatMoney(neto)}</td></tr>
+            <tr><td style="border:1px solid #000;background:#f2f2f2;padding:8px 10px;font-weight:900;text-transform:uppercase">${vatRate}%</td><td style="border:1px solid #000;padding:8px 10px;text-align:right;font-weight:900">${formatMoney(iva)}</td></tr>
+            <tr><td style="border:1px solid #000;background:#f2f2f2;padding:9px 10px;font-size:13px;font-weight:900;text-transform:uppercase">Total</td><td style="border:1px solid #000;padding:9px 10px;text-align:right;font-size:14px;font-weight:900">${formatMoney(total)}</td></tr>
+          </table>
+        </td>
+      </tr>
+      <tr>
+        <td colspan="2" style="border-top:1px solid #000;padding:7px 10px;font-size:9.5px;line-height:1.45">
+          <strong>Presupuesto valido por ${escapeHtml(validity)} dias corridos.</strong>
+          <strong> INCLUYE:</strong> montaje de logos imagen digital, correccion de logo para tecnica estampado o bordado. Foto montaje es utilizada como elemento de referencia.
+        </td>
+      </tr>
+    </table>
+
+    <table style="width:100%;margin-top:22px;border-collapse:collapse;font-size:9px;text-transform:uppercase;letter-spacing:.14em">
+      <tr>
+        <td style="font-weight:800;color:#0b8fa1">ROKKO Vestuario Corporativo</td>
+        <td style="text-align:right;font-weight:800">Documento generado para cotizacion comercial</td>
+      </tr>
+    </table>
+  </div>
+</body>
+</html>`;
+}
+
 function buildResponseEmail(folio: string, client_empresa: string, admin_notes: string, status: string) {
   const statusLabel = status === "respondida" ? "APROBADA" : "CERRADA";
   const statusColor = status === "respondida" ? "#059669" : "#dc2626";
@@ -309,6 +519,7 @@ export async function POST(request: Request) {
     }
 
     const type = body.type || "new_quote";
+    const appOrigin = new URL(request.url).origin;
 
     if (type === "admin_response") {
       const { folio, client_empresa, client_correo, admin_notes, status } = body;
@@ -335,7 +546,7 @@ export async function POST(request: Request) {
     } = body;
 
     const subject = `Cotización ${folio} — ${client_empresa}`;
-    const html = buildQuoteEmail(
+    const html = buildPrintableQuoteEmail(
       folio,
       client_empresa,
       client_rut,
@@ -346,7 +557,8 @@ export async function POST(request: Request) {
       items,
       total,
       brand,
-      commercial
+      commercial,
+      appOrigin
     );
     const result = await trySend([client_correo], subject, html);
     if (!result.ok) return Response.json({ error: result.error }, { status: 500 });

@@ -145,6 +145,18 @@ export default function AdminProducts() {
   }, [editingProduct]);
 
   useEffect(() => {
+    if (!isPanelOpen) return;
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousHtmlOverflow = document.documentElement.style.overflow;
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousBodyOverflow;
+      document.documentElement.style.overflow = previousHtmlOverflow;
+    };
+  }, [isPanelOpen]);
+
+  useEffect(() => {
     let mounted = true;
     getAdminProducts().then((data) => {
       if (!mounted) return;
@@ -595,19 +607,24 @@ export default function AdminProducts() {
         </div>
       </section>
 
-      {/* COMPONENTE CRUD: PANEL LATERAL SLIDE-OVER (CREAR / EDITAR) */}
+      {/* COMPONENTE CRUD: MODAL CENTRAL (CREAR / EDITAR) */}
       {isPanelOpen && editingProduct && (
-        <div className="fixed inset-0 z-[120]">
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-3 sm:p-5">
           {/* Backdrop */}
           <button
-            className="absolute inset-0 bg-slate-950/20 backdrop-blur-sm transition-opacity duration-300 animate-fade-in"
+            className="absolute inset-0 bg-slate-950/45 backdrop-blur-md transition-opacity duration-300 animate-fade-in"
             onClick={() => setIsPanelOpen(false)}
             aria-label="Cerrar editor"
           />
 
-          <aside className="absolute inset-y-0 right-0 flex w-full max-w-xl flex-col bg-white shadow-2xl animate-slide-over">
+          <aside
+            className="relative flex max-h-[92vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-white/70 bg-white shadow-[0_28px_90px_rgba(15,23,42,0.28)] animate-scale-in"
+            role="dialog"
+            aria-modal="true"
+            aria-label={isNewProduct ? "Crear producto" : "Editar producto"}
+          >
             {/* Cabecera del Panel */}
-            <div className="border-b border-slate-100 bg-surface-2/40 px-6 py-5">
+            <div className="border-b border-slate-100 bg-gradient-to-r from-surface-2 via-white to-accent-soft/45 px-5 py-4 sm:px-6">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-accent">
@@ -616,6 +633,9 @@ export default function AdminProducts() {
                   <h3 className="mt-1 text-2xl font-bold tracking-tight text-slate-900">
                     {isNewProduct ? "Nuevo Producto" : editingProduct.short_name}
                   </h3>
+                  <p className="mt-1 text-xs font-medium text-slate-500">
+                    Completa la ficha comercial sin perder las acciones de guardado.
+                  </p>
                 </div>
                 <button
                   onClick={() => setIsPanelOpen(false)}
@@ -630,20 +650,43 @@ export default function AdminProducts() {
             </div>
 
             {/* Cuerpo del Formulario */}
-            <div className="flex-1 overflow-y-auto px-6 py-6">
+            <div className="grid flex-1 min-h-0 gap-5 overflow-y-auto overscroll-contain px-5 py-5 sm:px-6 lg:grid-cols-[300px_minmax(0,1fr)]">
               {/* Vista previa de imagen */}
-              <div className="relative mb-6 flex h-48 items-center justify-center rounded-2xl border border-slate-100 bg-slate-50/50 p-6 shadow-inner">
-                <Image
-                  unoptimized
-                  src={getProductImages(editingProduct)[0] || "/rokko.png"}
-                  alt={editingProduct.name || ""}
-                  fill
-                  sizes="(max-width: 768px) 100vw, 420px"
-                  className="object-contain p-6"
-                />
+              <div className="lg:sticky lg:top-0 lg:self-start">
+                <div className="rounded-2xl border border-slate-100 bg-slate-50/80 p-4 shadow-inner">
+                  <div className="relative flex h-56 items-center justify-center rounded-xl bg-white">
+                    <Image
+                      unoptimized
+                      src={getProductImages(editingProduct)[0] || "/rokko.png"}
+                      alt={editingProduct.name || ""}
+                      fill
+                      sizes="(max-width: 1024px) 100vw, 300px"
+                      className="object-contain p-6"
+                    />
+                  </div>
+                  <div className="mt-4 rounded-xl border border-slate-200 bg-white px-4 py-3">
+                    <p className="text-[10px] font-black uppercase tracking-[0.16em] text-accent">
+                      Vista rapida
+                    </p>
+                    <p className="mt-1 text-sm font-black text-slate-900">
+                      {editingProduct.short_name || "Producto sin nombre"}
+                    </p>
+                    <p className="mt-1 line-clamp-3 text-xs leading-5 text-slate-500">
+                      {editingProduct.name || editingProduct.description || "Completa los datos base para identificar la prenda."}
+                    </p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <span className="rounded-full bg-accent-soft px-2.5 py-1 text-[10px] font-black capitalize text-accent">
+                        {editingProduct.category || "categoria"}
+                      </span>
+                      <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-black text-slate-500">
+                        ${Number(editingProduct.price || 0).toLocaleString("es-CL")}
+                      </span>
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              <div className="space-y-5">
+              <div className="min-w-0 space-y-5">
                 <div className="grid gap-4 sm:grid-cols-2">
                   <InputBlock label="Nombre corto">
                     <input
@@ -1108,7 +1151,7 @@ export default function AdminProducts() {
             </div>
 
             {/* Footer de Acciones Integradas */}
-            <div className="flex items-center justify-between border-t border-slate-100 bg-white px-6 py-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 bg-white/95 px-5 py-4 shadow-[0_-12px_34px_rgba(15,23,42,0.06)] backdrop-blur sm:px-6">
               <div>
                 {!isNewProduct && (
                   <button
@@ -1121,18 +1164,18 @@ export default function AdminProducts() {
                 )}
               </div>
               
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <button
                   type="button"
                   onClick={() => setIsPanelOpen(false)}
-                  className="rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50"
+                  className="min-w-[120px] rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={saveProduct}
                   disabled={saving}
-                  className="rounded-xl bg-accent px-6 py-3 text-sm font-semibold text-white transition-all duration-200 hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
+                  className="min-w-[150px] rounded-xl bg-accent px-6 py-3 text-sm font-semibold text-white transition-all duration-200 hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {saving ? "Guardando..." : isNewProduct ? "Crear producto" : "Guardar cambios"}
                 </button>

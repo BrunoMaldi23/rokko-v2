@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import Header from "@/components/Header";
 import AdminAccess from "@/components/AdminAccess";
+import AccessibilityWidget from "@/components/AccessibilityWidget";
 
 // Configuración de metadatos optimizada para SEO y OpenGraph
 export const metadata: Metadata = {
@@ -39,6 +40,7 @@ export default function RootLayout({
         
         {/* Acceso flotante de administración */}
         <AdminAccess />
+        <AccessibilityWidget />
       </body>
     </html>
   );
