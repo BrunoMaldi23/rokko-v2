@@ -1,8 +1,17 @@
 import QuoteBuilder from "@/components/QuoteBuilder";
 import { getProductsByCategory } from "@/lib/products";
+import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
+
+const categories = [
+  { slug: "poleras", label: "Poleras" },
+  { slug: "camisas", label: "Camisas / Blusas" },
+  { slug: "polerones", label: "Polerones" },
+  { slug: "parkas", label: "Parkas" },
+  { slug: "pantalones", label: "Pantalones" },
+];
 
 export default async function CotizarCategoria({
   params,
@@ -37,6 +46,32 @@ export default async function CotizarCategoria({
             <span className="h-1 w-1 rounded-full bg-accent/45" />
             <span>Personaliza colores, tallas y logo</span>
           </div>
+
+          <nav className="mt-6 flex flex-wrap items-center gap-2" aria-label="Categorias del cotizador">
+            <Link
+              href="/"
+              className="inline-flex h-10 items-center gap-2 rounded-xl border border-border bg-white px-3.5 text-xs font-black uppercase tracking-[0.12em] text-muted shadow-sm transition hover:border-accent/45 hover:text-accent-deep"
+            >
+              Inicio
+            </Link>
+            {categories.map((category) => {
+              const active = category.slug === categoria;
+              return (
+                <Link
+                  key={category.slug}
+                  href={`/cotizar/${category.slug}`}
+                  aria-current={active ? "page" : undefined}
+                  className={`inline-flex h-10 items-center rounded-xl border px-3.5 text-xs font-black uppercase tracking-[0.12em] shadow-sm transition ${
+                    active
+                      ? "border-accent bg-accent text-white"
+                      : "border-border bg-white text-muted hover:border-accent/45 hover:text-accent-deep"
+                  }`}
+                >
+                  {category.label}
+                </Link>
+              );
+            })}
+          </nav>
         </div>
 
         {/* ─── Products ─── */}

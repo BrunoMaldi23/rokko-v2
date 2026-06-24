@@ -5,6 +5,7 @@ import { useEffect, useMemo } from "react";
 import type { Product } from "@/types/product";
 import { certificationLogos } from "@/data/catalog";
 import Visualizador3D from "@/components/Visualizador3D";
+import { getProductPriceTiers } from "@/lib/pricing";
 
 const colorMap: Record<string, string> = {
   amarillo: "#eab308",
@@ -232,17 +233,20 @@ export default function ProductDetailPanel({
   }, []);
 
   const priceInfo = useMemo(() => {
-    if (product.wholesale_from && product.wholesale_price) {
+    const tiers = getProductPriceTiers(product);
+    if (tiers.length > 0) {
       return {
         base: product.price,
-        wholesale: product.wholesale_price,
-        from: product.wholesale_from,
+        wholesale: tiers[0].price,
+        from: tiers[0].from,
+        tiers,
       };
     }
     return {
       base: product.price,
       wholesale: null,
       from: null,
+      tiers: [],
     };
   }, [product]);
 
@@ -365,10 +369,14 @@ export default function ProductDetailPanel({
               <div className="rounded-lg border border-accent/18 bg-accent-soft p-4">
                 <p className="text-[10px] font-black uppercase tracking-[0.18em] text-accent-deep">Mayorista</p>
                 {priceInfo.wholesale ? (
-                  <p className="mt-1 text-2xl font-black text-text">
-                    ${priceInfo.wholesale.toLocaleString("es-CL")}
-                    <span className="ml-2 text-xs font-bold text-muted">desde {priceInfo.from} und.</span>
-                  </p>
+                  <div className="mt-2 space-y-1">
+                    {priceInfo.tiers.slice(0, 4).map((tier) => (
+                      <p key={`${tier.from}-${tier.price}`} className="flex items-baseline justify-between gap-3 text-sm font-black text-text">
+                        <span>Desde {tier.from} und.</span>
+                        <span>${tier.price.toLocaleString("es-CL")}</span>
+                      </p>
+                    ))}
+                  </div>
                 ) : (
                   <p className="mt-2 text-sm font-bold text-muted">Disponible por cotizacion</p>
                 )}

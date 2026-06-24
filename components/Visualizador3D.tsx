@@ -18,11 +18,86 @@ import { getDecalCoords, getDecalPositionLabels } from "@/lib/garmentMap";
 import { detectBaseGarmentType, getBaseModelUrl, isLegacyProductModelUrl } from "@/lib/baseModels";
 import { SceneErrorBoundary } from "@/components/SceneErrorBoundary";
 
+type TextureProjection = "front" | "wide-front" | "softshell" | "leg";
+
+type TextureProfile = {
+  projection: TextureProjection;
+  textureAllMeshes: boolean;
+  remapExistingUvs: boolean;
+  mainThreshold: number;
+  secondaryThreshold: number;
+  trimThreshold: number;
+};
+
+const DEFAULT_TEXTURE_PROFILE: TextureProfile = {
+  projection: "front",
+  textureAllMeshes: false,
+  remapExistingUvs: false,
+  mainThreshold: 0.18,
+  secondaryThreshold: 0.045,
+  trimThreshold: 0.012,
+};
+
+function getTextureProfile(garmentType?: string, modelUrl?: string): TextureProfile {
+  const key = `${garmentType || ""} ${modelUrl || ""}`.toLowerCase();
+
+  if (/models\/products\/poleras|polera-base|t-shirt|polo/.test(key)) {
+    return DEFAULT_TEXTURE_PROFILE;
+  }
+
+  if (/pantalon|cargo/.test(key)) {
+    return {
+      projection: "leg",
+      textureAllMeshes: true,
+      remapExistingUvs: true,
+      mainThreshold: 0.1,
+      secondaryThreshold: 0.025,
+      trimThreshold: 0.008,
+    };
+  }
+
+  if (/parka|softshell|micropolar/.test(key)) {
+    return {
+      projection: "softshell",
+      textureAllMeshes: true,
+      remapExistingUvs: true,
+      mainThreshold: 0.12,
+      secondaryThreshold: 0.03,
+      trimThreshold: 0.01,
+    };
+  }
+
+  if (/poleron|hoodie/.test(key)) {
+    return {
+      projection: "wide-front",
+      textureAllMeshes: true,
+      remapExistingUvs: true,
+      mainThreshold: 0.12,
+      secondaryThreshold: 0.03,
+      trimThreshold: 0.01,
+    };
+  }
+
+  if (/camisa|blusa/.test(key)) {
+    return {
+      projection: "wide-front",
+      textureAllMeshes: true,
+      remapExistingUvs: true,
+      mainThreshold: 0.14,
+      secondaryThreshold: 0.035,
+      trimThreshold: 0.01,
+    };
+  }
+
+  return DEFAULT_TEXTURE_PROFILE;
+}
+
 // ─── Product GLB ──────────────────────────────────────────────────────────────
 // Loads the garment GLB and applies the selected color or product texture.
 
 function ProductGLB({
   url,
+  garmentType,
   color,
   fabricTexture,
   tintTextureWithColor = false,
@@ -33,6 +108,7 @@ function ProductGLB({
   onMeshReady,
 }: {
   url: string;
+  garmentType?: string;
   color?: string;
   fabricTexture?: THREE.Texture | null;
   tintTextureWithColor?: boolean;
@@ -44,6 +120,8 @@ function ProductGLB({
 }) {
   const gltf = useGLTF(url);
   const invalidate = useThree((state) => state.invalidate);
+
+  const textureProfile = useMemo(() => getTextureProfile(garmentType, url), [garmentType, url]);
 
   const pickPrimaryMesh = useCallback((root: THREE.Object3D) => {
     let bestMesh: THREE.Mesh | null = null;
@@ -92,13 +170,13 @@ function ProductGLB({
 
     const targets = new Set<THREE.Mesh>();
     for (const item of scored) {
-      const isMainPanel = item.score >= bestScore * 0.18;
+      const isMainPanel = item.score >= bestScore * textureProfile.mainThreshold;
       const isSleeveLike =
-        item.score >= bestScore * 0.045 &&
+        item.score >= bestScore * textureProfile.secondaryThreshold &&
         item.size.x >= 0.08 &&
         item.size.y >= 0.12;
       const isTrimLike =
-        item.score >= bestScore * 0.012 &&
+        item.score >= bestScore * textureProfile.trimThreshold &&
         item.size.x >= 0.05 &&
         item.size.y >= 0.025;
 
@@ -108,7 +186,7 @@ function ProductGLB({
     }
 
     return targets;
-  }, []);
+  }, [textureProfile]);
 
   const mapGarmentTextureUv = useCallback((geometry: THREE.BufferGeometry) => {
     const position = geometry.attributes.position;
@@ -133,20 +211,32 @@ function ProductGLB({
       const nx = normal ? normal.getX(i) : 0;
       const nz = normal ? normal.getZ(i) : 1;
       const sideSurface = Math.abs(nx) > Math.abs(nz) * 1.15;
-      const u = sideSurface
+      let u = sideSurface
         ? (z - box.min.z) / rangeZ
         : (x - box.min.x) / rangeX;
-      const v = (y - box.min.y) / rangeY;
+      let v = (y - box.min.y) / rangeY;
+
+      if (textureProfile.projection === "leg") {
+        const useDepth = rangeZ > rangeX * 0.62;
+        u = useDepth ? (z - box.min.z) / rangeZ : (x - box.min.x) / rangeX;
+      } else if (textureProfile.projection === "wide-front") {
+        u = (x - box.min.x) / rangeX;
+        v = (y - box.min.y) / rangeY;
+      } else if (textureProfile.projection === "softshell") {
+        const frontBias = Math.abs(nz) >= Math.abs(nx) * 0.82;
+        u = frontBias ? (x - box.min.x) / rangeX : (z - box.min.z) / rangeZ;
+      }
 
       uv.push(THREE.MathUtils.clamp(u, 0, 1), THREE.MathUtils.clamp(v, 0, 1));
     }
 
     geometry.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2));
-  }, []);
+  }, [textureProfile]);
 
   const scene = useMemo(() => {
     const cloned = gltf.scene.clone(true);
-    const textureTargets = fabricTexture && !textureAllMeshes ? pickTextureMeshes(cloned) : new Set<THREE.Mesh>();
+    const shouldTextureAll = textureAllMeshes || textureProfile.textureAllMeshes;
+    const textureTargets = fabricTexture && !shouldTextureAll ? pickTextureMeshes(cloned) : new Set<THREE.Mesh>();
 
     cloned.traverse((child) => {
       if (child instanceof THREE.Mesh) {
@@ -155,17 +245,17 @@ function ProductGLB({
           | undefined;
         const shouldTextureMesh = Boolean(
           fabricTexture &&
-            (textureAllMeshes ||
+            (shouldTextureAll ||
               textureTargets.has(child))
         );
         const sourceGeometry = child.geometry;
-        const geometry = (shouldTextureMesh && !sourceGeometry.attributes.uv) || sourceGeometry.attributes.color
+        const geometry = shouldTextureMesh || sourceGeometry.attributes.color
           ? sourceGeometry.clone()
           : sourceGeometry;
         if (geometry.attributes.color) {
           geometry.deleteAttribute("color");
         }
-        if (shouldTextureMesh && !geometry.attributes.uv) {
+        if (shouldTextureMesh && (textureProfile.remapExistingUvs || !geometry.attributes.uv)) {
           mapGarmentTextureUv(geometry);
         }
         child.geometry = geometry;
@@ -202,7 +292,7 @@ function ProductGLB({
       }
     });
     return cloned;
-  }, [gltf, fabricTexture, textureAllMeshes, pickTextureMeshes, mapGarmentTextureUv]);
+  }, [gltf, fabricTexture, textureAllMeshes, textureProfile, pickTextureMeshes, mapGarmentTextureUv]);
 
   useEffect(() => {
     const colorObj = color ? new THREE.Color(color) : null;
@@ -262,6 +352,68 @@ function createLogoTextureSource(img: HTMLImageElement) {
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+  const image = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const pixels = image.data;
+  let edgeLightSamples = 0;
+  let edgeSamples = 0;
+  const edgeBand = Math.max(2, Math.round(Math.min(canvas.width, canvas.height) * 0.04));
+
+  for (let y = 0; y < canvas.height; y += 1) {
+    for (let x = 0; x < canvas.width; x += 1) {
+      const isEdge =
+        x < edgeBand ||
+        y < edgeBand ||
+        x >= canvas.width - edgeBand ||
+        y >= canvas.height - edgeBand;
+      if (!isEdge) continue;
+
+      const i = (y * canvas.width + x) * 4;
+      const r = pixels[i];
+      const g = pixels[i + 1];
+      const b = pixels[i + 2];
+      const a = pixels[i + 3];
+      const max = Math.max(r, g, b);
+      const min = Math.min(r, g, b);
+      edgeSamples += 1;
+      if (a < 24 || (max > 220 && max - min < 42)) edgeLightSamples += 1;
+    }
+  }
+
+  const hasLightBackground = edgeSamples > 0 && edgeLightSamples / edgeSamples > 0.42;
+  if (!hasLightBackground) return canvas;
+
+  for (let i = 0; i < pixels.length; i += 4) {
+    const r = pixels[i];
+    const g = pixels[i + 1];
+    const b = pixels[i + 2];
+    const a = pixels[i + 3];
+    if (a < 8) {
+      pixels[i + 3] = 0;
+      continue;
+    }
+
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    const lightness = max;
+    const neutral = max - min;
+    const isBackground = lightness > 214 && neutral < 46;
+
+    if (isBackground) {
+      const fade = THREE.MathUtils.clamp((246 - lightness) / 32, 0, 0.18);
+      pixels[i + 3] = Math.round(a * fade);
+      continue;
+    }
+
+    const inkNoise = (((i / 4) % 11) - 5) * 0.012;
+    const inkAlpha = THREE.MathUtils.clamp(0.82 + inkNoise, 0.74, 0.9);
+    pixels[i] = THREE.MathUtils.clamp(r * 0.94, 0, 255);
+    pixels[i + 1] = THREE.MathUtils.clamp(g * 0.94, 0, 255);
+    pixels[i + 2] = THREE.MathUtils.clamp(b * 0.94, 0, 255);
+    pixels[i + 3] = Math.round(a * inkAlpha);
+  }
+
+  ctx.putImageData(image, 0, 0);
   return canvas;
 }
 
@@ -298,6 +450,7 @@ function LogoSurfacePatch({
       const t = new THREE.Texture(createLogoTextureSource(img));
       t.colorSpace = THREE.SRGBColorSpace;
       t.anisotropy = 4;
+      t.premultiplyAlpha = true;
       t.needsUpdate = true;
       t.userData.logoAspect = img.naturalWidth / Math.max(img.naturalHeight, 1);
       texture = t;
@@ -321,21 +474,19 @@ function LogoSurfacePatch({
       <planeGeometry args={[scale[0], scale[1], 12, 12]} />
       <meshStandardMaterial
         map={tex.t}
-        alphaMap={tex.t}
-        bumpMap={tex.t}
-        bumpScale={0.0025}
         transparent
-        alphaTest={0.001}
-        opacity={0.94}
-        roughness={0.96}
+        alphaTest={0.04}
+        opacity={0.82}
+        roughness={1}
         metalness={0}
+        envMapIntensity={0.12}
         polygonOffset
         polygonOffsetFactor={-8}
         polygonOffsetUnits={-8}
         depthTest
         depthWrite={false}
         side={THREE.FrontSide}
-        toneMapped={false}
+        toneMapped
       />
     </mesh>
   );
@@ -514,16 +665,16 @@ function isTextureableLocalModelUrl(modelUrl: string | null | undefined) {
   if (!modelUrl) return false;
   try {
     const pathname = /^https?:\/\//i.test(modelUrl) ? new URL(modelUrl).pathname : modelUrl;
-    return /(?:^|\/)models\/(base\/)?[^/]+\.glb$/i.test(pathname);
+    return /(?:^|\/)models\/(?:base\/[^/]+|products\/[^/]+\/[^/]+)\.glb$/i.test(pathname);
   } catch {
-    return /(?:^|\/)models\/(base\/)?[^/]+\.glb$/i.test(modelUrl);
+    return /(?:^|\/)models\/(?:base\/[^/]+|products\/[^/]+\/[^/]+)\.glb$/i.test(modelUrl);
   }
 }
 
 const PHOTO_TEXTURE_CACHE = new Map<string, HTMLCanvasElement>();
 const PHOTO_TEXTURE_SIZE = 448;
 
-function usePhotoFabricTexture(src?: string) {
+function usePhotoFabricTexture(src?: string, mode: "swatch" | "atlas" = "swatch") {
   const [texture, setTexture] = useState<THREE.Texture | null>(null);
 
   useEffect(() => {
@@ -535,12 +686,14 @@ function usePhotoFabricTexture(src?: string) {
     let cancelled = false;
     let generatedTexture: THREE.Texture | null = null;
 
+    const cacheKey = `${mode}:${src}`;
+
     const setCanvasTexture = (canvas: HTMLCanvasElement) => {
       if (cancelled) return;
       const t = new THREE.CanvasTexture(canvas);
       t.colorSpace = THREE.SRGBColorSpace;
-      t.wrapS = THREE.RepeatWrapping;
-      t.wrapT = THREE.RepeatWrapping;
+      t.wrapS = mode === "atlas" ? THREE.ClampToEdgeWrapping : THREE.RepeatWrapping;
+      t.wrapT = mode === "atlas" ? THREE.ClampToEdgeWrapping : THREE.RepeatWrapping;
       t.repeat.set(1, 1);
       t.minFilter = THREE.LinearFilter;
       t.magFilter = THREE.LinearFilter;
@@ -550,7 +703,7 @@ function usePhotoFabricTexture(src?: string) {
       setTexture(t);
     };
 
-    const cachedCanvas = PHOTO_TEXTURE_CACHE.get(src);
+    const cachedCanvas = PHOTO_TEXTURE_CACHE.get(cacheKey);
     if (cachedCanvas) {
       setCanvasTexture(cachedCanvas);
       return () => {
@@ -629,53 +782,94 @@ function usePhotoFabricTexture(src?: string) {
       const fillB = Math.round(avgB / samples);
       const cropW = Math.max(1, maxX - minX + 1);
       const cropH = Math.max(1, maxY - minY + 1);
-      const patchSize = Math.max(72, Math.min(220, Math.floor(Math.min(cropW, cropH) * 0.32)));
-      const patchX = Math.round(THREE.MathUtils.clamp(minX + cropW * 0.5 - patchSize / 2, minX, maxX - patchSize));
-      const patchY = Math.round(THREE.MathUtils.clamp(minY + cropH * 0.45 - patchSize / 2, minY, maxY - patchSize));
 
-      const patch = document.createElement("canvas");
-      patch.width = patchSize;
-      patch.height = patchSize;
-      const patchCtx = patch.getContext("2d", { willReadFrequently: true });
-      if (!patchCtx) return;
+      if (mode === "atlas") {
+        const canvas = document.createElement("canvas");
+        canvas.width = PHOTO_TEXTURE_SIZE;
+        canvas.height = PHOTO_TEXTURE_SIZE;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
 
-      patchCtx.fillStyle = `rgb(${fillR}, ${fillG}, ${fillB})`;
-      patchCtx.fillRect(0, 0, patchSize, patchSize);
-      patchCtx.drawImage(source, patchX, patchY, patchSize, patchSize, 0, 0, patchSize, patchSize);
+        ctx.fillStyle = `rgb(${fillR}, ${fillG}, ${fillB})`;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      const patchImage = patchCtx.getImageData(0, 0, patch.width, patch.height);
-      const pixels = patchImage.data;
-      for (let i = 0; i < pixels.length; i += 4) {
-        const r = pixels[i];
-        const g = pixels[i + 1];
-        const b = pixels[i + 2];
-        const a = pixels[i + 3];
-        if (!isBackgroundPixel(r, g, b, a)) {
-          pixels[i + 3] = 255;
-          continue;
+        const padding = PHOTO_TEXTURE_SIZE * 0.04;
+        const fit = Math.min(
+          (PHOTO_TEXTURE_SIZE - padding * 2) / cropW,
+          (PHOTO_TEXTURE_SIZE - padding * 2) / cropH,
+        );
+        const drawW = cropW * fit;
+        const drawH = cropH * fit;
+        const drawX = (PHOTO_TEXTURE_SIZE - drawW) / 2;
+        const drawY = (PHOTO_TEXTURE_SIZE - drawH) / 2;
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = "high";
+        ctx.drawImage(source, minX, minY, cropW, cropH, drawX, drawY, drawW, drawH);
+
+        const atlasImage = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const atlasPixels = atlasImage.data;
+        for (let i = 0; i < atlasPixels.length; i += 4) {
+          const r = atlasPixels[i];
+          const g = atlasPixels[i + 1];
+          const b = atlasPixels[i + 2];
+          const a = atlasPixels[i + 3];
+          const max = Math.max(r, g, b);
+          const min = Math.min(r, g, b);
+          const isAtlasBackground = a < 18 || (max > 224 && max - min < 36);
+
+          if (!isAtlasBackground) {
+            atlasPixels[i + 3] = 255;
+            continue;
+          }
+
+          const noise = ((i / 4) % 17) - 8;
+          atlasPixels[i] = THREE.MathUtils.clamp(fillR + noise, 0, 255);
+          atlasPixels[i + 1] = THREE.MathUtils.clamp(fillG + noise, 0, 255);
+          atlasPixels[i + 2] = THREE.MathUtils.clamp(fillB + noise, 0, 255);
+          atlasPixels[i + 3] = 255;
         }
+        ctx.putImageData(atlasImage, 0, 0);
 
-        const noise = ((i / 4) % 13) - 6;
-        pixels[i] = THREE.MathUtils.clamp(fillR + noise, 0, 255);
-        pixels[i + 1] = THREE.MathUtils.clamp(fillG + noise, 0, 255);
-        pixels[i + 2] = THREE.MathUtils.clamp(fillB + noise, 0, 255);
-        pixels[i + 3] = 255;
+        const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+        gradient.addColorStop(0, "rgba(255,255,255,0.06)");
+        gradient.addColorStop(0.55, "rgba(255,255,255,0)");
+        gradient.addColorStop(1, "rgba(0,0,0,0.05)");
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        PHOTO_TEXTURE_CACHE.set(cacheKey, canvas);
+        setCanvasTexture(canvas);
+        return;
       }
-      patchCtx.putImageData(patchImage, 0, 0);
 
       const canvas = document.createElement("canvas");
       canvas.width = PHOTO_TEXTURE_SIZE;
       canvas.height = PHOTO_TEXTURE_SIZE;
-      const ctx = canvas.getContext("2d");
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
       if (!ctx) return;
 
       ctx.fillStyle = `rgb(${fillR}, ${fillG}, ${fillB})`;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
-      const pattern = ctx.createPattern(patch, "repeat");
-      if (pattern) {
-        ctx.fillStyle = pattern;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      const fabricImage = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const fabricPixels = fabricImage.data;
+      for (let y = 0; y < canvas.height; y += 1) {
+        for (let x = 0; x < canvas.width; x += 1) {
+          const i = (y * canvas.width + x) * 4;
+          const weave =
+            ((x % 7) - 3) * 0.75 +
+            ((y % 11) - 5) * 0.45 +
+            (Math.sin(x * 0.42) + Math.cos(y * 0.36)) * 1.15;
+          const softNoise = (((x * 13 + y * 17) % 23) - 11) * 0.35;
+          const shade = weave + softNoise;
+
+          fabricPixels[i] = THREE.MathUtils.clamp(fillR + shade, 0, 255);
+          fabricPixels[i + 1] = THREE.MathUtils.clamp(fillG + shade, 0, 255);
+          fabricPixels[i + 2] = THREE.MathUtils.clamp(fillB + shade, 0, 255);
+          fabricPixels[i + 3] = 255;
+        }
       }
+      ctx.putImageData(fabricImage, 0, 0);
 
       const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
       gradient.addColorStop(0, "rgba(255,255,255,0.10)");
@@ -684,7 +878,7 @@ function usePhotoFabricTexture(src?: string) {
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      PHOTO_TEXTURE_CACHE.set(src, canvas);
+      PHOTO_TEXTURE_CACHE.set(cacheKey, canvas);
       setCanvasTexture(canvas);
     };
 
@@ -697,7 +891,7 @@ function usePhotoFabricTexture(src?: string) {
       cancelled = true;
       generatedTexture?.dispose();
     };
-  }, [src]);
+  }, [src, mode]);
 
   return texture;
 }
@@ -789,7 +983,10 @@ function Scene3D({
       isTextureableLocalModelUrl(baseModelUrl) &&
       productImageUrl
   );
-  const photoFabricTexture = usePhotoFabricTexture(canUsePhotoFabricTexture ? productImageUrl : undefined);
+  const photoFabricTexture = usePhotoFabricTexture(
+    canUsePhotoFabricTexture ? productImageUrl : undefined,
+    "swatch",
+  );
   const modelTexture = photoFabricTexture;
   const tintModelTexture = false;
 
@@ -851,6 +1048,7 @@ function Scene3D({
           <ProductGLB
             key={baseModelUrl}
             url={baseModelUrl}
+            garmentType={garmentType}
             color={modelTexture ? undefined : colorHex}
             fabricTexture={modelTexture}
             tintTextureWithColor={tintModelTexture}

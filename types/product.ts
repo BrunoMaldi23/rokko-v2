@@ -1,3 +1,8 @@
+export type PriceTier = {
+  from: number;
+  price: number;
+};
+
 export type Product = {
   id: string;
   slug: string;
@@ -16,6 +21,7 @@ export type Product = {
   price: number;
   wholesale_price: number | null;
   wholesale_from: number | null;
+  price_tiers?: PriceTier[] | null;
   sizes: string[];
   colors: string[];
   composition: string | null;

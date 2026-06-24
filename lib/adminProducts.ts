@@ -2,6 +2,7 @@ import { supabase, hasSupabaseConfig } from "@/lib/supabaseClient";
 import { deleteProductImages } from "@/lib/storage";
 import type { Product } from "@/types/product";
 import { normalizeProductModelUrl } from "@/lib/baseModels";
+import { normalizePriceTiers } from "@/lib/pricing";
 
 type AdminProductInput = Partial<Omit<Product, "id">>;
 
@@ -66,6 +67,7 @@ function normalizeProductInput(product: AdminProductInput) {
     price: Number(product.price || 0),
     wholesale_price: product.wholesale_price ?? null,
     wholesale_from: product.wholesale_from ?? null,
+    price_tiers: normalizePriceTiers(product.price_tiers),
     sizes: product.sizes || [],
     colors: product.colors || [],
     composition: product.composition ?? null,
@@ -142,6 +144,7 @@ export async function updateAdminProduct(product: Product) {
     price: product.price,
     wholesale_price: product.wholesale_price,
     wholesale_from: product.wholesale_from,
+    price_tiers: normalizePriceTiers(product.price_tiers),
     sizes: product.sizes,
     colors: product.colors,
     composition: product.composition,

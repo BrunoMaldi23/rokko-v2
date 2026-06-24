@@ -1,4 +1,5 @@
 const BASE = "/models/base";
+const PRODUCTS = "/models/products";
 
 export const BASE_MODEL_MAP: Record<string, string> = {
   "t-shirt": `${BASE}/polera-base.glb`,
@@ -22,6 +23,17 @@ export const BASE_MODEL_MAP: Record<string, string> = {
   blusa: `${BASE}/blusa-base.glb`,
   "pantalon-cargo": `${BASE}/pantalon-cargo-base.glb`,
   pantalon: `${BASE}/pantalon-cargo-base.glb`,
+};
+
+export const PRODUCT_MODEL_MAP: Record<string, string> = {
+  "polera-cuello-camisa-ejecutiva-verde-laguna": `${PRODUCTS}/poleras/polera-cuello-camisa-ejecutiva-verde-laguna.glb`,
+  "polera-cuello-camisa-ejecutiva": `${PRODUCTS}/poleras/polera-cuello-camisa-ejecutiva.glb`,
+  "polera-cuello-camisa-sport": `${PRODUCTS}/poleras/polera-cuello-camisa-sport.glb`,
+  "polera-heavy-cotton": `${PRODUCTS}/poleras/polera-heavy-cotton-170grs-algodon-100.glb`,
+  "polera-heavy-cotton-manga-larga": `${PRODUCTS}/poleras/polera-heavy-cotton-manga-larga.glb`,
+  "polera-manga-corta-essential": `${PRODUCTS}/poleras/polera-manga-corta-essential.glb`,
+  "polera-polo-manga-larga-ejecutiva": `${PRODUCTS}/poleras/polera-polo-manga-larga-ejecutiva.glb`,
+  "poleron-canguro": `${PRODUCTS}/polerones/poleron-canguro-base.glb`,
 };
 
 export function getBaseModelUrl(garmentType: string): string | null {
@@ -52,7 +64,7 @@ export function normalizeProductModelUrl(
   modelUrl: string | null | undefined,
   parts: Array<string | null | undefined>,
 ): string | null {
-  const fallbackUrl = getDetectedBaseModelUrl(parts);
+  const fallbackUrl = getDetectedProductModelUrl(parts) || getDetectedBaseModelUrl(parts);
   if (!modelUrl || isLegacyProductModelUrl(modelUrl)) return fallbackUrl;
   return modelUrl;
 }
@@ -91,6 +103,26 @@ export function detectBaseGarmentType(parts: Array<string | null | undefined>): 
   if (/manga larga/.test(normalized)) return "t-shirt manga larga";
 
   return "t-shirt";
+}
+
+export function detectProductModelKey(parts: Array<string | null | undefined>): string | null {
+  const normalized = normalizeModelText(parts.filter(Boolean).join(" "));
+
+  if (/poleron/.test(normalized) && /canguro/.test(normalized)) return "poleron-canguro";
+  if (/verde laguna/.test(normalized)) return "polera-cuello-camisa-ejecutiva-verde-laguna";
+  if (/heavy cotton|heavy-cotton|170/.test(normalized) && /manga larga|\bml\b/.test(normalized)) return "polera-heavy-cotton-manga-larga";
+  if (/heavy cotton|heavy-cotton|170/.test(normalized)) return "polera-heavy-cotton";
+  if (/essential/.test(normalized)) return "polera-manga-corta-essential";
+  if (/manga larga/.test(normalized) && /ejecutiv|polo/.test(normalized)) return "polera-polo-manga-larga-ejecutiva";
+  if (/sport/.test(normalized)) return "polera-cuello-camisa-sport";
+  if (/ejecutiv|dryfresh/.test(normalized)) return "polera-cuello-camisa-ejecutiva";
+
+  return null;
+}
+
+export function getDetectedProductModelUrl(parts: Array<string | null | undefined>): string | null {
+  const key = detectProductModelKey(parts);
+  return key ? PRODUCT_MODEL_MAP[key] || null : null;
 }
 
 export function getDetectedBaseModelUrl(parts: Array<string | null | undefined>): string | null {

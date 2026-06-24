@@ -1,6 +1,6 @@
 import { supabase, hasSupabaseConfig } from "@/lib/supabaseClient";
 import type { ProductModel } from "@/types/productModel";
-import { BASE_MODEL_MAP } from "@/lib/baseModels";
+import { BASE_MODEL_MAP, PRODUCT_MODEL_MAP } from "@/lib/baseModels";
 
 export type ProductModelInput = Omit<ProductModel, "id" | "created_at">;
 
@@ -62,6 +62,17 @@ const BASE_MODEL_LABELS: Record<string, string> = {
   pantalon: "Pantalon base",
 };
 
+const PRODUCT_MODEL_LABELS: Record<string, string> = {
+  "polera-cuello-camisa-ejecutiva-verde-laguna": "Polera cuello camisa ejecutiva verde laguna",
+  "polera-cuello-camisa-ejecutiva": "Polera cuello camisa ejecutiva",
+  "polera-cuello-camisa-sport": "Polera cuello camisa sport",
+  "polera-heavy-cotton": "Polera heavy cotton 170grs algodon 100",
+  "polera-heavy-cotton-manga-larga": "Polera heavy cotton manga larga",
+  "polera-manga-corta-essential": "Polera manga corta essential",
+  "polera-polo-manga-larga-ejecutiva": "Polera polo manga larga ejecutiva",
+  "poleron-canguro": "Poleron canguro base",
+};
+
 function categoryForGarmentType(type: string) {
   if (/poleron|hoodie/.test(type)) return "polerones";
   if (/parka|softshell/.test(type)) return "parkas";
@@ -90,8 +101,24 @@ const LOCAL_BASE_MODELS: ProductModel[] = Object.entries(BASE_MODEL_MAP).map(([t
   created_at: null,
 }));
 
+const LOCAL_PRODUCT_MODELS: ProductModel[] = Object.entries(PRODUCT_MODEL_MAP).map(([type, url]) => ({
+  id: `local-product-${type}`,
+  name: PRODUCT_MODEL_LABELS[type] || `${type} producto`,
+  category: categoryForGarmentType(type),
+  product_id: null,
+  model_url: url,
+  file_path: url.replace(/^\/+/, ""),
+  scale: 1,
+  position_y: 0,
+  rotation_y: defaultRotationForGarmentType(type),
+  base_model: true,
+  created_at: null,
+}));
+
+const LOCAL_MODELS = [...LOCAL_PRODUCT_MODELS, ...LOCAL_BASE_MODELS];
+
 export async function getProductModels() {
-  if (!hasSupabaseConfig || !supabase) return LOCAL_BASE_MODELS;
+  if (!hasSupabaseConfig || !supabase) return LOCAL_MODELS;
 
   const { data, error } = await supabase
     .from("product_models")
@@ -100,10 +127,10 @@ export async function getProductModels() {
 
   if (error) {
     console.error("Error cargando modelos 3D:", error.message);
-    return LOCAL_BASE_MODELS;
+    return LOCAL_MODELS;
   }
 
-  return [...LOCAL_BASE_MODELS, ...((data || []) as ProductModel[])];
+  return [...LOCAL_MODELS, ...((data || []) as ProductModel[])];
 }
 
 export async function uploadProductModelFile(file: File) {

@@ -19,6 +19,7 @@ import {
   getDetectedBaseModelUrl,
   normalizeProductModelUrl,
 } from "@/lib/baseModels";
+import { getUnitPriceForQuantity } from "@/lib/pricing";
 
 const ProductDetailPanel = dynamic(() => import("@/components/ProductDetailPanel"), {
   ssr: false,
@@ -126,6 +127,7 @@ function getColorHex(name: string): string {
 
 const sizes = ["S", "M", "L", "XL", "2XL", "3XL", "4XL"];
 const EMPTY_SIZE_FORM: Readonly<Record<string, number>> = Object.freeze({});
+const CART_STORAGE_KEY = "rokko.quote.cart.v1";
 
 type Props = {
   initialProducts: Product[];
@@ -189,6 +191,7 @@ function getProductImages(product: Product) {
 }
 export default function QuoteBuilder({ initialProducts }: Props) {
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [cartLoaded, setCartLoaded] = useState(false);
   const [forms, setForms] = useState<Record<string, ProductForm>>({});
   const [galleryIndexes, setGalleryIndexes] = useState<Record<string, number>>(
     {},
@@ -217,6 +220,46 @@ export default function QuoteBuilder({ initialProducts }: Props) {
     fetchBrandSettings().then(setBrand);
     fetchCommercialSettings().then(setCommercial);
   }, []);
+
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(CART_STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          setCart(
+            parsed.filter((item): item is CartItem =>
+              Boolean(
+                item &&
+                  typeof item.id === "number" &&
+                  typeof item.product === "string" &&
+                  typeof item.productId === "string" &&
+                  typeof item.color === "string" &&
+                  typeof item.logoPosition === "string" &&
+                  typeof item.sizes === "object" &&
+                  typeof item.totalUnits === "number" &&
+                  typeof item.unitPrice === "number" &&
+                  typeof item.subtotal === "number",
+              ),
+            ),
+          );
+        }
+      }
+    } catch (err) {
+      console.warn("No se pudo restaurar el carrito guardado:", err);
+    } finally {
+      setCartLoaded(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!cartLoaded) return;
+    try {
+      window.localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+    } catch (err) {
+      console.warn("No se pudo guardar el carrito:", err);
+    }
+  }, [cart, cartLoaded]);
 
   const [clientData, setClientData] = useState<ClientData>({
     empresa: "",
@@ -289,11 +332,11 @@ export default function QuoteBuilder({ initialProducts }: Props) {
         alert("Debes ingresar al menos una cantidad.");
         return;
       }
-      const wholesaleFrom = product.wholesale_from || commercialWholesaleMin;
-      const unitPrice =
-        wholesaleFrom && product.wholesale_price && totalUnits >= wholesaleFrom
-          ? product.wholesale_price
-          : product.price;
+      const unitPrice = getUnitPriceForQuantity(
+        product,
+        totalUnits,
+        commercialWholesaleMin,
+      );
       setCart((prev) => [
         ...prev,
         {

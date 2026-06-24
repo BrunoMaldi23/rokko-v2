@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
-import type { Product } from "@/types/product";
+import type { PriceTier, Product } from "@/types/product";
 import {
   getAdminProducts,
   toggleAdminProductStatus,
@@ -12,6 +12,7 @@ import {
   deleteAdminProduct,
 } from "@/lib/adminProducts";
 import { uploadImage, deleteStorageImages, parseImageField } from "@/lib/storage";
+import { normalizePriceTiers } from "@/lib/pricing";
 
 const categories = [
   { value: "todas", label: "Todas las categorías" },
@@ -33,6 +34,7 @@ const initialProductState: Partial<Product> = {
   price: 0,
   wholesale_price: null,
   wholesale_from: null,
+  price_tiers: [],
   image: "",
   sizes: [],
   colors: [],
@@ -178,6 +180,7 @@ export default function AdminProducts() {
   const selectedCertifications = Array.isArray(editingProduct?.certifications)
     ? editingProduct.certifications
     : [];
+  const selectedPriceTiers = normalizePriceTiers(editingProduct?.price_tiers);
 
   // Abrir panel para Crear
   function handleCreateClick() {
@@ -259,6 +262,45 @@ export default function AdminProducts() {
     const current = Number(editingRef.current?.[field] || 0);
     setNumberValue(field, current + step);
   }, [setNumberValue]);
+
+  function updatePriceTier(index: number, field: keyof PriceTier, value: string) {
+    if (!editingProduct) return;
+    const tiers = normalizePriceTiers(editingProduct.price_tiers);
+    const next = [...tiers];
+    const current = next[index] || { from: 1, price: 0 };
+    next[index] = {
+      ...current,
+      [field]: Math.max(0, Number(value || 0)),
+    };
+    setEditingProduct({
+      ...editingProduct,
+      price_tiers: normalizePriceTiers(next),
+    });
+  }
+
+  function addPriceTier() {
+    if (!editingProduct) return;
+    const tiers = normalizePriceTiers(editingProduct.price_tiers);
+    const last = tiers[tiers.length - 1];
+    setEditingProduct({
+      ...editingProduct,
+      price_tiers: [
+        ...tiers,
+        {
+          from: last ? last.from + 5 : Number(editingProduct.wholesale_from || 5),
+          price: last ? last.price : Number(editingProduct.wholesale_price || editingProduct.price || 0),
+        },
+      ],
+    });
+  }
+
+  function removePriceTier(index: number) {
+    if (!editingProduct) return;
+    setEditingProduct({
+      ...editingProduct,
+      price_tiers: normalizePriceTiers(editingProduct.price_tiers).filter((_, i) => i !== index),
+    });
+  }
 
   const updateImageGallery = useCallback((images: string[]) => {
     const product = editingRef.current;
@@ -822,6 +864,68 @@ export default function AdminProducts() {
                         </button>
                       </div>
                     </InputBlock>
+                  </div>
+                  <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-4">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
+                          Escala por volumen
+                        </p>
+                        <p className="mt-1 text-[11px] leading-5 text-slate-400">
+                          Define varios tramos. El cotizador aplica el precio del mayor tramo alcanzado.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={addPriceTier}
+                        className="rounded-xl border border-accent-soft bg-accent-soft px-4 py-2 text-xs font-bold text-accent transition-colors hover:bg-accent-soft/60"
+                      >
+                        Agregar tramo
+                      </button>
+                    </div>
+
+                    <div className="mt-4 space-y-2">
+                      {selectedPriceTiers.length === 0 && (
+                        <p className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-3 py-3 text-xs text-slate-400">
+                          Sin tramos. Se usara el precio unitario y, si existe, el mayorista simple.
+                        </p>
+                      )}
+                      {selectedPriceTiers.map((tier, index) => (
+                        <div key={`${tier.from}-${index}`} className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
+                          <label className="block">
+                            <span className="mb-1 block text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">
+                              Desde unidades
+                            </span>
+                            <input
+                              type="number"
+                              min={1}
+                              value={tier.from}
+                              onChange={(e) => updatePriceTier(index, "from", e.target.value)}
+                              className="admin-control"
+                            />
+                          </label>
+                          <label className="block">
+                            <span className="mb-1 block text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">
+                              Precio unitario
+                            </span>
+                            <input
+                              type="number"
+                              min={0}
+                              value={tier.price}
+                              onChange={(e) => updatePriceTier(index, "price", e.target.value)}
+                              className="admin-control"
+                            />
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => removePriceTier(index)}
+                            className="self-end rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs font-bold text-red-600 transition-colors hover:bg-red-100"
+                          >
+                            Quitar
+                          </button>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
 
