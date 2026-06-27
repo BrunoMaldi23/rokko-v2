@@ -1,17 +1,10 @@
 import QuoteBuilder from "@/components/QuoteBuilder";
+import { getProductCategories } from "@/lib/productCategories";
 import { getProductsByCategory } from "@/lib/products";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
-
-const categories = [
-  { slug: "poleras", label: "Poleras" },
-  { slug: "camisas", label: "Camisas / Blusas" },
-  { slug: "polerones", label: "Polerones" },
-  { slug: "parkas", label: "Parkas" },
-  { slug: "pantalones", label: "Pantalones" },
-];
 
 export default async function CotizarCategoria({
   params,
@@ -20,7 +13,10 @@ export default async function CotizarCategoria({
 }) {
   const { categoria } = await params;
 
-  const products = await getProductsByCategory(categoria);
+  const [products, categories] = await Promise.all([
+    getProductsByCategory(categoria),
+    getProductCategories({ activeOnly: true }),
+  ]);
 
   return (
     <main className="relative min-h-screen bg-bg text-text">

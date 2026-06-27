@@ -1,4 +1,4 @@
-const supabaseHost = process.env.NEXT_PUBLIC_SUPABASE_URL
+﻿const supabaseHost = process.env.NEXT_PUBLIC_SUPABASE_URL
   ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).hostname
   : "pbkpurgnzxvjzpfdotbk.supabase.co";
 
@@ -12,13 +12,9 @@ const nextConfig = {
         hostname: supabaseHost,
         pathname: "/storage/v1/object/public/product-images/**",
       },
-      {
-        protocol: "https",
-        hostname: supabaseHost,
-        pathname: "/storage/v1/object/public/product-models/**",
-      },
     ],
   },
 };
 
 module.exports = nextConfig;
+

@@ -1,18 +1,5 @@
 import { serverSupabase as supabase, hasSupabaseConfig } from "@/lib/serverSupabase";
 import type { Product } from "@/types/product";
-import { normalizeProductModelUrl } from "@/lib/baseModels";
-
-function normalizeProductModel(product: Product): Product {
-  return {
-    ...product,
-    model_3d_url: normalizeProductModelUrl(product.model_3d_url, [
-      product.category,
-      product.slug,
-      product.short_name,
-      product.name,
-    ]),
-  };
-}
 
 export async function getAllProducts() {
   if (!hasSupabaseConfig || !supabase) {
@@ -20,18 +7,31 @@ export async function getAllProducts() {
     return [];
   }
 
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from("products")
     .select("*")
     .eq("active", true)
+    .order("category", { ascending: true })
+    .order("sort_order", { ascending: true })
     .order("name", { ascending: true });
+
+  if (error && /sort_order/i.test(error.message)) {
+    const retry = await supabase
+      .from("products")
+      .select("*")
+      .eq("active", true)
+      .order("category", { ascending: true })
+      .order("name", { ascending: true });
+    data = retry.data;
+    error = retry.error;
+  }
 
   if (error) {
     console.error("Error obteniendo productos:", error.message);
     return [];
   }
 
-  return ((data || []) as Product[]).map(normalizeProductModel);
+  return ((data || []) as Product[]);
 }
 
 export async function getProductsByCategory(category: string) {
@@ -40,17 +40,29 @@ export async function getProductsByCategory(category: string) {
     return [];
   }
 
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from("products")
     .select("*")
     .eq("category", category)
     .eq("active", true)
+    .order("sort_order", { ascending: true })
     .order("price", { ascending: true });
+
+  if (error && /sort_order/i.test(error.message)) {
+    const retry = await supabase
+      .from("products")
+      .select("*")
+      .eq("category", category)
+      .eq("active", true)
+      .order("price", { ascending: true });
+    data = retry.data;
+    error = retry.error;
+  }
 
   if (error) {
     console.error("Error obteniendo productos:", error.message);
     return [];
   }
 
-  return ((data || []) as Product[]).map(normalizeProductModel);
+  return ((data || []) as Product[]);
 }

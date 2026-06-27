@@ -1,248 +1,250 @@
+"use client";
+
+import {
+  BadgeAlert,
+  Clock,
+  Droplets,
+  FileCheck2,
+  Palette,
+  Ruler,
+  Shirt,
+  Sparkles,
+  Thermometer,
+  RefreshCw, // Icono nuevo para lavar del revés
+} from "lucide-react";
+
 const careItems = [
   {
-    icon: "M19 14l-7 7m0 0l-7-7m7 7V3",
+    icon: Droplets,
     label: "Lavar con agua fría",
-    desc: "No sobrepasar los 30°C para conservar colores y tela.",
+    desc: "No sobrepasar los 30 grados para conservar color, forma y tela.",
   },
   {
-    icon: "M18.36 6.64a9 9 0 1 1-12.73 0",
+    icon: BadgeAlert,
     label: "No usar blanqueador",
-    desc: "El cloro daña las fibras y decolora los estampados.",
+    desc: "El cloro daña fibras, logos y terminaciones.",
   },
   {
-    icon: "M21 16H8a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h13l-2 4 2 4H8",
-    label: "No usar secadora",
-    desc: "El calor excesivo encoge las prendas y daña los logos.",
+    icon: Thermometer,
+    label: "Evitar secadora",
+    desc: "El calor excesivo puede encoger prendas y afectar aplicaciones.",
   },
   {
-    icon: "M11 4a7 7 0 0 0-7 7v4a7 7 0 0 0 7 7",
+    icon: Shirt,
     label: "Planchar a baja temperatura",
-    desc: "Máximo 110°C. No planchar directamente sobre el logo.",
+    desc: "No planchar directamente sobre bordados o estampados.",
   },
   {
-    icon: "M3 3l18 18M21 3l-18 18",
-    label: "No lavar en seco",
-    desc: "Los solventes químicos pueden dañar estampados y bordados.",
-  },
-  {
-    icon: "M12 2v20M2 12h20",
+    icon: RefreshCw, // Cambiado para evitar duplicar el icono de Shirt
     label: "Lavar del revés",
-    desc: "Protege el logo y reduce la fricción directa sobre la prenda.",
+    desc: "Reduce fricción directa y protege la identidad aplicada.",
   },
 ];
 
 const sizeRows = [
-  ["S", "106–110 cm", "106–110 cm", "70 cm"],
-  ["M", "111–115 cm", "111–115 cm", "73 cm"],
-  ["L", "116–120 cm", "116–120 cm", "76 cm"],
-  ["XL", "121–125 cm", "121–125 cm", "80 cm"],
-  ["2XL", "126–130 cm", "126–130 cm", "84 cm"],
-  ["3XL", "131–135 cm", "131–135 cm", "88 cm"],
-  ["4XL", "136–140 cm", "136–140 cm", "92 cm"],
+  ["S", "106-110 cm", "106-110 cm", "70 cm"],
+  ["M", "111-115 cm", "111-115 cm", "73 cm"],
+  ["L", "116-120 cm", "116-120 cm", "76 cm"],
+  ["XL", "121-125 cm", "121-125 cm", "80 cm"],
+  ["2XL", "126-130 cm", "126-130 cm", "84 cm"],
+  ["3XL", "131-135 cm", "131-135 cm", "88 cm"],
+  ["4XL", "136-140 cm", "136-140 cm", "92 cm"],
 ];
 
 const tips = [
   {
-    title: "Antes de cotizar",
-    desc: "Revisa bien las cantidades por talla. Una vez confirmada la orden no podemos modificar cantidades ni tallas.",
+    icon: FileCheck2,
+    title: "Antes de confirmar",
+    desc: "Valida cantidades por talla con tu equipo. Luego de aprobar producción, los cambios pueden afectar plazo y costo.",
   },
   {
-    title: "Sobre el logo",
-    desc: "Evalúa la calidad de tu logo antes de producir. Si no tiene la resolución suficiente, podemos vectorizarlo por ti.",
+    icon: Sparkles,
+    title: "Calidad del logo",
+    desc: "Usa archivos vectoriales cuando sea posible. Si solo tienes imagen, revisamos si sirve para producir.",
   },
   {
-    title: "Disponibilidad",
-    desc: "Colores y tallas pueden variar según stock al momento de la confirmación. Te informaremos antes de producir.",
+    icon: Palette,
+    title: "Stock y colores",
+    desc: "La disponibilidad puede variar al momento de confirmar. Te avisaremos antes de producir.",
   },
   {
-    title: "Tiempos de producción",
-    desc: "El proceso completo toma entre 10 y 15 días hábiles, dependiendo del volumen y tipo de aplicación.",
+    icon: Clock,
+    title: "Plazos",
+    desc: "El proceso completo suele tomar entre 10 y 15 días hábiles según volumen y técnica.",
   },
 ];
 
 export default function MedidasCuidadosPage() {
   return (
-    <main className="min-h-screen w-full overflow-x-hidden">
-      <section className="mx-auto w-full max-w-7xl overflow-hidden px-4 py-10 sm:px-6 sm:py-14">
-        <div className="max-w-4xl">
-          <div className="animate-fade-in-up">
-            <div className="inline-flex max-w-full items-center gap-3 rounded-full border border-border bg-white/90 px-4 py-2 shadow-sm backdrop-blur-sm sm:px-5">
-              <span className="relative flex h-2 w-2 shrink-0">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-75" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-accent" />
-              </span>
+    <main className="min-h-[calc(100dvh-80px)] overflow-hidden bg-[#f4f7f9] font-sans text-[#071827]">
+      
+      {/* HERO TITLE */}
+      <section className="relative mx-auto w-full max-w-[1100px] px-5 py-8 sm:px-6 lg:px-8 lg:py-12">
+        <div className="pointer-events-none absolute -left-16 top-10 h-40 w-40 rounded-full bg-[#00b8c8]/10 blur-3xl" />
+        <div className="pointer-events-none absolute right-0 top-16 h-44 w-44 rounded-full bg-[#087381]/10 blur-3xl" />
 
-              <p className="truncate text-[10px] font-black uppercase tracking-[0.22em] text-accent sm:text-xs sm:tracking-[0.35em]">
-                Medidas y cuidados
-              </p>
-            </div>
-          </div>
-
-          <h1 className="mt-7 animate-fade-in-up animate-delay-100 max-w-full text-3xl font-black leading-tight text-[#1e1e1e] sm:mt-8 sm:text-4xl md:text-5xl">
-            Guía para elegir tallas y cuidar tus prendas corporativas.
-          </h1>
-
-          <p className="mt-5 animate-fade-in-up animate-delay-200 max-w-2xl text-sm leading-7 text-muted sm:mt-6 sm:text-base sm:leading-8">
-            Una correcta selección de talla y cuidado de lavado ayuda a mantener
-            la presentación, color, forma y durabilidad de cada prenda.
+        <div className="relative z-10">
+          <p className="inline-flex items-center gap-2 rounded-full bg-[#087381]/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.15em] text-[#087381]">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#087381]" />
+            Guías de talla y cuidado
           </p>
+
+          <h1 className="mt-4 max-w-[900px] text-[36px] font-black leading-[1.1] tracking-[-0.04em] text-[#051321] sm:text-[44px] lg:text-[48px]">
+            Elige la talla correcta y{" "}
+            <span className="relative inline-block text-[#087381]">
+              cuida mejor tus prendas.
+              <span className="absolute -bottom-1 left-0 h-1.5 w-full rounded-full bg-[#00b8c8]/20" />
+            </span>
+          </h1>
         </div>
+      </section>
 
-        <div className="mt-10 grid w-full min-w-0 animate-fade-in-up animate-delay-200 gap-6 lg:mt-12 lg:grid-cols-[1.15fr_0.85fr] lg:gap-8">
-          <section className="w-full min-w-0 overflow-hidden rounded-3xl border border-border bg-white/80 p-4 shadow-sm backdrop-blur-sm sm:p-6">
-            <h2 className="text-xl font-black text-[#1e1e1e] sm:text-2xl">
-              Tabla referencial de tallas
-            </h2>
-
-            <p className="mt-2 text-sm leading-6 text-muted">
-              Medidas aproximadas para poleras manga corta 100% algodón.
-            </p>
-
-            {/* MOBILE Y TABLET: CARDS */}
-            <div className="mt-6 grid w-full gap-3 lg:hidden">
-              {sizeRows.map((row) => (
-                <article
-                  key={row[0]}
-                  className="w-full min-w-0 rounded-2xl border border-border bg-surface-2/70 p-4"
-                >
-                  <div className="mb-4 flex items-center justify-between gap-3">
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted">
-                      Talla
-                    </span>
-
-                    <span className="shrink-0 rounded-full bg-white px-4 py-1.5 text-base font-black text-[#1e1e1e] shadow-sm">
-                      {row[0]}
-                    </span>
-                  </div>
-
-                  <div className="grid gap-3">
-                    <div className="flex items-center justify-between gap-4 border-t border-border pt-3">
-                      <span className="shrink-0 text-xs font-bold uppercase tracking-[0.14em] text-muted">
-                        Pecho
-                      </span>
-                      <span className="min-w-0 text-right text-sm font-semibold text-[#1e1e1e]">
-                        {row[1]}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center justify-between gap-4 border-t border-border pt-3">
-                      <span className="shrink-0 text-xs font-bold uppercase tracking-[0.14em] text-muted">
-                        Cadera
-                      </span>
-                      <span className="min-w-0 text-right text-sm font-semibold text-[#1e1e1e]">
-                        {row[2]}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center justify-between gap-4 border-t border-border pt-3">
-                      <span className="shrink-0 text-xs font-bold uppercase tracking-[0.14em] text-muted">
-                        Largo total
-                      </span>
-                      <span className="min-w-0 text-right text-sm font-semibold text-[#1e1e1e]">
-                        {row[3]}
-                      </span>
-                    </div>
-                  </div>
-                </article>
-              ))}
-            </div>
-
-            {/* DESKTOP: TABLA */}
-            <div className="mt-6 hidden w-full overflow-hidden rounded-2xl border border-border lg:block">
-              <table className="w-full table-fixed text-left text-sm">
-                <thead className="bg-surface-2 text-xs uppercase tracking-[0.16em] text-muted">
-                  <tr>
-                    <th className="w-[18%] px-4 py-4">Talla</th>
-                    <th className="w-[27%] px-4 py-4">Pecho</th>
-                    <th className="w-[27%] px-4 py-4">Cadera</th>
-                    <th className="w-[28%] px-4 py-4">Largo total</th>
-                  </tr>
-                </thead>
-
-                <tbody className="divide-y divide-border bg-white/70">
-                  {sizeRows.map((row) => (
-                    <tr
-                      key={row[0]}
-                      className="transition-colors hover:bg-accent-soft/50"
-                    >
-                      <td className="px-4 py-4 font-black text-[#1e1e1e]">
-                        {row[0]}
-                      </td>
-                      <td className="px-4 py-4 text-muted">{row[1]}</td>
-                      <td className="px-4 py-4 text-muted">{row[2]}</td>
-                      <td className="px-4 py-4 text-muted">{row[3]}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            <p className="mt-4 text-xs leading-5 text-muted">
-              * Estas medidas son referenciales y pueden variar ±2 cm según el
-              modelo y la tela.
-            </p>
-          </section>
-
-          <aside className="w-full min-w-0 overflow-hidden rounded-3xl border border-border bg-white/80 p-4 shadow-sm backdrop-blur-sm sm:p-6">
-            <h2 className="text-xl font-black text-[#1e1e1e] sm:text-2xl">
-              Cuidados de prenda
-            </h2>
-
-            <p className="mt-2 max-w-full text-sm leading-6 text-muted">
-              Sigue estas recomendaciones para alargar la vida de tus prendas
-              corporativas.
-            </p>
-
-            <div className="mt-6 grid w-full gap-3 sm:grid-cols-2 lg:grid-cols-1">
-              {careItems.map((item) => (
-                <article
-                  key={item.label}
-                  className="group flex w-full min-w-0 items-start gap-3 overflow-hidden rounded-2xl bg-surface-2/80 px-4 py-3 transition-colors hover:bg-accent-soft/80"
-                >
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent transition-colors group-hover:bg-white">
-                    <svg
-                      className="h-4 w-4"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth={1.5}
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d={item.icon} />
-                    </svg>
+      {/* BLOQUE PRINCIPAL (Estructura Split Limpia) */}
+      <section className="mx-auto max-w-[1100px] px-5 pb-10 sm:px-6 lg:px-8">
+        <div className="relative overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_24px_48px_-12px_rgba(7,24,39,0.07)]">
+          
+          <div className="relative z-10 grid lg:grid-cols-[1.15fr_0.85fr]">
+            
+            {/* LADO IZQUIERDO: TABLA DE TALLAS */}
+            <article className="p-6 sm:p-8 lg:p-10 border-b border-slate-100 lg:border-b-0 lg:border-r border-slate-200">
+              <div className="flex items-start gap-3.5">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#087381]/10 text-[#087381]">
+                  <Ruler className="h-5 w-5" />
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#087381]">
+                    Medidas referenciales
                   </span>
+                  <h2 className="mt-1 text-[24px] font-black tracking-[-0.03em] text-[#051321]">
+                    Tabla de tallas
+                  </h2>
+                  <p className="mt-1.5 text-[13px] font-medium leading-relaxed text-slate-500">
+                    Medidas aproximadas para poleras manga corta 100% algodón.
+                  </p>
+                </div>
+              </div>
 
-                  <div className="min-w-0 flex-1 overflow-hidden">
-                    <p className="whitespace-normal break-words text-sm font-bold leading-5 text-[#1e1e1e]">
-                      {item.label}
-                    </p>
+              {/* TABLA OPTIMIZADA CON REJILLA INVISIBLE/LIVIANA */}
+              <div className="mt-6 overflow-x-auto rounded-xl border border-slate-200 bg-white">
+                <table className="w-full min-w-[500px] border-collapse text-left text-[13px]">
+                  <thead className="bg-slate-50 text-[10px] font-bold uppercase tracking-wider text-slate-600 border-b border-slate-200">
+                    <tr>
+                      <th className="px-4 py-3.5 font-bold">Talla</th>
+                      <th className="px-4 py-3.5">Pecho</th>
+                      <th className="px-4 py-3.5">Cadera</th>
+                      <th className="px-4 py-3.5">Largo total</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {sizeRows.map((row, index) => (
+                      <tr
+                        key={row[0]}
+                        className={`transition-colors duration-150 hover:bg-slate-50/80 ${
+                          index % 2 === 0 ? "bg-white" : "bg-slate-50/30"
+                        }`}
+                      >
+                        <td className="px-4 py-3.5 font-black text-[#051321] text-[14px]">
+                          {row[0]}
+                        </td>
+                        <td className="px-4 py-3.5 font-semibold text-slate-600">{row[1]}</td>
+                        <td className="px-4 py-3.5 font-semibold text-slate-600">{row[2]}</td>
+                        <td className="px-4 py-3.5 font-semibold text-slate-700">{row[3]}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
 
-                    <p className="mt-1 whitespace-normal break-words text-xs leading-5 text-muted">
-                      {item.desc}
-                    </p>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </aside>
-        </div>
-
-        <div className="mt-8 grid w-full min-w-0 animate-fade-in-up animate-delay-300 gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
-          {tips.map((t) => (
-            <article
-              key={t.title}
-              className="w-full min-w-0 rounded-3xl border border-border bg-white/80 p-5 shadow-sm backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:border-accent hover:shadow-md sm:p-6"
-            >
-              <h3 className="whitespace-normal break-words text-base font-black text-[#1e1e1e]">
-                {t.title}
-              </h3>
-
-              <p className="mt-2 whitespace-normal break-words text-sm leading-6 text-muted">
-                {t.desc}
+              <p className="mt-4 text-[11px] font-medium leading-relaxed text-slate-400 flex gap-1.5 items-center">
+                <span className="h-1.5 w-1.5 rounded-full bg-slate-300 shrink-0" />
+                Estas medidas son referenciales y pueden variar ±2 cm según el modelo y la tela.
               </p>
             </article>
-          ))}
+
+            {/* LADO DERECHO: CUIDADOS */}
+            <aside className="bg-slate-50/50 p-6 sm:p-8 lg:p-10 flex flex-col justify-between">
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#087381]">
+                  Conservación
+                </span>
+                <h2 className="mt-1 text-[24px] font-black tracking-[-0.03em] text-[#051321] leading-tight">
+                  Cuidados del textil
+                </h2>
+                <p className="mt-1.5 text-[13px] font-medium leading-relaxed text-slate-500">
+                  Sigue estas recomendaciones para cuidar el color, estampados y logos corporativos.
+                </p>
+
+                {/* TARJETAS DE CUIDADO RE-ESTILIZADAS */}
+                <div className="mt-6 space-y-3">
+                  {careItems.map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <article
+                        key={item.label}
+                        className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-[0_2px_8px_rgba(7,24,39,0.02)] transition-all duration-200 hover:border-slate-300"
+                      >
+                        <div className="flex gap-3.5">
+                          <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#087381]/10 text-[#087381]">
+                            <Icon className="h-[18px] w-[18px]" />
+                          </span>
+                          <div>
+                            <h4 className="text-[13px] font-bold text-[#051321]">
+                              {item.label}
+                            </h4>
+                            <p className="mt-0.5 text-[11px] font-semibold leading-relaxed text-slate-400">
+                              {item.desc}
+                            </p>
+                          </div>
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              </div>
+            </aside>
+
+          </div>
+        </div>
+      </section>
+
+      {/* TIPS FINALES */}
+      <section className="mx-auto max-w-[1100px] px-5 pb-16 sm:px-6 lg:px-8">
+        <div className="border-t border-slate-200 pt-10">
+          <div className="mb-8">
+            <span className="inline-flex items-center gap-2 rounded-full bg-[#087381]/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.15em] text-[#087381]">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#087381]" />
+              Antes de producir
+            </span>
+            <h2 className="mt-2 text-[28px] font-black tracking-[-0.04em] text-[#051321] sm:text-[32px]">
+              Consideraciones de tu pedido
+            </h2>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {tips.map((tip) => {
+              const Icon = tip.icon;
+              return (
+                <article
+                  key={tip.title}
+                  className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_4px_16px_rgba(7,24,39,0.02)] transition-all duration-200 hover:-translate-y-1 hover:border-slate-300 hover:shadow-[0_12px_24px_rgba(7,24,39,0.05)]"
+                >
+                  <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#087381]/10 text-[#087381] transition-colors duration-200 group-hover:bg-[#071827] group-hover:text-white">
+                    <Icon className="h-4 w-4" />
+                  </span>
+
+                  <h3 className="mt-4 text-[15px] font-bold tracking-tight text-[#051321]">
+                    {tip.title}
+                  </h3>
+
+                  <p className="mt-2 text-[12px] font-semibold leading-relaxed text-slate-400">
+                    {tip.desc}
+                  </p>
+
+                  <div className="mt-4 h-0.5 w-8 bg-[#00b8c8] transition-all duration-300 group-hover:w-12" />
+                </article>
+              );
+            })}
+          </div>
         </div>
       </section>
     </main>

@@ -8,31 +8,28 @@ This version has breaking changes - APIs, conventions, and file structure may al
 # Session Summary
 
 ## Goal
-- Finish the ROKKO uniform quote app, with the 3D preview focused on attractive garment-only GLB rendering.
-- Keep the project lean by removing mannequin/fallback/dead-code paths that are no longer part of the product direction.
+- Finish the ROKKO uniform quote app with a lean catalog, quote flow, contact flow, and technical product sheet.
+- Keep the project free of removed 3D/model-preview paths.
 
-## Current 3D Direction
-- The mannequin has been intentionally removed.
-- The visualizer should render product/base garment GLBs only.
-- `ProductGLB` is the active 3D path in `components/Visualizador3D.tsx`.
-- `FittedGarment`, procedural mannequin extraction, `mannequin.glb`, `ThreePatch`, debug mannequin flags, and legacy model-viewer code have been removed.
+## Current Product Direction
+- The app no longer uses 3D previews or GLB/GLTF assets.
+- Product detail should stay as a technical sheet using product images, colors, sizes, prices, technologies, and certifications.
+- Do not reintroduce model uploads, product-model buckets, Three.js/R3F/Fabric visualizers, or static garment model assets.
 
-## Relevant 3D Files
-- `components/Visualizador3D.tsx`: garment-only Three/R3F visualizer.
-- `lib/baseModels.ts`: maps detected garment types to `/models/base/*.glb`.
-- `lib/garmentMap.ts`: decal/logo placement labels and base coordinates.
-- `public/models/base/*.glb`: active static garment models.
+## Relevant Product Files
+- `components/QuoteBuilder.tsx`: catalog cards, cart, quote modal, and technical sheet entry point.
+- `components/ProductDetailPanel.tsx`: technical sheet without 3D.
+- `components/admin/AdminProducts.tsx`: product catalog management.
+- `app/contacto/page.tsx`: public contact flow.
 
 ## Validation Notes
-- Production build was confirmed before cleanup with Next.js 16.2.6.
-- After cleanup, run:
+- After changes, run:
   - `npm run build`
-  - local visual check in browser via `npm run dev`
 - `npm run lint` currently has unrelated legacy/type issues in admin/API and other components; do not assume visualizer cleanup alone will make lint fully green.
 
 ## Remaining Work
-1. Validate garment-only 3D locally after cleanup.
-2. Fine tune logo/decal placement per garment type in `GARMENT_3D_MAP` and `fitDecalCoordsToMesh`.
+1. Improve technical sheet content layout.
+2. Add category management in admin.
 3. Continue admin/API lint cleanup and type hardening.
 4. Choose one package manager and clean lockfile/install state.
 <!-- END:session-summary -->

@@ -56,11 +56,38 @@ async function requireAdmin(request: Request) {
   return { clients };
 }
 
+async function ensureCategoryExists(
+  adminClient: NonNullable<ReturnType<typeof getClients>>["adminClient"],
+  category: unknown,
+) {
+  const categorySlug = String(category || "").trim();
+  if (!categorySlug) {
+    return "Categoria requerida.";
+  }
+
+  const { data, error } = await adminClient
+    .from("product_categories")
+    .select("slug")
+    .eq("slug", categorySlug)
+    .maybeSingle();
+
+  if (error) return error.message;
+  if (!data) return "La categoria seleccionada no existe.";
+  return null;
+}
+
 export async function POST(request: Request) {
   const guard = await requireAdmin(request);
   if ("error" in guard) return guard.error;
 
   const product = await request.json();
+
+  const categoryError = await ensureCategoryExists(
+    guard.clients.adminClient,
+    product.category,
+  );
+  if (categoryError) return json({ error: categoryError }, 400);
+
   const { data, error } = await guard.clients.adminClient
     .from("products")
     .insert(product)
@@ -81,6 +108,14 @@ export async function PATCH(request: Request) {
 
   if (!id || !product) {
     return json({ error: "Producto e id son requeridos." }, 400);
+  }
+
+  if (product.category !== undefined) {
+    const categoryError = await ensureCategoryExists(
+      guard.clients.adminClient,
+      product.category,
+    );
+    if (categoryError) return json({ error: categoryError }, 400);
   }
 
   const { data, error, count } = await guard.clients.adminClient

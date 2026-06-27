@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import type { PriceTier, Product } from "@/types/product";
+import type { ProductCategory } from "@/types/category";
 import {
   getAdminProducts,
   toggleAdminProductStatus,
@@ -11,18 +12,10 @@ import {
   createAdminProduct,
   deleteAdminProduct,
 } from "@/lib/adminProducts";
+import { fetchAdminCategories } from "@/lib/adminCategories";
+import { fallbackProductCategories } from "@/lib/productCategories";
 import { uploadImage, deleteStorageImages, parseImageField } from "@/lib/storage";
 import { normalizePriceTiers } from "@/lib/pricing";
-
-const categories = [
-  { value: "todas", label: "Todas las categorías" },
-  { value: "poleras", label: "Poleras" },
-  { value: "polerones", label: "Polerones" },
-  { value: "micropolar", label: "Micropolar" },
-  { value: "camisas", label: "Camisas / Blusas" },
-  { value: "parkas", label: "Parkas" },
-  { value: "pantalones", label: "Pantalones" },
-];
 
 const initialProductState: Partial<Product> = {
   name: "",
@@ -129,6 +122,7 @@ function formatImagesForInput(product?: Partial<Product> | null) {
 
 export default function AdminProducts() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [productCategories, setProductCategories] = useState<ProductCategory[]>([]);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("todas");
   const [loading, setLoading] = useState(true);
@@ -158,15 +152,39 @@ export default function AdminProducts() {
 
   useEffect(() => {
     let mounted = true;
-    getAdminProducts().then((data) => {
+    Promise.all([
+      getAdminProducts(),
+      fetchAdminCategories().catch(() => fallbackProductCategories),
+    ]).then(([data, categoryRows]) => {
       if (!mounted) return;
       setProducts(data);
+      setProductCategories(categoryRows.length ? categoryRows : fallbackProductCategories);
       setLoading(false);
     });
     return () => {
       mounted = false;
     };
   }, []);
+
+  const categoryOptions = useMemo(
+    () => [
+      { value: "todas", label: "Todas las categorias" },
+      ...productCategories.map((item) => ({
+        value: item.slug,
+        label: item.label,
+      })),
+    ],
+    [productCategories],
+  );
+
+  const categoryLabelBySlug = useMemo(
+    () =>
+      productCategories.reduce<Record<string, string>>((acc, item) => {
+        acc[item.slug] = item.label;
+        return acc;
+      }, {}),
+    [productCategories],
+  );
 
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
@@ -196,7 +214,10 @@ export default function AdminProducts() {
 
   // Abrir panel para Crear
   function handleCreateClick() {
-    setEditingProduct({ ...initialProductState });
+    setEditingProduct({
+      ...initialProductState,
+      category: productCategories[0]?.slug || initialProductState.category,
+    });
     setIsPanelOpen(true);
   }
 
@@ -490,7 +511,7 @@ export default function AdminProducts() {
               onChange={(e) => setCategory(e.target.value)}
               className="admin-control"
             >
-              {categories.map((item) => (
+              {categoryOptions.map((item) => (
                 <option key={item.value} value={item.value}>
                   {item.label}
                 </option>
@@ -553,7 +574,7 @@ export default function AdminProducts() {
                     </td>
                     <td className="px-6 py-4">
                       <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium capitalize text-slate-600">
-                        {product.category}
+                        {categoryLabelBySlug[product.category] || product.category}
                       </span>
                     </td>
                     <td className="px-6 py-4 font-bold text-slate-900">
@@ -676,7 +697,7 @@ export default function AdminProducts() {
                     </p>
                     <div className="mt-3 flex flex-wrap gap-2">
                       <span className="rounded-full bg-accent-soft px-2.5 py-1 text-[10px] font-black capitalize text-accent">
-                        {editingProduct.category || "categoria"}
+                        {categoryLabelBySlug[editingProduct.category || ""] || editingProduct.category || "categoria"}
                       </span>
                       <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-black text-slate-500">
                         ${Number(editingProduct.price || 0).toLocaleString("es-CL")}
@@ -699,11 +720,11 @@ export default function AdminProducts() {
 
                   <InputBlock label="Categoría">
                     <select
-                      value={editingProduct.category || "poleras"}
+                      value={editingProduct.category || productCategories[0]?.slug || "poleras"}
                       onChange={(e) => updateField("category", e.target.value)}
                       className="admin-control"
                     >
-                      {categories
+                      {categoryOptions
                         .filter((item) => item.value !== "todas")
                         .map((item) => (
                           <option key={item.value} value={item.value}>

@@ -14,7 +14,6 @@ Vercel ejecuta la aplicacion Next.js:
 
 - Home, catalogo y cotizador.
 - Admin UI.
-- Visualizador 3D.
 - Route Handlers internos, como envio de cotizaciones por email.
 
 Variables requeridas en Vercel:
@@ -31,10 +30,8 @@ RESEND_API_KEY=re_xxxxx
 Supabase es la unica fuente de backend:
 
 - Auth para acceso al panel admin.
-- Tablas `products`, `quotes`, `brand_settings`, `commercial_settings` y `product_models`.
-- Storage buckets `product-images` y `product-models`.
-
-Los modelos base del visor 3D que viven en `public/models/base` se sirven desde Vercel como assets estaticos. Los modelos subidos desde el admin se guardan en Supabase Storage.
+- Tablas `products`, `quotes`, `brand_settings` y `commercial_settings`.
+- Storage bucket `product-images`.
 
 ## SQL
 

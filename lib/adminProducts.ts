@@ -1,7 +1,11 @@
-import { supabase, hasSupabaseConfig } from "@/lib/supabaseClient";
+import {
+  clearSupabaseAuthStorage,
+  hasSupabaseConfig,
+  isInvalidRefreshTokenError,
+  supabase,
+} from "@/lib/supabaseClient";
 import { deleteProductImages } from "@/lib/storage";
 import type { Product } from "@/types/product";
-import { normalizeProductModelUrl } from "@/lib/baseModels";
 import { normalizePriceTiers } from "@/lib/pricing";
 
 type AdminProductInput = Partial<Omit<Product, "id">>;
@@ -14,7 +18,13 @@ async function adminProductRequest<T>(
     throw new Error("Supabase no esta configurado.");
   }
 
-  const { data } = await supabase.auth.getSession();
+  const { data } = await supabase.auth.getSession().catch((error: unknown) => {
+    if (isInvalidRefreshTokenError(error)) {
+      clearSupabaseAuthStorage();
+      throw new Error("Sesion expirada. Vuelve a iniciar sesion.");
+    }
+    throw error;
+  });
   const token = data.session?.access_token;
   if (!token) {
     throw new Error("Sesion requerida.");
@@ -48,22 +58,27 @@ function makeSlug(value: string) {
     .replace(/^-+|-+$/g, "");
 }
 
+function makeCardSummary(value: string | null | undefined, maxLength = 86) {
+  const clean = (value || "").replace(/\s+/g, " ").trim();
+  if (clean.length <= maxLength) return clean || null;
+  const sliced = clean.slice(0, maxLength + 1);
+  const lastSpace = sliced.lastIndexOf(" ");
+  return `${(lastSpace > 48 ? sliced.slice(0, lastSpace) : clean.slice(0, maxLength)).trim()}...`;
+}
+
 function normalizeProductInput(product: AdminProductInput) {
   const name = product.name || product.short_name || "Producto Rokko";
+  const description = product.description?.trim() || null;
 
   return {
     slug: product.slug || makeSlug(name) || `producto-${Date.now()}`,
     category: product.category || "poleras",
     name,
     short_name: product.short_name || name,
-    description: product.description ?? null,
-    extract: product.extract ?? null,
+    description,
+    extract: makeCardSummary(product.extract || description || name),
     image: product.image ?? null,
     color_images: product.color_images ?? {},
-    model_3d_url: product.model_3d_url ?? null,
-    model_3d_scale: product.model_3d_scale ?? 1,
-    model_3d_position_y: product.model_3d_position_y ?? 0,
-    model_3d_rotation_y: product.model_3d_rotation_y ?? 0,
     price: Number(product.price || 0),
     wholesale_price: product.wholesale_price ?? null,
     wholesale_from: product.wholesale_from ?? null,
@@ -75,18 +90,8 @@ function normalizeProductInput(product: AdminProductInput) {
     technologies: product.technologies || [],
     certifications: product.certifications || [],
     active: product.active ?? true,
-  };
-}
-
-function normalizeLoadedProductModel(product: Product): Product {
-  return {
-    ...product,
-    model_3d_url: normalizeProductModelUrl(product.model_3d_url, [
-      product.category,
-      product.slug,
-      product.short_name,
-      product.name,
-    ]),
+    sort_order: Number(product.sort_order || 0),
+    mockup_calibrations: product.mockup_calibrations ?? {},
   };
 }
 
@@ -96,18 +101,29 @@ export async function getAdminProducts() {
     return [];
   }
 
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from("products")
     .select("*")
     .order("category", { ascending: true })
+    .order("sort_order", { ascending: true })
     .order("price", { ascending: true });
+
+  if (error && /sort_order/i.test(error.message)) {
+    const retry = await supabase
+      .from("products")
+      .select("*")
+      .order("category", { ascending: true })
+      .order("price", { ascending: true });
+    data = retry.data;
+    error = retry.error;
+  }
 
   if (error) {
     console.error("Error cargando productos admin:", error.message);
     return [];
   }
 
-  return ((data || []) as Product[]).map(normalizeLoadedProductModel);
+  return ((data || []) as Product[]);
 }
 
 export async function createAdminProduct(product: AdminProductInput) {
@@ -128,19 +144,16 @@ export async function updateAdminProduct(product: Product) {
     throw new Error("Supabase no esta configurado.");
   }
 
+  const description = product.description?.trim() || null;
   const payload = {
     slug: product.slug,
     category: product.category,
     name: product.name,
     short_name: product.short_name,
-    description: product.description,
-    extract: product.extract,
+    description,
+    extract: makeCardSummary(product.extract || description || product.name),
     image: product.image,
     color_images: product.color_images ?? {},
-    model_3d_url: product.model_3d_url ?? null,
-    model_3d_scale: product.model_3d_scale ?? 1,
-    model_3d_position_y: product.model_3d_position_y ?? 0,
-    model_3d_rotation_y: product.model_3d_rotation_y ?? 0,
     price: product.price,
     wholesale_price: product.wholesale_price,
     wholesale_from: product.wholesale_from,
@@ -152,6 +165,8 @@ export async function updateAdminProduct(product: Product) {
     technologies: product.technologies,
     certifications: product.certifications,
     active: product.active,
+    sort_order: Number(product.sort_order || 0),
+    mockup_calibrations: product.mockup_calibrations ?? {},
   };
 
   const data = await adminProductRequest<{ product: Product }>("/api/admin/products", {

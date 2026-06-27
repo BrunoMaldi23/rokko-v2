@@ -14,11 +14,6 @@ import {
   type CommercialSettings,
 } from "@/lib/settings";
 import { printElement } from "@/lib/print";
-import {
-  detectBaseGarmentType,
-  getDetectedBaseModelUrl,
-  normalizeProductModelUrl,
-} from "@/lib/baseModels";
 import { getUnitPriceForQuantity } from "@/lib/pricing";
 
 const ProductDetailPanel = dynamic(() => import("@/components/ProductDetailPanel"), {
@@ -32,22 +27,8 @@ const ProductDetailPanel = dynamic(() => import("@/components/ProductDetailPanel
   ),
 });
 
-const preloadedDetailModels = new Set<string>();
-
 function preloadProductDetailPanel() {
   void import("@/components/ProductDetailPanel");
-}
-
-function preloadProductModel(modelUrl: string | null | undefined) {
-  if (!modelUrl || preloadedDetailModels.has(modelUrl)) return;
-  preloadedDetailModels.add(modelUrl);
-
-  const link = document.createElement("link");
-  link.rel = "preload";
-  link.as = "fetch";
-  link.href = modelUrl;
-  link.crossOrigin = "anonymous";
-  document.head.appendChild(link);
 }
 
 const colorMap: Record<string, string> = {
@@ -220,8 +201,6 @@ export default function QuoteBuilder({ initialProducts }: Props) {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [quoteOpen, setQuoteOpen] = useState(false);
   const [quoteStep, setQuoteStep] = useState<"review" | "client">("review");
-  const [logoPreview, setLogoPreview] = useState<string | null>(null);
-  const [logoSize, setLogoSize] = useState(0.08);
   const [showSuccess, setShowSuccess] = useState(false);
   const [notice, setNotice] = useState<Notice | null>(null);
   const [savingQuote, setSavingQuote] = useState(false);
@@ -425,38 +404,12 @@ export default function QuoteBuilder({ initialProducts }: Props) {
     }));
   }
 
-  const resetVisualCustomization = useCallback((productId?: string) => {
-    setLogoPreview((prev) => {
-      if (prev) URL.revokeObjectURL(prev);
-      return null;
-    });
-    setLogoSize(0.08);
-    if (productId) {
-      setForms((prev) => ({
-        ...prev,
-        [productId]: {
-          ...prev[productId],
-          logoPosition: "Pecho centro",
-        },
-      }));
-    }
-  }, []);
-
   const closeProductDetail = useCallback(() => {
-    resetVisualCustomization(selectedProduct?.id);
     setSelectedProduct(null);
-  }, [resetVisualCustomization, selectedProduct?.id]);
+  }, []);
 
   const handlePreloadProductDetail = useCallback((product: Product) => {
     preloadProductDetailPanel();
-    preloadProductModel(
-      normalizeProductModelUrl(product.model_3d_url, [
-        product.category,
-        product.slug,
-        product.short_name,
-        product.name,
-      ]),
-    );
   }, []);
 
   function updateClient(field: keyof ClientData, value: string) {
@@ -603,8 +556,6 @@ export default function QuoteBuilder({ initialProducts }: Props) {
   }, [clientData, quoteItems, total, brand, commercial]);
 
   const resetQuote = useCallback(() => {
-    if (logoPreview) URL.revokeObjectURL(logoPreview);
-    setLogoPreview(null);
     setQuoteOpen(false);
     setQuoteStep("review");
     setSubmittedFolio(null);
@@ -617,7 +568,7 @@ export default function QuoteBuilder({ initialProducts }: Props) {
       observaciones: "",
     });
     setCart([]);
-  }, [logoPreview]);
+  }, []);
   return (
     <>
       {/* Success toast */}
@@ -738,7 +689,6 @@ export default function QuoteBuilder({ initialProducts }: Props) {
                 selectedColor={selectedColor}
                 galleryIndex={galleryIndex}
                 formSizes={forms[product.id]?.sizes || EMPTY_SIZE_FORM}
-                logoPreview={logoPreview}
                 onColorSelect={handleColorSelect}
                 onGalleryNav={handleGalleryNav}
                 onSizeUpdate={handleSizeUpdate}
@@ -934,40 +884,8 @@ export default function QuoteBuilder({ initialProducts }: Props) {
             return imgs.length > 0 ? imgs : [""];
           })()}
           galleryIndex={galleryIndexes[selectedProduct.id] || 0}
-          logoPreview={logoPreview}
-          logoPosition={forms[selectedProduct.id]?.logoPosition}
-          logoSize={logoSize}
-          modelUrl={
-            normalizeProductModelUrl(selectedProduct.model_3d_url, [
-              selectedProduct.category,
-              selectedProduct.slug,
-              selectedProduct.short_name,
-              selectedProduct.name,
-            ]) || undefined
-          }
-          modelScale={(() => {
-            if (selectedProduct.model_3d_scale != null)
-              return selectedProduct.model_3d_scale;
-            return undefined;
-          })()}
-          modelPositionY={(() => {
-            if (selectedProduct.model_3d_position_y != null)
-              return selectedProduct.model_3d_position_y;
-            return undefined;
-          })()}
-          modelRotationY={selectedProduct.model_3d_rotation_y ?? undefined}
           onColorSelect={handleColorSelect}
           onGalleryNav={handleGalleryNav}
-          onLogoUpload={(file) => {
-            if (logoPreview) URL.revokeObjectURL(logoPreview);
-            setLogoPreview(URL.createObjectURL(file));
-          }}
-          onPositionChange={(label) =>
-            updateForm(selectedProduct.id, "logoPosition", label)
-          }
-          onSizeChange={setLogoSize}
-          onResetVisual={() => resetVisualCustomization(selectedProduct.id)}
-          onRemoveLogo={() => resetVisualCustomization(selectedProduct.id)}
           onClose={closeProductDetail}
         />
       )}
@@ -2107,7 +2025,6 @@ const ProductCard = memo(function ProductCard({
   selectedColor,
   galleryIndex,
   formSizes,
-  logoPreview,
   onColorSelect,
   onGalleryNav,
   onSizeUpdate,
@@ -2120,7 +2037,6 @@ const ProductCard = memo(function ProductCard({
   selectedColor: string;
   galleryIndex: number;
   formSizes: Readonly<Record<string, number>>;
-  logoPreview: string | null;
   onColorSelect: (
     productId: string,
     color: string,
@@ -2139,28 +2055,22 @@ const ProductCard = memo(function ProductCard({
 }) {
   const allProductImages = useMemo(() => getProductImages(product), [product]);
   const productSizes = product.sizes?.length ? product.sizes : sizes;
-  const description =
-    product.extract ||
-    [product.composition, product.weight].filter(Boolean).join(", ") ||
-    product.description;
+  const description = useMemo(() => {
+    const source =
+      product.extract ||
+      [product.composition, product.weight].filter(Boolean).join(", ") ||
+      product.description ||
+      "";
+    const clean = source.replace(/\s+/g, " ").trim();
+    if (clean.length <= 86) return clean;
+    const sliced = clean.slice(0, 87);
+    const lastSpace = sliced.lastIndexOf(" ");
+    return `${(lastSpace > 48 ? sliced.slice(0, lastSpace) : clean.slice(0, 86)).trim()}...`;
+  }, [product.composition, product.description, product.extract, product.weight]);
   const pid = product.id;
   const selectedUnits = Object.values(formSizes).reduce(
     (sum, value) => sum + Number(value || 0),
     0,
-  );
-  const baseGarmentType = detectBaseGarmentType([
-    product.category,
-    product.slug,
-    product.short_name,
-    product.name,
-  ]);
-  const hasBaseModel = Boolean(
-    getDetectedBaseModelUrl([
-      product.category,
-      product.slug,
-      product.short_name,
-      product.name,
-    ]),
   );
 
   const imageEntries = useMemo(() => {
@@ -2292,20 +2202,6 @@ const ProductCard = memo(function ProductCard({
             className="relative h-auto max-h-[88%] w-auto max-w-[88%] object-contain drop-shadow-[0_18px_28px_rgba(45,52,54,0.10)]"
             style={{ width: "auto", height: "auto" }}
           />
-          {logoPreview && (
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="relative w-14 h-14 opacity-30">
-                <Image
-                  unoptimized
-                  src={logoPreview}
-                  alt="Logo"
-                  fill
-                  className="object-contain"
-                />
-              </div>
-            </div>
-          )}
-
           {/* Gallery nav */}
           {displayImages.length > 1 && (
             <>
@@ -2364,12 +2260,6 @@ const ProductCard = memo(function ProductCard({
             </>
           )}
 
-          {/* Badge */}
-          {hasBaseModel && (
-            <span className="absolute left-3 top-3 rounded-md bg-white/92 px-2 py-0.5 text-[10px] font-black text-accent shadow-sm ring-1 ring-accent/15 backdrop-blur">
-              3D
-            </span>
-          )}
         </div>
 
         {/* ─── CONTENT ─── */}
@@ -2401,7 +2291,7 @@ const ProductCard = memo(function ProductCard({
           {/* Tags */}
           <div className="mt-3 flex flex-wrap gap-1">
             <span className="rounded-md border border-border bg-surface-2 px-2 py-0.5 text-[10px] font-bold text-muted">
-              {baseGarmentType}
+              {product.category}
             </span>
             {(product.technologies || []).slice(0, 3).map((tech) => (
               <span

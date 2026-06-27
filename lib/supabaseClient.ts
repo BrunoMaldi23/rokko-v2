@@ -36,3 +36,10 @@ export function clearSupabaseAuthStorage() {
     }
   }
 }
+
+export function isInvalidRefreshTokenError(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error || "");
+  return /invalid refresh token|refresh token not found|refresh token/i.test(
+    message,
+  );
+}

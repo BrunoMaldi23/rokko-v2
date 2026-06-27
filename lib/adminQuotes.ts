@@ -1,8 +1,20 @@
-import { supabase } from "./supabaseClient";
+import {
+  clearSupabaseAuthStorage,
+  isInvalidRefreshTokenError,
+  supabase,
+} from "./supabaseClient";
 import type { QuoteItem, QuoteRecord } from "./quotes";
 
 export async function adminFetch(path: string, init: RequestInit = {}) {
-  const { data } = supabase ? await supabase.auth.getSession() : { data: null };
+  const { data } = supabase
+    ? await supabase.auth.getSession().catch((error: unknown) => {
+        if (isInvalidRefreshTokenError(error)) {
+          clearSupabaseAuthStorage();
+          throw new Error("Sesion expirada. Vuelve a iniciar sesion.");
+        }
+        throw error;
+      })
+    : { data: null };
   const token = data?.session?.access_token;
 
   if (!token) {

@@ -32,8 +32,8 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 Todo el backend de negocio vive en Supabase:
 
 - Supabase Auth para el panel admin.
-- Tablas para productos, cotizaciones, settings y modelos 3D.
-- Supabase Storage para imagenes y modelos subidos desde el admin.
+- Tablas para productos, cotizaciones y settings.
+- Supabase Storage para imagenes de productos.
 
 El envio de emails usa el Route Handler `app/api/send-quote` en Vercel con `RESEND_API_KEY`.
 
