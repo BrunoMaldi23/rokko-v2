@@ -34,7 +34,13 @@ const navItems: NavItem[] = [
     description: "Indicadores",
     shortcut: "OV",
     icon: (props) => (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        {...props}
+      >
         <path d="M3 3v18h18" />
         <path d="M18 17V9" />
         <path d="M12 17V5" />
@@ -48,7 +54,13 @@ const navItems: NavItem[] = [
     description: "Catálogo y stock",
     shortcut: "PR",
     icon: (props) => (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        {...props}
+      >
         <rect x="2" y="7" width="20" height="14" rx="2" />
         <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
       </svg>
@@ -60,7 +72,13 @@ const navItems: NavItem[] = [
     description: "Familias comerciales",
     shortcut: "CA",
     icon: (props) => (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        {...props}
+      >
         <rect x="3" y="4" width="7" height="7" rx="1.5" />
         <rect x="14" y="4" width="7" height="7" rx="1.5" />
         <rect x="3" y="15" width="7" height="5" rx="1.5" />
@@ -74,7 +92,13 @@ const navItems: NavItem[] = [
     description: "Precios y reglas",
     shortcut: "CO",
     icon: (props) => (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        {...props}
+      >
         <line x1="12" y1="1" x2="12" y2="23" />
         <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
       </svg>
@@ -86,7 +110,13 @@ const navItems: NavItem[] = [
     description: "Pipeline comercial",
     shortcut: "CT",
     icon: (props) => (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        {...props}
+      >
         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
         <polyline points="14 2 14 8 20 8" />
         <line x1="16" y1="13" x2="8" y2="13" />
@@ -100,7 +130,13 @@ const navItems: NavItem[] = [
     description: "Datos de empresa",
     shortcut: "BR",
     icon: (props) => (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        {...props}
+      >
         <path d="M12 3 4 7l8 4 8-4-8-4Z" />
         <path d="m4 12 8 4 8-4" />
         <path d="m4 17 8 4 8-4" />
@@ -113,7 +149,13 @@ const navItems: NavItem[] = [
     description: "Accesos admin",
     shortcut: "US",
     icon: (props) => (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        {...props}
+      >
         <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
         <circle cx="9" cy="7" r="4" />
         <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
@@ -129,39 +171,42 @@ export function AdminSidebar({
   onLogout,
 }: AdminSidebarProps) {
   return (
-    <aside className="admin-sidebar-shell sticky top-0 hidden h-screen shrink-0 flex-col overflow-hidden md:flex">
-      <div className="px-4 pb-4 pt-5">
+    <aside className="admin-sidebar-shell sticky top-0 hidden h-screen w-[248px] shrink-0 flex-col overflow-hidden border-r border-[var(--adm-border-soft)] bg-[var(--adm-bg-sidebar)] md:flex">
+      {/* LOGO */}
+      <div className="px-5 pb-3 pt-5">
         <Link
           href="/admin"
-          className="sidebar-logo-wrap flex items-center justify-center rounded-2xl"
+          className="sidebar-logo-wrap flex h-[72px] items-center justify-center rounded-2xl transition hover:bg-[var(--adm-bg-sidebar-hover)]"
           aria-label="ROKKO Admin"
         >
-          <div className="sidebar-logo-box relative h-[72px] w-full">
+          <div className="sidebar-logo-box relative h-[58px] w-full">
             <Image
               src="/brand/rokko-navbar.png"
               alt="ROKKO"
               fill
               priority
               className="object-contain object-left"
-              sizes="220px"
+              sizes="210px"
             />
           </div>
         </Link>
       </div>
 
-      <div className="px-5 pb-3">
+      {/* SECCIÓN */}
+      <div className="px-5 pb-3 pt-1">
         <div className="flex items-center justify-between">
-          <p className="sidebar-section-title text-[11px] font-black uppercase tracking-[0.18em]">
+          <p className="sidebar-section-title text-[10px] font-black uppercase tracking-[0.2em] text-[var(--adm-text-secondary)]">
             Gestión
           </p>
 
-          <span className="rounded-full bg-[var(--adm-bg-badge-visible)] px-3 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-[var(--adm-text-badge-visible)]">
+          <span className="rounded-full bg-[var(--adm-bg-badge-visible)] px-3 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-[var(--adm-text-badge-visible)]">
             Admin
           </span>
         </div>
       </div>
 
-      <nav className="flex-1 space-y-1.5 overflow-y-auto px-3 pb-4">
+      {/* NAVEGACIÓN */}
+      <nav className="custom-scrollbar flex-1 space-y-1.5 overflow-y-auto px-3 pb-4">
         {navItems.map((item) => {
           const isActive = activeTab === item.id;
 
@@ -170,9 +215,10 @@ export function AdminSidebar({
               key={item.id}
               type="button"
               onClick={() => onTabChange(item.id)}
-              className={`group relative flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left transition-all duration-200 ${
+              aria-pressed={isActive}
+              className={`group relative flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left outline-none transition-all duration-200 focus-visible:ring-4 focus-visible:ring-[var(--adm-teal-500)]/15 ${
                 isActive
-                  ? "sidebar-active-item"
+                  ? "sidebar-active-item shadow-[0_10px_24px_rgba(0,184,200,0.14)]"
                   : "text-[var(--adm-text-on-sidebar)] hover:bg-[var(--adm-bg-sidebar-hover)] hover:text-[var(--adm-text-primary)]"
               }`}
             >
@@ -181,8 +227,10 @@ export function AdminSidebar({
               )}
 
               <span
-                className={`sidebar-icon-box flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition ${
-                  isActive ? "sidebar-icon-box-active" : ""
+                className={`sidebar-icon-box flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-all duration-200 ${
+                  isActive
+                    ? "sidebar-icon-box-active"
+                    : "group-hover:bg-[var(--adm-bg-badge-visible)] group-hover:text-[var(--adm-teal-500)]"
                 }`}
               >
                 <item.icon className="h-5 w-5" />
@@ -190,7 +238,7 @@ export function AdminSidebar({
 
               <span className="min-w-0 flex-1">
                 <span
-                  className={`block truncate text-sm font-black ${
+                  className={`block truncate text-[13px] font-black leading-tight ${
                     isActive
                       ? "text-[var(--adm-teal-500)]"
                       : "text-[var(--adm-text-primary)]"
@@ -199,12 +247,18 @@ export function AdminSidebar({
                   {item.label}
                 </span>
 
-                <span className="mt-0.5 block truncate text-[10px] font-semibold leading-4 text-[var(--adm-text-secondary)]">
+                <span className="mt-1 block truncate text-[10px] font-semibold leading-4 text-[var(--adm-text-secondary)]">
                   {item.description}
                 </span>
               </span>
 
-              <span className="sidebar-shortcut rounded-lg px-2 py-1 text-[10px] font-black tracking-wider">
+              <span
+                className={`rounded-lg px-2 py-1 text-[9px] font-black tracking-wider transition ${
+                  isActive
+                    ? "bg-[var(--adm-bg-badge-visible)] text-[var(--adm-text-badge-visible)]"
+                    : "bg-transparent text-[var(--adm-text-secondary)] group-hover:bg-[var(--adm-bg-badge-visible)] group-hover:text-[var(--adm-text-badge-visible)]"
+                }`}
+              >
                 {item.shortcut}
               </span>
             </button>
@@ -212,10 +266,11 @@ export function AdminSidebar({
         })}
       </nav>
 
-      <div className="px-3 pb-6 pt-3">
+      {/* FOOTER */}
+      <div className="border-t border-[var(--adm-border-soft)] px-3 pb-5 pt-4">
         <Link
           href="/"
-          className="sidebar-public-link mb-3 flex h-12 items-center justify-center gap-2 rounded-2xl text-sm font-black transition"
+          className="mb-3 flex h-11 items-center justify-center gap-2 rounded-2xl border border-[var(--adm-border-soft)] bg-white text-[13px] font-black text-[var(--adm-text-primary)] shadow-[0_8px_18px_rgba(7,24,39,0.04)] transition hover:-translate-y-0.5 hover:border-[var(--adm-teal-500)]/50 hover:bg-[#f7fcfd] hover:text-[var(--adm-teal-500)] active:translate-y-0 [html[data-theme='dark']_&]:bg-[#111b22] [html[data-theme='dark']_&]:text-[#f8fafc] [html[data-theme='dark']_&]:shadow-none [html[data-theme='dark']_&]:hover:border-[#00b8c8]/50 [html[data-theme='dark']_&]:hover:bg-[#162530] [html[data-theme='dark']_&]:hover:text-[#00b8c8]"
         >
           <span>Ver sitio público</span>
 
@@ -224,6 +279,7 @@ export function AdminSidebar({
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
+            aria-hidden="true"
           >
             <path
               strokeLinecap="round"
@@ -237,14 +293,15 @@ export function AdminSidebar({
         <button
           type="button"
           onClick={onLogout}
-          className="group flex h-11 w-full items-center justify-center gap-2 rounded-2xl border border-[var(--adm-teal-500)]/30 bg-[var(--adm-teal-500)] px-4 text-sm font-black text-white shadow-md transition hover:-translate-y-0.5 hover:bg-[var(--adm-teal-700)] active:translate-y-0 active:scale-[0.99]"
+          className="group flex h-11 w-full items-center justify-center gap-2 rounded-2xl border border-red-200 bg-red-50 px-4 text-[13px] font-black text-red-600 shadow-[0_8px_18px_rgba(220,38,38,0.08)] transition hover:-translate-y-0.5 hover:border-red-300 hover:bg-red-600 hover:text-white hover:shadow-[0_14px_28px_rgba(220,38,38,0.18)] active:translate-y-0 active:scale-[0.99] [html[data-theme='dark']_&]:border-red-500/30 [html[data-theme='dark']_&]:bg-red-950/35 [html[data-theme='dark']_&]:text-red-300 [html[data-theme='dark']_&]:shadow-none [html[data-theme='dark']_&]:hover:border-red-500/50 [html[data-theme='dark']_&]:hover:bg-red-600 [html[data-theme='dark']_&]:hover:text-white"
         >
-          <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-white/20 text-white transition group-hover:bg-white/25">
+          <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-red-100 text-red-600 transition group-hover:bg-white/20 group-hover:text-white [html[data-theme='dark']_&]:bg-red-500/15 [html[data-theme='dark']_&]:text-red-300 [html[data-theme='dark']_&]:group-hover:bg-white/20 [html[data-theme='dark']_&]:group-hover:text-white">
             <svg
               className="h-4 w-4"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
+              aria-hidden="true"
             >
               <path
                 strokeLinecap="round"

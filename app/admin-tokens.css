@@ -457,3 +457,201 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ─── MEJORA DE LEGIBILIDAD ADMIN ───────────────────────────── */
+
+[data-admin] {
+  font-family: "Inter", "Segoe UI", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  --adm-text-primary: #071827;
+  --adm-text-heading: #020617;
+  --adm-text-secondary: #334155;
+  --adm-text-muted: #475569;
+}
+
+/* Dark mode */
+html[data-theme="dark"] [data-admin] {
+  --adm-text-primary: #f8fafc;
+  --adm-text-heading: #ffffff;
+  --adm-text-secondary: #cbd5e1;
+  --adm-text-muted: #94a3b8;
+}
+
+/* Títulos más negros y firmes */
+[data-admin] h1,
+[data-admin] h2,
+[data-admin] h3,
+[data-admin] h4 {
+  color: var(--adm-text-heading);
+  font-weight: 900;
+  letter-spacing: -0.04em;
+}
+
+/* Textos generales más legibles */
+[data-admin] p,
+[data-admin] span,
+[data-admin] button,
+[data-admin] a,
+[data-admin] input,
+[data-admin] textarea,
+[data-admin] label {
+  font-weight: 700;
+}
+
+/* Textos secundarios menos grises */
+[data-admin] .text-muted {
+  color: var(--adm-text-muted);
+}
+
+[data-admin] .admin-eyebrow {
+  color: var(--adm-teal-500);
+  font-weight: 900;
+  letter-spacing: 0.18em;
+}
+
+/* Cards y paneles con texto más fuerte */
+[data-admin] .admin-panel,
+[data-admin] .admin-panel-strong {
+  color: var(--adm-text-primary);
+}
+
+/* Inputs más nítidos */
+[data-admin] input,
+[data-admin] textarea {
+  color: var(--adm-text-primary);
+  font-weight: 700;
+}
+
+[data-admin] input::placeholder,
+[data-admin] textarea::placeholder {
+  color: var(--adm-text-muted);
+  font-weight: 600;
+}
+
+/* ─── CONTROLES FORMULARIO ADMIN / MODAL PRODUCTOS ───────────── */
+
+.admin-control {
+  width: 100%;
+  min-height: 46px;
+  border-radius: 14px;
+  border: 1.5px solid #a7dfe7;
+  background: #ffffff;
+  padding: 12px 14px;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.45;
+  color: #071827;
+  outline: none;
+  box-shadow: 0 6px 16px rgba(8, 115, 129, 0.04);
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    background 0.18s ease,
+    color 0.18s ease;
+}
+
+textarea.admin-control {
+  min-height: 92px;
+  resize: vertical;
+}
+
+select.admin-control {
+  cursor: pointer;
+  appearance: none;
+  background-image:
+    linear-gradient(45deg, transparent 50%, #071827 50%),
+    linear-gradient(135deg, #071827 50%, transparent 50%);
+  background-position:
+    calc(100% - 18px) 50%,
+    calc(100% - 13px) 50%;
+  background-size:
+    5px 5px,
+    5px 5px;
+  background-repeat: no-repeat;
+  padding-right: 42px;
+}
+
+.admin-control::placeholder {
+  color: #475569;
+  font-weight: 700;
+}
+
+.admin-control:hover {
+  border-color: #21b7c7;
+  background: #fbfeff;
+}
+
+.admin-control:focus {
+  border-color: #21b7c7;
+  background: #ffffff;
+  box-shadow:
+    0 0 0 4px rgba(33, 183, 199, 0.12),
+    0 10px 24px rgba(8, 115, 129, 0.08);
+}
+
+.admin-control:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Labels del modal */
+.admin-field-label {
+  margin-bottom: 8px;
+  display: block;
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+/* Caja visual para grupos de formulario */
+.admin-form-card {
+  border: 1px solid #bfe8ee;
+  background: linear-gradient(180deg, #fbfeff 0%, #f4fbfd 100%);
+  border-radius: 20px;
+  padding: 18px;
+  box-shadow: 0 8px 22px rgba(8, 115, 129, 0.04);
+}
+
+/* Dark mode */
+html[data-theme="dark"] .admin-control {
+  border-color: #243542;
+  background: #0b1319;
+  color: #ffffff;
+  box-shadow: none;
+}
+
+html[data-theme="dark"] .admin-control::placeholder {
+  color: #94a3b8;
+}
+
+html[data-theme="dark"] .admin-control:hover {
+  border-color: rgba(0, 184, 200, 0.45);
+  background: #101c25;
+}
+
+html[data-theme="dark"] .admin-control:focus {
+  border-color: #00b8c8;
+  background: #0b1319;
+  box-shadow: 0 0 0 4px rgba(0, 184, 200, 0.12);
+}
+
+html[data-theme="dark"] select.admin-control {
+  background-image:
+    linear-gradient(45deg, transparent 50%, #f8fafc 50%),
+    linear-gradient(135deg, #f8fafc 50%, transparent 50%);
+}
+
+html[data-theme="dark"] .admin-field-label {
+  color: #94a3b8;
+}
+
+html[data-theme="dark"] .admin-form-card {
+  border-color: #243542;
+  background: linear-gradient(180deg, #111b22 0%, #0f1a22 100%);
+  box-shadow: none;
+}

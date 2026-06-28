@@ -1,21 +1,13 @@
 "use client";
 
-import Image from "next/image";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { ReactNode } from "react";
-import type { PriceTier, Product } from "@/types/product";
+import { useEffect, useMemo, useState } from "react";
+import type { Product } from "@/types/product";
 import type { ProductCategory } from "@/types/category";
-import {
-  getAdminProducts,
-  toggleAdminProductStatus,
-  updateAdminProduct,
-  createAdminProduct,
-  deleteAdminProduct,
-} from "@/lib/adminProducts";
+import { getAdminProducts } from "@/lib/adminProducts";
 import { fetchAdminCategories } from "@/lib/adminCategories";
 import { fallbackProductCategories } from "@/lib/productCategories";
-import { uploadImage, deleteStorageImages, parseImageField } from "@/lib/storage";
-import { normalizePriceTiers } from "@/lib/pricing";
+import ProductTable from "./products/ProductTable";
+import ProductEditorModal from "./products/ProductEditorModal";
 
 const initialProductState: Partial<Product> = {
   name: "",
@@ -29,6 +21,7 @@ const initialProductState: Partial<Product> = {
   wholesale_from: null,
   price_tiers: [],
   image: "",
+  images: [],
   sizes: [],
   colors: [],
   color_images: {},
@@ -39,180 +32,94 @@ const initialProductState: Partial<Product> = {
   active: true,
 };
 
-type ArrayField = keyof Pick<Product, "sizes" | "colors" | "technologies" | "certifications">;
-
-const sizeOptions = ["S", "M", "L", "XL", "2XL", "3XL", "4XL"];
-
-const colorOptions = [
-  { name: "amarillo", hex: "#eab308" },
-  { name: "arena", hex: "#d8c3a5" },
-  { name: "azul marino", hex: "#1e3a5f" },
-  { name: "azul rey", hex: "#1d4ed8" },
-  { name: "azul royal", hex: "#1d4ed8" },
-  { name: "blanco", hex: "#ffffff" },
-  { name: "camel", hex: "#c19a6b" },
-  { name: "celeste", hex: "#93c5fd" },
-  { name: "fucsia", hex: "#d946ef" },
-  { name: "granate", hex: "#7f1d1d" },
-  { name: "gris", hex: "#9ca3af" },
-  { name: "gris oscuro", hex: "#4b5563" },
-  { name: "gris jaspeado", hex: "#b6bbc3" },
-  { name: "gris vigore", hex: "#6b7280" },
-  { name: "morado", hex: "#7c3aed" },
-  { name: "naranja", hex: "#ea580c" },
-  { name: "naranjo", hex: "#ea580c" },
-  { name: "negro", hex: "#1a1a1a" },
-  { name: "plomo", hex: "#6b7280" },
-  { name: "rojo", hex: "#dc2626" },
-  { name: "rosa claro", hex: "#f9a8d4" },
-  { name: "turqueza", hex: "#14b8a6" },
-  { name: "turquesa", hex: "#14b8a6" },
-  { name: "verde aceituna", hex: "#4d7c0f" },
-  { name: "verde manzana", hex: "#84cc16" },
-  { name: "verde mist", hex: "#8fb9a8" },
-  { name: "verde pino", hex: "#166534" },
-];
-
-const technologyOptions = [
-  "Antipilling",
-  "Estabilidad dimensional",
-  "Solidez de color por luz",
-  "Proteccion UPF+",
-  "Secado rapido",
-  "Respirable",
-];
-
-const certificationOptions = [
-  "OEKO-TEX",
-  "WRAP",
-  "BSCI",
-  "ISO 9001",
-  "Global Recycled Standard",
-  "Fair Wear",
-];
-
-const fabricOptions = [
-  "100% algodon",
-  "80% algodon, 20% poliester",
-  "65% poliester, 35% algodon",
-  "100% poliester",
-  "Softshell tecnico",
-  "Dry-fit",
-  "Polar",
-  "Gabardina",
-];
-
-function getProductImages(product?: Partial<Product> | null) {
-  const directImages = Array.isArray(product?.images) ? product.images : [];
-  const parsedImages = parseImageField(product?.image);
-  return Array.from(new Set([...directImages, ...parsedImages])).filter(Boolean);
-}
-
-function serializeImages(images: string[]) {
-  const cleanImages = images.map((image) => image.trim()).filter(Boolean);
-
-  if (cleanImages.length === 0) return "";
-  if (cleanImages.length === 1) return cleanImages[0];
-  return JSON.stringify(cleanImages);
-}
-
-function formatImagesForInput(product?: Partial<Product> | null) {
-  return getProductImages(product).join("\n");
-}
-
 export default function AdminProducts() {
   const [products, setProducts] = useState<Product[]>([]);
-  const [productCategories, setProductCategories] = useState<ProductCategory[]>([]);
+  const [productCategories, setProductCategories] = useState<ProductCategory[]>(
+    [],
+  );
+
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("todas");
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  
-  // Estados para el CRUD (Creación, Edición y Eliminación)
+
   const [isPanelOpen, setIsPanelOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<Partial<Product> | null>(null);
-  const editingRef = useRef(editingProduct);
-  const isNewProduct = !editingProduct?.id;
-
-  useEffect(() => {
-    editingRef.current = editingProduct;
-  }, [editingProduct]);
-
-  useEffect(() => {
-    if (!isPanelOpen) return;
-    const previousBodyOverflow = document.body.style.overflow;
-    const previousHtmlOverflow = document.documentElement.style.overflow;
-    document.body.style.overflow = "hidden";
-    document.documentElement.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = previousBodyOverflow;
-      document.documentElement.style.overflow = previousHtmlOverflow;
-    };
-  }, [isPanelOpen]);
+  const [editingProduct, setEditingProduct] =
+    useState<Partial<Product> | null>(null);
 
   useEffect(() => {
     let mounted = true;
+
     Promise.all([
       getAdminProducts(),
       fetchAdminCategories().catch(() => fallbackProductCategories),
-    ]).then(([data, categoryRows]) => {
+    ]).then(([productRows, categoryRows]) => {
       if (!mounted) return;
-      setProducts(data);
-      setProductCategories(categoryRows.length ? categoryRows : fallbackProductCategories);
+
+      setProducts(productRows);
+      setProductCategories(
+        categoryRows.length ? categoryRows : fallbackProductCategories,
+      );
       setLoading(false);
     });
+
     return () => {
       mounted = false;
     };
   }, []);
 
-  const categoryOptions = useMemo(
-    () => [
-      { value: "todas", label: "Todas las categorias" },
+  useEffect(() => {
+    if (!isPanelOpen) return;
+
+    const bodyOverflow = document.body.style.overflow;
+    const htmlOverflow = document.documentElement.style.overflow;
+
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = bodyOverflow;
+      document.documentElement.style.overflow = htmlOverflow;
+    };
+  }, [isPanelOpen]);
+
+  const categoryOptions = useMemo(() => {
+    return [
+      { value: "todas", label: "Todas las categorías" },
       ...productCategories.map((item) => ({
         value: item.slug,
         label: item.label,
       })),
-    ],
-    [productCategories],
-  );
+    ];
+  }, [productCategories]);
 
-  const categoryLabelBySlug = useMemo(
-    () =>
-      productCategories.reduce<Record<string, string>>((acc, item) => {
-        acc[item.slug] = item.label;
-        return acc;
-      }, {}),
-    [productCategories],
-  );
+  const categoryLabelBySlug = useMemo(() => {
+    return productCategories.reduce<Record<string, string>>((acc, item) => {
+      acc[item.slug] = item.label;
+      return acc;
+    }, {});
+  }, [productCategories]);
 
   const filteredProducts = useMemo(() => {
+    const cleanSearch = search.toLowerCase().trim();
+
     return products.filter((product) => {
-      const searchText = search.toLowerCase();
       const matchesSearch =
-        product.name?.toLowerCase().includes(searchText) ||
-        product.short_name?.toLowerCase().includes(searchText);
-      const matchesCategory = category === "todas" || product.category === category;
+        !cleanSearch ||
+        product.name?.toLowerCase().includes(cleanSearch) ||
+        product.short_name?.toLowerCase().includes(cleanSearch) ||
+        product.slug?.toLowerCase().includes(cleanSearch);
+
+      const matchesCategory =
+        category === "todas" || product.category === category;
+
       return matchesSearch && matchesCategory;
     });
   }, [products, search, category]);
 
-  const activeProducts = useMemo(
-    () => products.filter((product) => product.active).length,
-    [products]
-  );
+  const activeProducts = useMemo(() => {
+    return products.filter((product) => product.active).length;
+  }, [products]);
 
-  const selectedColors = Array.isArray(editingProduct?.colors) ? editingProduct.colors : [];
-  const selectedSizes = Array.isArray(editingProduct?.sizes) ? editingProduct.sizes : [];
-  const selectedTechnologies = Array.isArray(editingProduct?.technologies)
-    ? editingProduct.technologies
-    : [];
-  const selectedCertifications = Array.isArray(editingProduct?.certifications)
-    ? editingProduct.certifications
-    : [];
-  const selectedPriceTiers = normalizePriceTiers(editingProduct?.price_tiers);
-
-  // Abrir panel para Crear
   function handleCreateClick() {
     setEditingProduct({
       ...initialProductState,
@@ -221,295 +128,124 @@ export default function AdminProducts() {
     setIsPanelOpen(true);
   }
 
-  // Abrir panel para Editar
   function handleEditClick(product: Product) {
     setEditingProduct({ ...product });
     setIsPanelOpen(true);
   }
 
-  async function toggleActive(product: Product) {
-    try {
-      const updated = await toggleAdminProductStatus(product.id, !product.active);
-      setProducts((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
-    } catch (err) {
-      alert("Error al actualizar el estado.");
-      console.error(err);
-    }
+  function closePanel() {
+    setIsPanelOpen(false);
+    setEditingProduct(null);
   }
 
-  const updateField = useCallback((field: keyof Product, value: string) => {
-    const product = editingRef.current;
-    if (!product) return;
-    const numeric = ["price", "wholesale_price", "wholesale_from"];
-    setEditingProduct({
-      ...product,
-      [field]: numeric.includes(field) ? (value === "" ? null : Number(value)) : value,
-    });
-  }, []);
+  function handleProductSaved(product: Product) {
+    setProducts((prev) => {
+      const exists = prev.some((item) => item.id === product.id);
 
-  function updateListField(field: ArrayField, value: string) {
-    if (!editingProduct) return;
-    setEditingProduct({
-      ...editingProduct,
-      [field]: value
-        .split(",")
-        .map((item) => item.trim())
-        .filter(Boolean),
-    });
-  }
-
-  function formatList(value: unknown) {
-    return Array.isArray(value) ? value.join(", ") : "";
-  }
-
-  function getArrayValue(field: ArrayField) {
-    const value = editingRef.current?.[field];
-    return Array.isArray(value) ? value : [];
-  }
-
-  const toggleArrayValue = useCallback((field: ArrayField, value: string) => {
-    const product = editingRef.current;
-    if (!product) return;
-
-    const current = getArrayValue(field);
-    const next = current.includes(value)
-      ? current.filter((item) => item !== value)
-      : [...current, value];
-
-    setEditingProduct({
-      ...product,
-      [field]: next,
-    });
-  }, []);
-
-  const setNumberValue = useCallback((field: "price" | "wholesale_price" | "wholesale_from", value: number) => {
-    const product = editingRef.current;
-    if (!product) return;
-    setEditingProduct({
-      ...product,
-      [field]: Math.max(0, value),
-    });
-  }, []);
-
-  const stepNumberValue = useCallback((field: "price" | "wholesale_price" | "wholesale_from", step: number) => {
-    const current = Number(editingRef.current?.[field] || 0);
-    setNumberValue(field, current + step);
-  }, [setNumberValue]);
-
-  function updatePriceTier(index: number, field: keyof PriceTier, value: string) {
-    if (!editingProduct) return;
-    const tiers = normalizePriceTiers(editingProduct.price_tiers);
-    const next = [...tiers];
-    const current = next[index] || { from: 1, price: 0 };
-    next[index] = {
-      ...current,
-      [field]: Math.max(0, Number(value || 0)),
-    };
-    setEditingProduct({
-      ...editingProduct,
-      price_tiers: normalizePriceTiers(next),
-    });
-  }
-
-  function addPriceTier() {
-    if (!editingProduct) return;
-    const tiers = normalizePriceTiers(editingProduct.price_tiers);
-    const last = tiers[tiers.length - 1];
-    setEditingProduct({
-      ...editingProduct,
-      price_tiers: [
-        ...tiers,
-        {
-          from: last ? last.from + 5 : Number(editingProduct.wholesale_from || 5),
-          price: last ? last.price : Number(editingProduct.wholesale_price || editingProduct.price || 0),
-        },
-      ],
-    });
-  }
-
-  function removePriceTier(index: number) {
-    if (!editingProduct) return;
-    setEditingProduct({
-      ...editingProduct,
-      price_tiers: normalizePriceTiers(editingProduct.price_tiers).filter((_, i) => i !== index),
-    });
-  }
-
-  const updateImageGallery = useCallback((images: string[]) => {
-    const product = editingRef.current;
-    if (!product) return;
-    const cleanImages = Array.from(new Set(images.map((image) => image.trim()).filter(Boolean)));
-    const imageSet = new Set(cleanImages);
-    const colorImages = { ...(product.color_images || {}) };
-    Object.keys(colorImages).forEach((c) => {
-      colorImages[c] = colorImages[c].filter((u) => imageSet.has(u));
-      if (colorImages[c].length === 0) delete colorImages[c];
-    });
-
-    setEditingProduct({
-      ...product,
-      image: serializeImages(cleanImages),
-      images: cleanImages,
-      color_images: colorImages,
-    });
-  }, []);
-
-  function updateImageGalleryFromText(value: string) {
-    updateImageGallery(
-      value
-        .split(/\n|,/)
-        .map((image) => image.trim())
-        .filter(Boolean)
-    );
-  }
-
-  const [uploading, setUploading] = useState(false);
-
-  async function handleImageUpload(files?: FileList | null) {
-    if (!files?.length || !editingProduct) return;
-    const imageFiles = Array.from(files).filter((file) =>
-      file.type.startsWith("image/")
-    );
-    if (imageFiles.length === 0) {
-      alert("Selecciona imagenes validas para el producto.");
-      return;
-    }
-    const productId = editingProduct.id || `temp-${Date.now()}`;
-    setUploading(true);
-    try {
-      const uploadedUrls = await Promise.all(
-        imageFiles.map((file) => uploadImage(file, productId))
-      );
-      updateImageGallery([...getProductImages(editingProduct), ...uploadedUrls]);
-    } catch (err) {
-      alert("Error al subir imagenes. Revisa la consola.");
-      console.error(err);
-    } finally {
-      setUploading(false);
-    }
-  }
-
-  async function removeGalleryImage(imageToRemove: string) {
-    updateImageGallery(
-      getProductImages(editingProduct).filter((image) => image !== imageToRemove)
-    );
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    if (supabaseUrl && imageToRemove.startsWith(supabaseUrl)) {
-      try {
-        await deleteStorageImages([imageToRemove]);
-      } catch (err) {
-        console.error("Error al eliminar imagen de Storage:", err);
+      if (exists) {
+        return prev.map((item) => (item.id === product.id ? product : item));
       }
-    }
+
+      return [product, ...prev];
+    });
+
+    closePanel();
   }
 
-  function setPrimaryGalleryImage(imageToPromote: string) {
-    const images = getProductImages(editingProduct);
-    updateImageGallery([
-      imageToPromote,
-      ...images.filter((image) => image !== imageToPromote),
-    ]);
+  function handleProductUpdated(product: Product) {
+    setProducts((prev) =>
+      prev.map((item) => (item.id === product.id ? product : item)),
+    );
   }
 
-  // Guardar (Soporta Crear y Editar)
-  async function saveProduct() {
-    if (!editingProduct) return;
-    try {
-      setSaving(true);
-      if (isNewProduct) {
-        const created = await createAdminProduct(editingProduct as Omit<Product, "id">);
-        setProducts((prev) => [created, ...prev]);
-      } else {
-        const updated = await updateAdminProduct(editingProduct as Product);
-        setProducts((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
-      }
-      setIsPanelOpen(false);
-      setEditingProduct(null);
-    } catch (err) {
-      alert("Error al guardar el producto.");
-      console.error(err);
-    } finally {
-      setSaving(false);
-    }
-  }
+  function handleProductDeleted(productId: string) {
+    setProducts((prev) => prev.filter((item) => item.id !== productId));
 
-  // Eliminar producto
-  async function handleDelete(id: string) {
-    if (!confirm("¿Estás seguro de que deseas eliminar este producto de forma permanente?")) return;
-    try {
-      const deleted = await deleteAdminProduct(id);
-      setProducts((prev) => prev.filter((p) => p.id !== deleted.id));
-      setIsPanelOpen(false);
-      setEditingProduct(null);
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Error al eliminar el producto.";
-      alert(message);
-      console.error(err);
+    if (editingProduct?.id === productId) {
+      closePanel();
     }
   }
 
   return (
     <>
-      <section className="overflow-hidden rounded-2xl border border-accent-soft/50 bg-white shadow-sm shadow-slate-100/50 animate-fade-in">
-        {/* CABECERA DE LA TABLA */}
-        <div className="border-b border-slate-100 bg-white px-5 py-6 sm:px-6">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      <section className="animate-fade-in overflow-hidden rounded-2xl border border-[#bfe8ee] bg-[linear-gradient(180deg,#fbfeff_0%,#f3fbfd_100%)] shadow-[0_12px_30px_rgba(8,115,129,0.06)] [html[data-theme='dark']_&]:border-[#243542] [html[data-theme='dark']_&]:bg-[linear-gradient(180deg,#111b22_0%,#0f1a22_100%)] [html[data-theme='dark']_&]:shadow-[0_18px_42px_rgba(0,0,0,0.32)]">
+        <div className="border-b border-[#cfe8ee] px-5 py-4 sm:px-6 [html[data-theme='dark']_&]:border-[#243542]">
+          <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
             <div>
-              <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-accent">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0ea5b7] [html[data-theme='dark']_&]:text-[#00b8c8]">
                 Inventario
               </p>
-              <h2 className="mt-1 text-xl font-bold tracking-tight text-slate-900">Productos publicados</h2>
-              <p className="mt-1 text-sm text-slate-500">
-                {products.length} productos cargados, {activeProducts} disponibles para cotizar.
+
+              <h2 className="mt-1 text-[24px] font-black leading-tight tracking-[-0.045em] text-[#071827] [html[data-theme='dark']_&]:text-white">
+                Productos publicados
+              </h2>
+
+              <p className="mt-1 text-[12px] font-bold text-[#334155] [html[data-theme='dark']_&]:text-[#cbd5e1]">
+                {products.length} productos cargados, {activeProducts}{" "}
+                disponibles para cotizar.
               </p>
             </div>
 
-            <div className="flex flex-wrap items-center gap-4 self-end md:self-auto">
-              {/* Bloque de Métricas (Inspirado en image_d77835.png) */}
-              <div className="grid grid-cols-3 overflow-hidden rounded-xl border border-accent-soft/30 bg-surface-2/50">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <div className="grid grid-cols-3 overflow-hidden rounded-2xl border border-[#bfe8ee] bg-[#f6fcfe] [html[data-theme='dark']_&]:border-[#243542] [html[data-theme='dark']_&]:bg-[#0b1319]/70">
                 <Metric label="Total" value={products.length} />
                 <Metric label="Activos" value={activeProducts} />
                 <Metric label="Vista" value={filteredProducts.length} />
               </div>
-              
-              {/* Botón Añadir Producto (CRUD) */}
+
               <button
+                type="button"
                 onClick={handleCreateClick}
-                className="inline-flex items-center gap-2 rounded-xl bg-accent px-4 py-3 text-sm font-semibold text-white transition-all duration-200 hover:bg-accent hover:shadow-lg hover:shadow-accent/10 active:scale-[0.98]"
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#21b7c7] px-5 text-[13px] font-black text-white shadow-[0_12px_24px_rgba(33,183,199,0.2)] transition hover:-translate-y-0.5 hover:bg-[#087381] hover:shadow-[0_16px_30px_rgba(8,115,129,0.22)] active:translate-y-0 active:scale-[0.99] [html[data-theme='dark']_&]:bg-[#00b8c8] [html[data-theme='dark']_&]:text-[#071827] [html[data-theme='dark']_&]:hover:bg-[#9eeef4]"
               >
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                <svg
+                  className="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2.8}
+                  aria-hidden="true"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 4v16m8-8H4"
+                  />
                 </svg>
                 Nuevo producto
               </button>
             </div>
           </div>
 
-          {/* FILTROS Y BÚSQUEDA */}
-          <div className="mt-6 grid gap-3 lg:grid-cols-[1fr_260px]">
+          <div className="mt-4 grid gap-3 lg:grid-cols-[1fr_260px]">
             <div className="relative">
               <svg
-                className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+                className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#64748b] [html[data-theme='dark']_&]:text-[#94a3b8]"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
                 strokeWidth={2}
+                aria-hidden="true"
               >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5-5M10 18a8 8 0 100-16 8 8 0 000 16z" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M21 21l-5-5M10 18a8 8 0 100-16 8 8 0 000 16z"
+                />
               </svg>
+
               <input
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Buscar por producto o nombre corto..."
-                className="admin-control !pl-10"
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Buscar por producto, nombre corto o slug..."
+                className="h-11 w-full rounded-2xl border border-[#bfe8ee] bg-white px-4 pl-10 text-[13px] font-bold text-[#071827] outline-none transition placeholder:text-[#64748b] focus:border-[#21b7c7] focus:ring-4 focus:ring-[#21b7c7]/10 [html[data-theme='dark']_&]:border-[#243542] [html[data-theme='dark']_&]:bg-[#0b1319] [html[data-theme='dark']_&]:text-white [html[data-theme='dark']_&]:placeholder:text-[#94a3b8] [html[data-theme='dark']_&]:focus:border-[#00b8c8]"
               />
             </div>
 
             <select
               value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="admin-control"
+              onChange={(event) => setCategory(event.target.value)}
+              className="h-11 rounded-2xl border border-[#bfe8ee] bg-white px-4 text-[13px] font-black text-[#071827] outline-none transition focus:border-[#21b7c7] focus:ring-4 focus:ring-[#21b7c7]/10 [html[data-theme='dark']_&]:border-[#243542] [html[data-theme='dark']_&]:bg-[#0b1319] [html[data-theme='dark']_&]:text-white [html[data-theme='dark']_&]:focus:border-[#00b8c8]"
             >
               {categoryOptions.map((item) => (
                 <option key={item.value} value={item.value}>
@@ -520,690 +256,25 @@ export default function AdminProducts() {
           </div>
         </div>
 
-        {/* CONTENEDOR DE LA TABLA */}
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[920px] text-left text-sm">
-            <thead className="bg-slate-50/70 border-b border-slate-100">
-              <tr>
-                {["Producto", "Categoria", "Precio", "Mayorista", "Estado", "Acciones"].map((header) => (
-                  <th
-                    key={header}
-                    className={`px-6 py-4 text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400 ${
-                      header === "Acciones" ? "text-right" : ""
-                    }`}
-                  >
-                    {header}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 bg-white">
-              {loading && (
-                <tr>
-                  <td colSpan={6} className="px-6 py-16 text-center text-slate-400 font-medium">
-                    <span className="inline-flex items-center gap-3">
-                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-accent-soft border-t-accent" />
-                      Cargando catálogo de productos...
-                    </span>
-                  </td>
-                </tr>
-              )}
-
-              {!loading &&
-                filteredProducts.map((product) => (
-                  <tr key={product.id} className="transition-colors duration-150 hover:bg-surface-2/30">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-4">
-                        <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-slate-100 bg-white p-1 shadow-sm shadow-slate-100">
-                          <Image
-                            unoptimized
-                            src={getProductImages(product)[0] || ""}
-                            alt={product.name || ""}
-                            fill
-                            sizes="48px"
-                            className="object-contain p-1"
-                          />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="font-semibold text-slate-900">{product.short_name}</p>
-                          <p className="mt-0.5 truncate text-xs text-slate-400">
-                            {product.name}
-                          </p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium capitalize text-slate-600">
-                        {categoryLabelBySlug[product.category] || product.category}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 font-bold text-slate-900">
-                      ${product.price?.toLocaleString("es-CL")}
-                    </td>
-                    <td className="px-6 py-4 font-medium text-slate-400">
-                      {product.wholesale_price
-                        ? `$${product.wholesale_price.toLocaleString("es-CL")}`
-                        : "—"}
-                    </td>
-                    <td className="px-6 py-4">
-                      <button
-                        onClick={() => toggleActive(product)}
-                        className={`inline-flex min-w-[80px] items-center justify-center rounded-full px-2.5 py-1 text-xs font-semibold transition-all duration-200 ${
-                          product.active
-                            ? "bg-accent-soft text-accent hover:bg-accent-soft border border-accent-soft/30"
-                            : "bg-slate-50 text-slate-400 hover:bg-slate-100 border border-slate-200/40"
-                        }`}
-                      >
-                        {product.active ? "Activo" : "Inactivo"}
-                      </button>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => handleEditClick(product)}
-                          className="rounded-xl border border-orange-200 bg-orange-50 px-4 py-2 text-xs font-semibold text-orange-700 transition-colors hover:bg-orange-100"
-                        >
-                          Editar
-                        </button>
-                        <button
-                          onClick={() => handleDelete(product.id)}
-                          className="rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-xs font-semibold text-red-600 transition-colors hover:bg-red-100"
-                        >
-                          Eliminar
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-
-              {!loading && filteredProducts.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="px-6 py-16 text-center text-sm font-medium text-slate-400">
-                    Ningún producto coincide con los filtros aplicados.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        <ProductTable
+          products={filteredProducts}
+          loading={loading}
+          categoryLabelBySlug={categoryLabelBySlug}
+          onEdit={handleEditClick}
+          onProductUpdated={handleProductUpdated}
+          onProductDeleted={handleProductDeleted}
+        />
       </section>
 
-      {/* COMPONENTE CRUD: MODAL CENTRAL (CREAR / EDITAR) */}
       {isPanelOpen && editingProduct && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center p-3 sm:p-5">
-          {/* Backdrop */}
-          <button
-            className="absolute inset-0 bg-slate-950/45 backdrop-blur-md transition-opacity duration-300 animate-fade-in"
-            onClick={() => setIsPanelOpen(false)}
-            aria-label="Cerrar editor"
-          />
-
-          <aside
-            className="relative flex max-h-[92vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-white/70 bg-white shadow-[0_28px_90px_rgba(15,23,42,0.28)] animate-scale-in"
-            role="dialog"
-            aria-modal="true"
-            aria-label={isNewProduct ? "Crear producto" : "Editar producto"}
-          >
-            {/* Cabecera del Panel */}
-            <div className="border-b border-slate-100 bg-gradient-to-r from-surface-2 via-white to-accent-soft/45 px-5 py-4 sm:px-6">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-accent">
-                    {isNewProduct ? "Gestión de catálogo" : "Editor de producto"}
-                  </p>
-                  <h3 className="mt-1 text-2xl font-bold tracking-tight text-slate-900">
-                    {isNewProduct ? "Nuevo Producto" : editingProduct.short_name}
-                  </h3>
-                  <p className="mt-1 text-xs font-medium text-slate-500">
-                    Completa la ficha comercial sin perder las acciones de guardado.
-                  </p>
-                </div>
-                <button
-                  onClick={() => setIsPanelOpen(false)}
-                  className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-400 transition-colors hover:text-accent hover:border-accent-soft"
-                  aria-label="Cerrar"
-                >
-                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-
-            {/* Cuerpo del Formulario */}
-            <div className="grid flex-1 min-h-0 gap-5 overflow-y-auto overscroll-contain px-5 py-5 sm:px-6 lg:grid-cols-[300px_minmax(0,1fr)]">
-              {/* Vista previa de imagen */}
-              <div className="lg:sticky lg:top-0 lg:self-start">
-                <div className="rounded-2xl border border-slate-100 bg-slate-50/80 p-4 shadow-inner">
-                  <div className="relative flex h-56 items-center justify-center rounded-xl bg-white">
-                    <Image
-                      unoptimized
-                      src={getProductImages(editingProduct)[0] || "/rokko.png"}
-                      alt={editingProduct.name || ""}
-                      fill
-                      sizes="(max-width: 1024px) 100vw, 300px"
-                      className="object-contain p-6"
-                    />
-                  </div>
-                  <div className="mt-4 rounded-xl border border-slate-200 bg-white px-4 py-3">
-                    <p className="text-[10px] font-black uppercase tracking-[0.16em] text-accent">
-                      Vista rapida
-                    </p>
-                    <p className="mt-1 text-sm font-black text-slate-900">
-                      {editingProduct.short_name || "Producto sin nombre"}
-                    </p>
-                    <p className="mt-1 line-clamp-3 text-xs leading-5 text-slate-500">
-                      {editingProduct.name || editingProduct.description || "Completa los datos base para identificar la prenda."}
-                    </p>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      <span className="rounded-full bg-accent-soft px-2.5 py-1 text-[10px] font-black capitalize text-accent">
-                        {categoryLabelBySlug[editingProduct.category || ""] || editingProduct.category || "categoria"}
-                      </span>
-                      <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-black text-slate-500">
-                        ${Number(editingProduct.price || 0).toLocaleString("es-CL")}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="min-w-0 space-y-5">
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <InputBlock label="Nombre corto">
-                    <input
-                      value={editingProduct.short_name || ""}
-                      onChange={(e) => updateField("short_name", e.target.value)}
-                      placeholder="Ej. Heavy Cotton MC"
-                      className="admin-control"
-                    />
-                  </InputBlock>
-
-                  <InputBlock label="Categoría">
-                    <select
-                      value={editingProduct.category || productCategories[0]?.slug || "poleras"}
-                      onChange={(e) => updateField("category", e.target.value)}
-                      className="admin-control"
-                    >
-                      {categoryOptions
-                        .filter((item) => item.value !== "todas")
-                        .map((item) => (
-                          <option key={item.value} value={item.value}>
-                            {item.label}
-                          </option>
-                        ))}
-                    </select>
-                  </InputBlock>
-                </div>
-
-                <InputBlock label="Nombre completo de exhibición">
-                  <input
-                    value={editingProduct.name || ""}
-                    onChange={(e) => updateField("name", e.target.value)}
-                    placeholder="Ej. Polera Heavy Cotton Manga Corta"
-                    className="admin-control"
-                  />
-                </InputBlock>
-
-                <InputBlock label="Descripción o Glosa">
-                  <textarea
-                    value={editingProduct.description || ""}
-                    onChange={(e) => updateField("description", e.target.value)}
-                    rows={3}
-                    placeholder="Detalles sobre el material, tallajes o especificaciones base del producto..."
-                    className="admin-control resize-none"
-                  />
-                </InputBlock>
-
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <InputBlock label="Slug">
-                    <input
-                      value={editingProduct.slug || ""}
-                      onChange={(e) => updateField("slug", e.target.value)}
-                      placeholder="ej. heavy-cotton-mc"
-                      className="admin-control"
-                    />
-                  </InputBlock>
-
-                  <InputBlock label="Extracto">
-                    <input
-                      value={editingProduct.extract || ""}
-                      onChange={(e) => updateField("extract", e.target.value)}
-                      placeholder="Resumen breve del producto"
-                      className="admin-control"
-                    />
-                  </InputBlock>
-                </div>
-
-                <InputBlock label="Galeria de imagenes del producto">
-                  <div className="grid gap-3">
-                    <textarea
-                      value={formatImagesForInput(editingProduct)}
-                      onChange={(e) => updateImageGalleryFromText(e.target.value)}
-                      rows={3}
-                      placeholder="Pega URLs o rutas, una por linea. Tambien puedes cargar varias imagenes desde tu equipo."
-                      className="admin-control resize-none"
-                    />
-                    <div className="flex flex-wrap items-center gap-3">
-                      <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-accent-soft bg-accent-soft px-4 py-2.5 text-xs font-semibold text-accent transition-colors hover:bg-accent-soft disabled:opacity-50 disabled:cursor-not-allowed">
-                        <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 16V4m0 0 4 4m-4-4-4 4M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
-                        </svg>
-                        {uploading ? "Subiendo..." : "Cargar varias desde mi equipo"}
-                        <input
-                          type="file"
-                          multiple
-                          accept="image/png,image/jpeg,image/webp"
-                          onChange={(e) => handleImageUpload(e.target.files)}
-                          className="sr-only"
-                          disabled={uploading}
-                        />
-                      </label>
-                      {getProductImages(editingProduct).length > 0 && (
-                        <button
-                          type="button"
-                          onClick={() => updateImageGallery([])}
-                          className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-500 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600"
-                        >
-                          Quitar todas
-                        </button>
-                      )}
-                    </div>
-                    {getProductImages(editingProduct).length > 0 && (
-                      <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
-                        {getProductImages(editingProduct).map((image, index) => {
-                          const assignedColor = Object.entries(editingProduct?.color_images || {}).find(([, urls]) => urls.includes(image))?.[0];
-                          return (
-                            <div
-                              key={`${image}-${index}`}
-                              className="group relative overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-2"
-                            >
-                              <div className="relative flex h-24 items-center justify-center">
-                                <Image
-                                  unoptimized
-                                  src={image}
-                                  alt={`Imagen ${index + 1}`}
-                                  fill
-                                  sizes="96px"
-                                  className="object-contain p-1"
-                                />
-                              </div>
-                              <select
-                                value={assignedColor || ""}
-                                onChange={(e) => {
-                                  const color = e.target.value;
-                                  const current = { ...(editingProduct?.color_images || {}) };
-                                  Object.keys(current).forEach((c) => {
-                                    current[c] = current[c].filter((u) => u !== image);
-                                    if (current[c].length === 0) delete current[c];
-                                  });
-                                  if (color) {
-                                    current[color] = [...(current[color] || []), image];
-                                  }
-                                  setEditingProduct({ ...editingProduct!, color_images: current });
-                                }}
-                                className="mt-1 w-full rounded-md border border-slate-200 bg-white px-1 py-1 text-[10px] outline-none"
-                              >
-                                <option value="">Sin color</option>
-                                {(editingProduct?.colors || []).map((c) => (
-                                  <option key={c} value={c}>{c}</option>
-                                ))}
-                              </select>
-                              <div className="mt-1 flex items-center gap-1">
-                                <button
-                                  type="button"
-                                  onClick={() => setPrimaryGalleryImage(image)}
-                                  className={`flex-1 rounded-lg px-2 py-1.5 text-[10px] font-bold transition-colors ${
-                                    index === 0
-                                      ? "bg-accent text-white"
-                                      : "bg-white text-slate-500 hover:text-accent"
-                                  }`}
-                                >
-                                  {index === 0 ? "Principal" : "Principal"}
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => removeGalleryImage(image)}
-                                  className="rounded-lg bg-white px-2 py-1.5 text-[10px] font-bold text-red-500 transition-colors hover:bg-red-50"
-                                >
-                                  X
-                                </button>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                    <p className="text-[11px] leading-5 text-slate-400">
-                      La primera imagen queda como principal. Si hay varias, se guardan en el campo image como una lista compatible con el carrusel del cotizador.
-                    </p>
-                  </div>
-                </InputBlock>
-
-                {/* Sección de Precios */}
-                <div className="rounded-2xl border border-accent-soft/30 bg-surface-2/40 p-5">
-                  <p className="mb-4 text-xs font-bold uppercase tracking-[0.14em] text-accent">
-                    Estructura de precios (CLP)
-                  </p>
-                  <div className="grid gap-3 sm:grid-cols-3">
-                    <InputBlock label="Unitario">
-                      <input
-                        type="number"
-                        value={editingProduct.price ?? ""}
-                        onChange={(e) => updateField("price", e.target.value)}
-                        className="admin-control"
-                      />
-                    </InputBlock>
-                    <InputBlock label="P. Mayorista">
-                      <input
-                        type="number"
-                        value={editingProduct.wholesale_price ?? ""}
-                        onChange={(e) => updateField("wholesale_price", e.target.value)}
-                        className="admin-control"
-                      />
-                    </InputBlock>
-                    <InputBlock label="Min. Unidades">
-                      <div className="flex items-center rounded-xl border border-slate-200 bg-white p-1">
-                        <button
-                          type="button"
-                          onClick={() => stepNumberValue("wholesale_from", -1)}
-                          className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100"
-                          aria-label="Bajar cantidad minima"
-                        >
-                          -
-                        </button>
-                        <input
-                          type="number"
-                          min={0}
-                          value={editingProduct.wholesale_from ?? ""}
-                          onChange={(e) => updateField("wholesale_from", e.target.value)}
-                          className="min-w-0 flex-1 bg-transparent px-2 text-center text-sm font-semibold text-slate-800 outline-none"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => stepNumberValue("wholesale_from", 1)}
-                          className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100"
-                          aria-label="Subir cantidad minima"
-                        >
-                          +
-                        </button>
-                      </div>
-                    </InputBlock>
-                  </div>
-                  <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-4">
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div>
-                        <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
-                          Escala por volumen
-                        </p>
-                        <p className="mt-1 text-[11px] leading-5 text-slate-400">
-                          Define varios tramos. El cotizador aplica el precio del mayor tramo alcanzado.
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={addPriceTier}
-                        className="rounded-xl border border-accent-soft bg-accent-soft px-4 py-2 text-xs font-bold text-accent transition-colors hover:bg-accent-soft/60"
-                      >
-                        Agregar tramo
-                      </button>
-                    </div>
-
-                    <div className="mt-4 space-y-2">
-                      {selectedPriceTiers.length === 0 && (
-                        <p className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-3 py-3 text-xs text-slate-400">
-                          Sin tramos. Se usara el precio unitario y, si existe, el mayorista simple.
-                        </p>
-                      )}
-                      {selectedPriceTiers.map((tier, index) => (
-                        <div key={`${tier.from}-${index}`} className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
-                          <label className="block">
-                            <span className="mb-1 block text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">
-                              Desde unidades
-                            </span>
-                            <input
-                              type="number"
-                              min={1}
-                              value={tier.from}
-                              onChange={(e) => updatePriceTier(index, "from", e.target.value)}
-                              className="admin-control"
-                            />
-                          </label>
-                          <label className="block">
-                            <span className="mb-1 block text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">
-                              Precio unitario
-                            </span>
-                            <input
-                              type="number"
-                              min={0}
-                              value={tier.price}
-                              onChange={(e) => updatePriceTier(index, "price", e.target.value)}
-                              className="admin-control"
-                            />
-                          </label>
-                          <button
-                            type="button"
-                            onClick={() => removePriceTier(index)}
-                            className="self-end rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs font-bold text-red-600 transition-colors hover:bg-red-100"
-                          >
-                            Quitar
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="rounded-2xl border border-slate-200 bg-white p-5">
-                  <p className="text-xs font-bold uppercase tracking-[0.14em] text-accent">
-                    Colores disponibles
-                  </p>
-                  <div className="mt-4 flex flex-wrap gap-3">
-                    {colorOptions.map((color) => {
-                      const selected = selectedColors.includes(color.name);
-                      return (
-                        <button
-                          key={color.name}
-                          type="button"
-                          onClick={() => toggleArrayValue("colors", color.name)}
-                          title={color.name}
-                          className={`flex h-9 w-9 items-center justify-center rounded-full border-2 shadow-sm transition-all hover:scale-105 ${
-                            selected
-                              ? "border-accent ring-2 ring-accent ring-offset-2"
-                              : "border-slate-200 hover:border-accent-soft"
-                          }`}
-                          style={{ backgroundColor: color.hex }}
-                          aria-label={`Seleccionar color ${color.name}`}
-                        >
-                          {selected && (
-                            <span className="h-2.5 w-2.5 rounded-full bg-accent shadow-[0_0_0_2px_white]" />
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
-                  <p className="mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
-                    {formatList(editingProduct.colors) || "Sin colores seleccionados"}
-                  </p>
-                </div>
-
-                <div className="rounded-2xl border border-slate-200 bg-white p-5">
-                  <p className="text-xs font-bold uppercase tracking-[0.14em] text-accent">
-                    Tallas disponibles
-                  </p>
-                  <div className="mt-4 grid grid-cols-4 gap-2 sm:grid-cols-7">
-                    {sizeOptions.map((size) => {
-                      const selected = selectedSizes.includes(size);
-                      return (
-                        <button
-                          key={size}
-                          type="button"
-                          onClick={() => toggleArrayValue("sizes", size)}
-                          className={`rounded-xl border px-3 py-3 text-sm font-bold transition-all ${
-                            selected
-                              ? "border-accent bg-accent-soft text-accent shadow-sm shadow-[#e5ddd4]"
-                              : "border-slate-200 bg-slate-50 text-slate-400 hover:border-accent-soft hover:bg-white"
-                          }`}
-                        >
-                          {size}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <InputBlock label="Tipo de tela / composicion">
-                    <input
-                      value={editingProduct.composition || ""}
-                      onChange={(e) => updateField("composition", e.target.value)}
-                      placeholder="Ej. 80% algodon, 180 g/m2"
-                      className="admin-control"
-                    />
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {fabricOptions.map((fabric) => {
-                        const selected = editingProduct.composition === fabric;
-                        return (
-                          <button
-                            key={fabric}
-                            type="button"
-                            onClick={() => updateField("composition", fabric)}
-                            className={`rounded-full border px-3 py-1.5 text-[11px] font-semibold transition-colors ${
-                              selected
-                                ? "border-accent bg-accent-soft text-accent"
-                                : "border-slate-200 bg-white text-slate-500 hover:border-accent-soft hover:text-accent"
-                            }`}
-                          >
-                            {fabric}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </InputBlock>
-
-                  <InputBlock label="Gramaje / peso">
-                    <input
-                      value={editingProduct.weight || ""}
-                      onChange={(e) => updateField("weight", e.target.value)}
-                      placeholder="Ej. 180 g/m2"
-                      className="admin-control"
-                    />
-                  </InputBlock>
-                </div>
-
-                <div className="rounded-2xl border border-slate-200 bg-white p-5">
-                  <p className="text-xs font-bold uppercase tracking-[0.14em] text-accent">
-                    Tecnologias destacadas
-                  </p>
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {technologyOptions.map((tech) => {
-                      const selected = selectedTechnologies.includes(tech);
-                      return (
-                        <button
-                          key={tech}
-                          type="button"
-                          onClick={() => toggleArrayValue("technologies", tech)}
-                          className={`rounded-full border px-3 py-2 text-xs font-semibold transition-colors ${
-                            selected
-                              ? "border-accent bg-accent-soft text-accent"
-                              : "border-slate-200 bg-slate-50 text-slate-500 hover:border-accent-soft hover:bg-white"
-                          }`}
-                        >
-                          {tech}
-                        </button>
-                      );
-                    })}
-                  </div>
-                  <input
-                    value={formatList(editingProduct.technologies)}
-                    onChange={(e) => updateListField("technologies", e.target.value)}
-                    placeholder="Agregar manualmente separado por comas"
-                    className="admin-control mt-4"
-                  />
-                </div>
-
-                <div className="rounded-2xl border border-slate-200 bg-white p-5">
-                  <p className="text-xs font-bold uppercase tracking-[0.14em] text-accent">
-                    Certificaciones
-                  </p>
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {certificationOptions.map((certification) => {
-                      const selected = selectedCertifications.includes(certification);
-                      return (
-                        <button
-                          key={certification}
-                          type="button"
-                          onClick={() => toggleArrayValue("certifications", certification)}
-                          className={`rounded-full border px-3 py-2 text-xs font-semibold transition-colors ${
-                            selected
-                              ? "border-accent bg-accent-soft text-accent"
-                              : "border-slate-200 bg-slate-50 text-slate-500 hover:border-accent-soft hover:bg-white"
-                          }`}
-                        >
-                          {certification}
-                        </button>
-                      );
-                    })}
-                  </div>
-                  <input
-                    value={formatList(editingProduct.certifications)}
-                    onChange={(e) => updateListField("certifications", e.target.value)}
-                    placeholder="Agregar manualmente separado por comas"
-                    className="admin-control mt-4"
-                  />
-                </div>
-
-                <label className="flex items-center justify-between rounded-2xl border border-accent-soft/40 bg-surface-2/40 px-4 py-3">
-                  <span>
-                    <span className="block text-sm font-semibold text-slate-800">Producto activo</span>
-                    <span className="block text-xs text-slate-500">Visible para cotizar en el catalogo.</span>
-                  </span>
-                  <input
-                    type="checkbox"
-                    checked={editingProduct.active ?? true}
-                    onChange={(e) =>
-                      setEditingProduct((prev) =>
-                        prev ? { ...prev, active: e.target.checked } : prev
-                      )
-                    }
-                    className="h-5 w-5 accent-accent"
-                  />
-                </label>
-              </div>
-            </div>
-
-            {/* Footer de Acciones Integradas */}
-            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 bg-white/95 px-5 py-4 shadow-[0_-12px_34px_rgba(15,23,42,0.06)] backdrop-blur sm:px-6">
-              <div>
-                {!isNewProduct && (
-                  <button
-                    type="button"
-                    onClick={() => handleDelete(editingProduct.id!)}
-                    className="rounded-xl border border-red-200 bg-white px-4 py-3 text-xs font-semibold text-red-600 transition-colors hover:bg-red-50/60"
-                  >
-                    Eliminar producto
-                  </button>
-                )}
-              </div>
-              
-              <div className="flex flex-wrap items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => setIsPanelOpen(false)}
-                  className="min-w-[120px] rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50"
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={saveProduct}
-                  disabled={saving}
-                  className="min-w-[150px] rounded-xl bg-accent px-6 py-3 text-sm font-semibold text-white transition-all duration-200 hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {saving ? "Guardando..." : isNewProduct ? "Crear producto" : "Guardar cambios"}
-                </button>
-              </div>
-            </div>
-          </aside>
-        </div>
+        <ProductEditorModal
+          product={editingProduct}
+          productCategories={productCategories}
+          categoryLabelBySlug={categoryLabelBySlug}
+          onClose={closePanel}
+          onSaved={handleProductSaved}
+          onDeleted={handleProductDeleted}
+        />
       )}
     </>
   );
@@ -1211,26 +282,14 @@ export default function AdminProducts() {
 
 function Metric({ label, value }: { label: string; value: number }) {
   return (
-    <div className="min-w-[76px] px-4 py-2.5 text-center sm:min-w-[88px]">
-      <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-accent/80">{label}</p>
-      <p className="mt-0.5 text-base font-extrabold tracking-tight text-slate-900">{value}</p>
-    </div>
-  );
-}
-
-function InputBlock({
-  label,
-  children,
-}: {
-  label: string;
-  children: ReactNode;
-}) {
-  return (
-    <div className="block">
-      <span className="mb-2 block text-xs font-semibold tracking-wide text-slate-500">
+    <div className="min-w-[82px] border-r border-[#cfe8ee] px-4 py-2.5 text-center last:border-r-0 [html[data-theme='dark']_&]:border-[#243542]">
+      <p className="text-[9px] font-black uppercase tracking-[0.16em] text-[#0ea5b7] [html[data-theme='dark']_&]:text-[#00b8c8]">
         {label}
-      </span>
-      {children}
+      </p>
+
+      <p className="mt-0.5 text-[18px] font-black leading-none text-[#071827] [html[data-theme='dark']_&]:text-white">
+        {value}
+      </p>
     </div>
   );
 }
