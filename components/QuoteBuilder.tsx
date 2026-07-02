@@ -700,13 +700,13 @@ export default function QuoteBuilder({ initialProducts }: Props) {
           })}
         </div>
 
-        <aside className="sticky top-28 h-fit overflow-hidden rounded-2xl border border-cyan-200/60 bg-gradient-to-br from-white via-[#effdff] to-[#bfeff5] text-slate-950 shadow-[0_24px_70px_rgba(0,144,160,0.16)]">
-          <div className="relative overflow-hidden border-b border-cyan-100 p-6">
+        <aside className="sticky top-28 h-fit overflow-hidden rounded-2xl border border-cyan-200/60 bg-gradient-to-br from-white via-[#effdff] to-[#bfeff5] text-slate-950 shadow-[0_24px_70px_rgba(0,144,160,0.16)] rokko-dark:border-[#243542] rokko-dark:bg-[linear-gradient(145deg,#111b22_0%,#0f2029_48%,#0b3038_100%)] rokko-dark:text-[#f8fafc] rokko-dark:shadow-[0_24px_70px_rgba(0,0,0,0.36)]">
+          <div className="relative overflow-hidden border-b border-cyan-100 p-6 rokko-dark:border-[#243542]">
             <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#071c20] via-accent to-cyan-300" />
             <div className="relative">
               <div className="flex items-center justify-between gap-4">
                 <div className="min-w-0">
-                  <p className="text-[10px] font-black uppercase tracking-[0.24em] text-accent-deep">
+                  <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#087381] rokko-dark:text-[#67d5df]">
                     Carrito
                   </p>
                   <h2 className="mt-1 text-lg font-black tracking-tight">
@@ -727,30 +727,30 @@ export default function QuoteBuilder({ initialProducts }: Props) {
                       d="M2.25 3h1.5l1.8 12.1a2 2 0 001.98 1.7h8.94a2 2 0 001.96-1.6l1.07-5.35H6.25M8.25 21a.75.75 0 100-1.5.75.75 0 000 1.5zm8 0a.75.75 0 100-1.5.75.75 0 000 1.5z"
                     />
                   </svg>
-                  <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-1 text-[10px] font-black text-white shadow-lg shadow-accent/25">
+                  <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#20b8c7] px-1 text-[10px] font-black text-white shadow-lg shadow-[#20b8c7]/25 rokko-dark:bg-[#67d5df] rokko-dark:text-[#071827]">
                     {cart.length}
                   </span>
                 </div>
               </div>
               <div className="mt-5 grid grid-cols-3 gap-2">
-                <div className="rounded-xl bg-white/80 p-3 ring-1 ring-cyan-200">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">
+                <div className="rounded-xl bg-white/80 p-3 ring-1 ring-cyan-200 rokko-dark:bg-[#0f1a22]/82 rokko-dark:ring-[#2b4a55]">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500 rokko-dark:text-[#94a3b8]">
                     Items
                   </p>
                   <p className="mt-1 text-xl font-black tracking-tight">
                     {cart.length}
                   </p>
                 </div>
-                <div className="rounded-xl bg-white/80 p-3 ring-1 ring-cyan-200">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">
+                <div className="rounded-xl bg-white/80 p-3 ring-1 ring-cyan-200 rokko-dark:bg-[#0f1a22]/82 rokko-dark:ring-[#2b4a55]">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500 rokko-dark:text-[#94a3b8]">
                     Unid.
                   </p>
                   <p className="mt-1 text-xl font-black tracking-tight">
                     {cartUnits}
                   </p>
                 </div>
-                <div className="rounded-xl bg-white/80 p-3 ring-1 ring-cyan-200">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">
+                <div className="rounded-xl bg-white/80 p-3 ring-1 ring-cyan-200 rokko-dark:bg-[#0f1a22]/82 rokko-dark:ring-[#2b4a55]">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500 rokko-dark:text-[#94a3b8]">
                     Colores
                   </p>
                   <p className="mt-1 text-xl font-black tracking-tight">
@@ -763,10 +763,10 @@ export default function QuoteBuilder({ initialProducts }: Props) {
 
           <div className="px-6 pb-2">
             {cart.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-cyan-300 bg-white/70 p-5 text-center">
-                <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-cyan-50">
+              <div className="rounded-xl border border-dashed border-cyan-300 bg-white/70 p-5 text-center rokko-dark:border-[#20b8c7]/45 rokko-dark:bg-[#0f1a22]/80">
+                <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-cyan-50 rokko-dark:bg-[#0b3038]">
                   <svg
-                    className="h-5 w-5 text-accent"
+                    className="h-5 w-5 text-[#20b8c7] rokko-dark:text-[#67d5df]"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -779,10 +779,10 @@ export default function QuoteBuilder({ initialProducts }: Props) {
                     />
                   </svg>
                 </div>
-                <h3 className="text-sm font-black text-slate-950">
+                <h3 className="text-sm font-black text-slate-950 rokko-dark:text-[#f8fafc]">
                   Tu carrito está vacío
                 </h3>
-                <p className="mt-1 text-xs leading-relaxed text-slate-500">
+                <p className="mt-1 text-xs leading-relaxed text-slate-500 rokko-dark:text-[#cbd5e1]">
                   Selecciona colores, tallas y agrega prendas para armar tu
                   cotización.
                 </p>
@@ -792,31 +792,31 @@ export default function QuoteBuilder({ initialProducts }: Props) {
                 {cart.map((item) => (
                   <div
                     key={item.id}
-                    className="group rounded-xl bg-white/88 p-3.5 shadow-sm ring-1 ring-cyan-100 transition-all hover:bg-white hover:ring-cyan-200"
+                    className="group rounded-xl bg-white/88 p-3.5 shadow-sm ring-1 ring-cyan-100 transition-all hover:bg-white hover:ring-cyan-200 rokko-dark:bg-[#0f1a22]/88 rokko-dark:ring-[#243542] rokko-dark:hover:bg-[#132630] rokko-dark:hover:ring-[#20b8c7]/45"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0 flex-1">
-                          <h3 className="truncate text-sm font-black text-slate-950">
+                          <h3 className="truncate text-sm font-black text-slate-950 rokko-dark:text-[#f8fafc]">
                           {item.product}
                         </h3>
-                        <p className="mt-0.5 text-xs font-semibold text-slate-600">
+                        <p className="mt-0.5 text-xs font-semibold text-slate-600 rokko-dark:text-[#cbd5e1]">
                           {item.color} · {item.application}
                         </p>
-                        <p className="mt-1.5 text-[11px] font-semibold leading-relaxed text-slate-500">
+                        <p className="mt-1.5 text-[11px] font-semibold leading-relaxed text-slate-500 rokko-dark:text-[#94a3b8]">
                           {Object.entries(item.sizes)
                             .filter(([, qty]) => qty > 0)
                             .map(([size, qty]) => `${qty}/${size}`)
                             .join(" · ")}
                         </p>
-                        <p className="mt-1 text-[11px] font-black text-accent-deep">
+                        <p className="mt-1 text-[11px] font-black text-[#087381] rokko-dark:text-[#67d5df]">
                           Unidad ${item.unitPrice.toLocaleString("es-CL")}
                         </p>
                       </div>
                       <div className="shrink-0 text-right">
-                        <p className="text-sm font-black text-slate-950">
+                        <p className="text-sm font-black text-slate-950 rokko-dark:text-[#f8fafc]">
                           ${item.subtotal.toLocaleString("es-CL")}
                         </p>
-                        <p className="text-[11px] font-semibold text-slate-500">
+                        <p className="text-[11px] font-semibold text-slate-500 rokko-dark:text-[#94a3b8]">
                           {item.totalUnits} und.
                         </p>
                       </div>
@@ -833,16 +833,16 @@ export default function QuoteBuilder({ initialProducts }: Props) {
             )}
           </div>
 
-          <div className="border-t border-cyan-100 px-6 py-5">
+          <div className="border-t border-cyan-100 px-6 py-5 rokko-dark:border-[#243542]">
             {commercialDiscount > 0 && discountAmount > 0 && (
-              <div className="mb-3 space-y-1 rounded-xl border border-cyan-200 bg-white/75 px-3.5 py-3 text-xs text-slate-600">
+              <div className="mb-3 space-y-1 rounded-xl border border-cyan-200 bg-white/75 px-3.5 py-3 text-xs text-slate-600 rokko-dark:border-[#2b4a55] rokko-dark:bg-[#0f1a22]/82 rokko-dark:text-[#cbd5e1]">
                 <div className="flex justify-between">
                   <span>Subtotal</span>
-                  <span className="font-bold text-slate-900">
+                  <span className="font-bold text-slate-900 rokko-dark:text-[#f8fafc]">
                     ${subtotalBeforeDiscount.toLocaleString("es-CL")}
                   </span>
                 </div>
-                <div className="flex justify-between text-accent-deep">
+                <div className="flex justify-between text-[#087381] rokko-dark:text-[#67d5df]">
                   <span>Descuento comercial {commercialDiscount}%</span>
                   <span className="font-black">
                     -${discountAmount.toLocaleString("es-CL")}
@@ -851,15 +851,15 @@ export default function QuoteBuilder({ initialProducts }: Props) {
               </div>
             )}
             <div className="flex items-end justify-between gap-4">
-              <span className="text-sm font-semibold text-slate-600">Total estimado</span>
-              <strong className="text-2xl font-black tracking-tight text-slate-950">
+              <span className="text-sm font-semibold text-slate-600 rokko-dark:text-[#cbd5e1]">Total estimado</span>
+              <strong className="text-2xl font-black tracking-tight text-slate-950 rokko-dark:text-[#f8fafc]">
                 ${total.toLocaleString("es-CL")}
               </strong>
             </div>
             <button
               onClick={openQuoteModal}
               disabled={cart.length === 0}
-              className="mt-4 w-full rounded-xl bg-accent px-5 py-3.5 text-sm font-black text-white shadow-lg shadow-accent/20 transition-all hover:bg-accent-deep active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-white/15 disabled:text-white/35 disabled:shadow-none"
+              className="mt-4 w-full rounded-xl bg-[#20b8c7] px-5 py-3.5 text-sm font-black text-white shadow-lg shadow-[#20b8c7]/20 transition-all hover:bg-[#087381] active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-white/15 disabled:text-white/35 disabled:shadow-none rokko-dark:hover:bg-[#67d5df] rokko-dark:hover:text-[#071827]"
             >
               Generar cotización
             </button>
@@ -2186,29 +2186,31 @@ const ProductCard = memo(function ProductCard({
       data-speak-price={`$${product.price.toLocaleString("es-CL")}`}
       data-speak-colors={(product.colors || []).join(", ")}
       data-speak-sizes={productSizes.join(", ")}
-      className="animate-fade-in-up group/card overflow-hidden rounded-2xl border border-border bg-white shadow-[0_16px_45px_rgba(45,52,54,0.06)] transition-all duration-200 hover:-translate-y-0.5 hover:border-accent/35 hover:shadow-[0_22px_60px_rgba(45,52,54,0.10)]"
+      className="animate-fade-in-up group/card overflow-hidden rounded-2xl border border-[#c9d8df] bg-white shadow-[0_16px_45px_rgba(45,52,54,0.06)] transition-all duration-200 hover:-translate-y-0.5 hover:border-[#20b8c7]/35 hover:shadow-[0_22px_60px_rgba(45,52,54,0.10)] rokko-dark:border-[#243542] rokko-dark:bg-[#111b22] rokko-dark:shadow-[0_22px_60px_rgba(0,0,0,0.34)] rokko-dark:hover:border-[#20b8c7]/55 lg:min-h-[430px]"
       style={{ animationDelay: `${animationDelay}ms` }}
     >
       <div className="grid gap-0 lg:grid-cols-[320px_1fr]">
         {/* ─── IMAGE ─── */}
-        <div className="relative flex aspect-[4/5] items-center justify-center overflow-hidden border-r border-border bg-gradient-to-b from-white via-accent-soft/30 to-surface-2/70 lg:aspect-auto lg:min-h-[360px]">
-          <Image
-            src={activeImage || "/rokko.png"}
-            alt={product.name}
-            width={260}
-            height={300}
-            loading={animationDelay === 0 ? "eager" : "lazy"}
-            fetchPriority={animationDelay === 0 ? "high" : "auto"}
-            className="relative h-auto max-h-[88%] w-auto max-w-[88%] object-contain drop-shadow-[0_18px_28px_rgba(45,52,54,0.10)]"
-            style={{ width: "auto", height: "auto" }}
-          />
+        <div className="relative flex aspect-[4/5] items-center justify-center overflow-hidden border-r border-[#dce7ec] bg-gradient-to-b from-white via-[#e8fafc]/45 to-[#f4f9fb] rokko-dark:border-[#243542] rokko-dark:bg-[linear-gradient(180deg,#152630_0%,#111b22_52%,#0b1319_100%)] lg:aspect-auto lg:min-h-[430px]">
+          <div className="relative flex h-[74%] w-[82%] items-center justify-center overflow-hidden rounded-xl bg-white shadow-[0_18px_38px_rgba(15,35,48,0.08)] ring-1 ring-[#dce7ec]/80 rokko-dark:bg-[#f4f6f7] rokko-dark:ring-white/10">
+            <Image
+              src={activeImage || "/rokko.png"}
+              alt={product.name}
+              width={260}
+              height={300}
+              loading={animationDelay === 0 ? "eager" : "lazy"}
+              fetchPriority={animationDelay === 0 ? "high" : "auto"}
+              className="relative h-auto max-h-[90%] w-auto max-w-[90%] object-contain drop-shadow-[0_18px_28px_rgba(45,52,54,0.10)]"
+              style={{ width: "auto", height: "auto" }}
+            />
+          </div>
           {/* Gallery nav */}
           {displayImages.length > 1 && (
             <>
               <button
                 type="button"
                 onClick={() => handleGallery(activeImageIndex - 1)}
-                className="absolute left-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/92 text-muted opacity-0 shadow-sm ring-1 ring-border backdrop-blur transition-colors duration-200 hover:bg-accent hover:text-white group-hover/card:opacity-100"
+                className="absolute left-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/92 text-[#526879] opacity-0 shadow-sm ring-1 ring-[#dce7ec] backdrop-blur transition-colors duration-200 hover:bg-[#20b8c7] hover:text-white group-hover/card:opacity-100 rokko-dark:bg-[#111b22]/90 rokko-dark:text-[#cbd5e1] rokko-dark:ring-[#243542]"
                 aria-label="Imagen anterior"
               >
                 <svg
@@ -2228,7 +2230,7 @@ const ProductCard = memo(function ProductCard({
               <button
                 type="button"
                 onClick={() => handleGallery(activeImageIndex + 1)}
-                className="absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/92 text-muted opacity-0 shadow-sm ring-1 ring-border backdrop-blur transition-colors duration-200 hover:bg-accent hover:text-white group-hover/card:opacity-100"
+                className="absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/92 text-[#526879] opacity-0 shadow-sm ring-1 ring-[#dce7ec] backdrop-blur transition-colors duration-200 hover:bg-[#20b8c7] hover:text-white group-hover/card:opacity-100 rokko-dark:bg-[#111b22]/90 rokko-dark:text-[#cbd5e1] rokko-dark:ring-[#243542]"
                 aria-label="Imagen siguiente"
               >
                 <svg
@@ -2245,7 +2247,7 @@ const ProductCard = memo(function ProductCard({
                   />
                 </svg>
               </button>
-              <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1.5 rounded-full bg-white/92 px-2.5 py-1.5 shadow-sm ring-1 ring-border backdrop-blur">
+              <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1.5 rounded-full bg-white/92 px-2.5 py-1.5 shadow-sm ring-1 ring-[#dce7ec] backdrop-blur rokko-dark:bg-[#111b22]/90 rokko-dark:ring-[#243542]">
                 {displayImages.map((image, index) => (
                   <button
                     key={`${image}-${index}`}
@@ -2263,40 +2265,38 @@ const ProductCard = memo(function ProductCard({
         </div>
 
         {/* ─── CONTENT ─── */}
-        <div className="flex flex-col bg-white p-5 sm:p-6">
+        <div className="flex flex-col bg-white p-5 rokko-dark:bg-[#111b22] sm:p-6">
           {/* Header */}
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0 flex-1">
-              <p className="text-[10px] font-black uppercase tracking-[0.15em] text-accent">
+              <p className="text-[10px] font-black uppercase tracking-[0.15em] text-[#087381] rokko-dark:text-[#67d5df]">
                 {product.short_name}
               </p>
-              <h2 className="mt-1 text-lg font-black leading-snug text-neutral-950 sm:text-xl">
+              <h2 className="mt-1 text-lg font-black leading-snug text-neutral-950 rokko-dark:text-[#f8fafc] sm:text-xl">
                 {product.name}
               </h2>
-              {description && (
-                <p className="mt-1 text-sm leading-relaxed text-muted line-clamp-2">
-                  {description}
-                </p>
-              )}
+              <p className="mt-1 min-h-[2.75rem] text-sm leading-relaxed text-[#526879] line-clamp-2 rokko-dark:text-[#cbd5e1]">
+                {description || " "}
+              </p>
             </div>
             <div className="shrink-0 text-right">
-              <p className="text-[10px] font-bold text-muted">Desde</p>
-              <p className="text-lg font-black text-accent">
+              <p className="text-[10px] font-bold text-[#526879] rokko-dark:text-[#94a3b8]">Desde</p>
+              <p className="text-lg font-black text-[#087381] rokko-dark:text-[#67d5df]">
                 ${product.price.toLocaleString("es-CL")}
               </p>
-              <p className="text-[9px] text-muted/65">IVA incl.</p>
+              <p className="text-[9px] text-[#526879]/65 rokko-dark:text-[#94a3b8]/70">IVA incl.</p>
             </div>
           </div>
 
           {/* Tags */}
-          <div className="mt-3 flex flex-wrap gap-1">
-            <span className="rounded-md border border-border bg-surface-2 px-2 py-0.5 text-[10px] font-bold text-muted">
+          <div className="mt-3 flex h-[22px] flex-wrap gap-1 overflow-hidden">
+            <span className="rounded-md border border-[#dce7ec] bg-[#f4f9fb] px-2 py-0.5 text-[10px] font-bold text-[#526879] rokko-dark:border-[#243542] rokko-dark:bg-[#162530] rokko-dark:text-[#cbd5e1]">
               {product.category}
             </span>
             {(product.technologies || []).slice(0, 3).map((tech) => (
               <span
                 key={tech}
-                className="rounded-md border border-border bg-surface-2 px-2 py-0.5 text-[10px] font-bold text-muted"
+                className="rounded-md border border-[#dce7ec] bg-[#f4f9fb] px-2 py-0.5 text-[10px] font-bold text-[#526879] rokko-dark:border-[#243542] rokko-dark:bg-[#162530] rokko-dark:text-[#cbd5e1]"
               >
                 {tech}
               </span>
@@ -2305,10 +2305,10 @@ const ProductCard = memo(function ProductCard({
 
           {/* Color + Logo */}
           <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_180px]">
-            <div className="rounded-xl border border-border bg-white p-3 shadow-sm shadow-slate-900/[0.03]">
-              <label className="mb-2 flex items-center justify-between gap-2 text-[11px] font-black text-text">
+            <div className="rounded-xl border border-[#dce7ec] bg-white p-3 shadow-sm shadow-slate-900/[0.03] rokko-dark:border-[#9edbe2] rokko-dark:bg-[#eaf7f9] rokko-dark:shadow-[0_10px_24px_rgba(0,0,0,0.14)]">
+              <label className="mb-2 flex items-center justify-between gap-2 text-[11px] font-black text-[#071827] rokko-dark:text-[#06343b]">
                 Color
-                <span className="inline-flex min-w-0 items-center gap-1.5 rounded-full border border-accent/20 bg-accent-soft px-2 py-1 text-[10px] font-black text-accent-deep capitalize">
+                <span className="inline-flex min-w-0 items-center gap-1.5 rounded-full border border-[#20b8c7]/20 bg-[#e8fafc] px-2 py-1 text-[10px] font-black text-[#087381] capitalize rokko-dark:border-[#9edbe2] rokko-dark:bg-white rokko-dark:text-[#075663]">
                   <span
                     className="h-2.5 w-2.5 shrink-0 rounded-full ring-1 ring-black/10"
                     style={{ backgroundColor: selectedColorHex }}
@@ -2316,7 +2316,7 @@ const ProductCard = memo(function ProductCard({
                   <span className="truncate">{selectedColor}</span>
                 </span>
               </label>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex max-h-[68px] min-h-[64px] flex-wrap gap-2 overflow-hidden">
                 {(product.colors || []).map((color, colorIndex) => {
                   const selected =
                     normalizeColorName(selectedColor) === normalizeColorName(color);
@@ -2348,23 +2348,23 @@ const ProductCard = memo(function ProductCard({
                 })}
               </div>
             </div>
-            <div className="rounded-xl border border-accent/18 bg-accent-soft p-3 shadow-sm shadow-accent/5">
-              <p className="text-[10px] font-black uppercase tracking-[0.08em] text-accent">
+            <div className="rounded-xl border border-[#20b8c7]/20 bg-[#e8fafc] p-3 shadow-sm shadow-[#20b8c7]/5 rokko-dark:border-[#4c8792] rokko-dark:bg-[#123d46]">
+              <p className="text-[10px] font-black uppercase tracking-[0.08em] text-[#087381] rokko-dark:text-[#9ff3fb]">
                 Logo incluido
               </p>
-              <p className="mt-1 text-xs font-semibold text-accent-deep/75">
+              <p className="mt-1 text-xs font-semibold text-[#087381]/75 rokko-dark:text-[#e8fdff]">
                 Pecho · Manga · Espalda
               </p>
             </div>
           </div>
 
           {/* Sizes */}
-          <div className="mt-4 rounded-xl border border-border bg-surface-2/70 p-3 shadow-sm shadow-slate-900/[0.03]">
+          <div className="mt-4 rounded-xl border border-[#dce7ec] bg-[#f4f9fb]/70 p-3 shadow-sm shadow-slate-900/[0.03] rokko-dark:border-[#3d6671] rokko-dark:bg-[#172a34]">
             <div className="mb-2 flex items-center justify-between gap-3">
-              <label className="text-[11px] font-black uppercase tracking-[0.08em] text-text">
+              <label className="text-[11px] font-black uppercase tracking-[0.08em] text-[#071827] rokko-dark:text-[#f8fafc]">
                 Tallas
               </label>
-              <span className="rounded-full bg-accent px-2.5 py-1 text-[10px] font-black text-white shadow-sm shadow-accent/20">
+              <span className="rounded-full bg-[#20b8c7] px-2.5 py-1 text-[10px] font-black text-white shadow-sm shadow-[#20b8c7]/20 rokko-dark:bg-[#dff8fb] rokko-dark:text-[#075663]">
                 {selectedUnits} und.
               </span>
             </div>
@@ -2374,7 +2374,7 @@ const ProductCard = memo(function ProductCard({
                 const val = formSizes[size];
                 return (
                   <div key={size}>
-                    <label className={`mb-1 block text-center text-[10px] font-black ${isAvail ? "text-neutral-600" : "text-neutral-300"}`}>
+                    <label className={`mb-1 block text-center text-[10px] font-black ${isAvail ? "text-neutral-600 rokko-dark:text-[#cbd5e1]" : "text-neutral-300 rokko-dark:text-[#526675]"}`}>
                       {size}
                     </label>
                     <input
@@ -2384,7 +2384,7 @@ const ProductCard = memo(function ProductCard({
                       disabled={!isAvail}
                       value={val ?? ""}
                       onChange={(e) => onSizeUpdate(pid, size, e.target.value)}
-                      className={`h-9 w-full rounded-lg border text-center text-sm font-black outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent/15 ${isAvail ? "border-border bg-white text-neutral-900 shadow-inner shadow-slate-900/[0.02]" : "border-border/60 bg-white/55 text-muted/35"}`}
+                      className={`h-9 w-full rounded-lg border text-center text-sm font-black outline-none transition-all focus:border-[#20b8c7] focus:ring-2 focus:ring-[#20b8c7]/15 ${isAvail ? "border-[#c9d8df] bg-white text-neutral-900 shadow-inner shadow-slate-900/[0.02] rokko-dark:border-[#8bc9d2] rokko-dark:bg-[#f8fcfd] rokko-dark:text-[#071827] rokko-dark:shadow-[0_6px_14px_rgba(0,0,0,0.16)]" : "border-[#dce7ec]/60 bg-white/55 text-[#526879]/35 rokko-dark:border-[#3d6671] rokko-dark:bg-[#213640] rokko-dark:text-[#7f93a3]"}`}
                     />
                   </div>
                 );
@@ -2396,7 +2396,7 @@ const ProductCard = memo(function ProductCard({
           <div className="mt-auto grid grid-cols-[minmax(0,1fr)_112px] items-center gap-2.5 pt-4">
             <button
               onClick={() => onAddToCart(pid)}
-              className="flex h-11 items-center justify-center gap-2 rounded-xl bg-accent px-4 text-sm font-black text-white shadow-[0_14px_32px_rgba(70,185,200,0.22)] transition-all hover:bg-accent-deep hover:shadow-[0_18px_40px_rgba(22,136,154,0.24)] active:scale-[0.98]"
+              className="flex h-11 items-center justify-center gap-2 rounded-xl bg-[#20b8c7] px-4 text-sm font-black text-white shadow-[0_14px_32px_rgba(70,185,200,0.22)] transition-all hover:bg-[#087381] hover:shadow-[0_18px_40px_rgba(22,136,154,0.24)] active:scale-[0.98] rokko-dark:hover:bg-[#67d5df] rokko-dark:hover:text-[#071827]"
             >
               <svg
                 className="h-4 w-4"
@@ -2418,7 +2418,7 @@ const ProductCard = memo(function ProductCard({
               onFocus={() => onPreloadDetails(product)}
               onTouchStart={() => onPreloadDetails(product)}
               onClick={() => onViewDetails(product)}
-              className="flex h-11 items-center justify-center gap-1.5 rounded-xl border border-border bg-white px-4 text-sm font-black text-muted shadow-sm shadow-slate-900/[0.03] transition-colors hover:border-accent/45 hover:bg-accent-soft hover:text-accent-deep"
+              className="flex h-11 items-center justify-center gap-1.5 rounded-xl border border-[#c9d8df] bg-white px-4 text-sm font-black text-[#526879] shadow-sm shadow-slate-900/[0.03] transition-colors hover:border-[#20b8c7]/45 hover:bg-[#e8fafc] hover:text-[#087381] rokko-dark:border-[#34495a] rokko-dark:bg-[#111b22] rokko-dark:text-[#cbd5e1] rokko-dark:hover:border-[#67d5df]/45 rokko-dark:hover:bg-[#0b3038] rokko-dark:hover:text-[#67d5df]"
             >
               <svg
                 className="h-3.5 w-3.5"

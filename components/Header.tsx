@@ -157,10 +157,10 @@ export default function Header() {
               onClick={toggleFontSize}
               title="Cambiar tamaño de texto"
               aria-label="Ajustar tamaño de fuente"
-              className="relative flex h-10 w-10 items-center justify-center rounded-xl text-muted transition hover:bg-surface-2 hover:text-text"
+              className="relative flex h-10 w-10 items-center justify-center rounded-xl text-muted transition hover:bg-surface-2 hover:text-text rokko-dark:text-[#cbd5e1] rokko-dark:hover:bg-[#162530] rokko-dark:hover:text-white"
             >
               <AArrowUp className="h-5 w-5" />
-              <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-accent text-[9px] font-black text-white">
+              <span className="absolute -right-2 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#20b8c7] px-1 text-[8.5px] font-black leading-none text-white shadow-sm ring-1 ring-white/70 rokko-dark:bg-[#67d5df] rokko-dark:text-[#071827] rokko-dark:ring-[#0b1319]">
                 {fontScales[fontScaleIndex]?.badge || "A"}
               </span>
             </button>
