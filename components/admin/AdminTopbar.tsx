@@ -11,6 +11,7 @@ type AdminTopbarProps = {
   userEmail?: string;
   onQuickAction?: () => void;
   onSearch?: (query: string) => void;
+  onLogout?: () => Promise<void>; // <-- Añadido para solucionar el error de TypeScript
 };
 
 const pageMeta: Record<
